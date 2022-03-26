@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
 	"github.com/google/go-jsonnet"
+	"go.starlark.net/starlark"
 )
 
 //go:embed builtin/*.tmpl
@@ -44,6 +46,11 @@ func newTemplate() (*template.Template, error) {
 
 func Load(datafile string, output interface{}) error {
 	if datafile != "" {
+		// Use starlark for .star or .py files
+		lowerName := strings.ToLower(datafile)
+		if strings.HasSuffix(lowerName, ".star") || strings.HasSuffix(lowerName, ".py") {
+			return loadStarlark(datafile, output)
+		}
 		vm := jsonnet.MakeVM()
 		jsonStr, err := vm.EvaluateFile(datafile)
 
@@ -55,6 +62,30 @@ func Load(datafile string, output interface{}) error {
 		}
 	}
 	return nil
+}
+
+func loadStarlark(datafile string, output interface{}) error {
+	// Execute Starlark program in a file.
+	thread := &starlark.Thread{Name: "datafile"}
+	globals, err := starlark.ExecFile(thread, datafile, nil, nil)
+	if err != nil {
+		return err
+	}
+	base, ext := path.Base(datafile), path.Ext(datafile)
+	base = base[0 : len(base)-len(ext)]
+	call, ok := globals[base]
+	if !ok {
+		return fmt.Errorf("datafile %s should have a global callable %s", datafile, base)
+	}
+	value, err := starlark.Call(thread, call, starlark.Tuple{starlark.NewDict(0)}, nil)
+	if err != nil {
+		return err
+	}
+	valBytes, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(valBytes, &output)
 }
 
 type stringError string

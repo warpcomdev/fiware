@@ -7,6 +7,7 @@ require (
 	github.com/google/go-jsonnet v0.18.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/urfave/cli/v2 v2.4.0
+	go.starlark.net v0.0.0-20220302181546-5411bad688d1
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 )
 

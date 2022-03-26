@@ -267,16 +267,19 @@ func get_models(filename string) []fiware.Entity {
 }
 
 //go:embed vertical.jsonnet
-var verticalJsonnet string
+var verticalTemplate string
+
+const (
+	fromMarker = "/* BEGIN REPLACE */"
+	toMarker   = "/* END REPLACE */"
+)
 
 func Decode(outfile, verticalName, subserviceName, path string) error {
 
-	fromMarker := "/* BEGIN REPLACE */"
-	toMarker := "/* END REPLACE */"
-	fromIndex := strings.Index(verticalJsonnet, fromMarker)
-	toIndex := strings.Index(verticalJsonnet, toMarker)
+	fromIndex := strings.Index(verticalTemplate, fromMarker)
+	toIndex := strings.Index(verticalTemplate, toMarker)
 	if fromIndex < 0 || toIndex < 0 {
-		return errors.New("failed to replace markers in verticals.jsonnet file")
+		return errors.New("failed to replace markers in verticals input file")
 	}
 
 	var handle *os.File = os.Stdout
@@ -295,14 +298,14 @@ func Decode(outfile, verticalName, subserviceName, path string) error {
 		return fmt.Errorf("failed to marshal models: %w", err)
 	}
 
-	handle.WriteString(verticalJsonnet[:fromIndex])
+	handle.WriteString(verticalTemplate[:fromIndex])
 	handle.WriteString(fmt.Sprintf(
-		"\n%sname: %q,\n%ssubservice: %q,\n%sentityTypes:",
+		"\n%s'name': %q,\n%s'subservice': %q,\n%s'entityTypes':",
 		indent, verticalName, indent, subserviceName, indent,
 	))
 	handle.Write(modelText)
 	handle.WriteString(",\n")
-	handle.WriteString(verticalJsonnet[toIndex+len(toMarker):])
+	handle.WriteString(verticalTemplate[toIndex+len(toMarker):])
 	handle.WriteString("\n")
 	return nil
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"runtime"
@@ -32,20 +31,11 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	var console io.Writer = os.Stdout
-	isTerminal := term.IsTerminal(int(syscall.Stdout))
-	if !isTerminal {
-		// Display prompt through stderr, so stdout is only used
-		// for token.
-		console = os.Stderr
-	}
-	fmt.Fprintf(console, "Environment: %s\n", k.LoginURL.String())
-	fmt.Fprintf(console, "Username@Service: %s@%s\n", k.Username, k.Service)
-	fmt.Fprint(console, "Password: ")
+	fmt.Fprintf(os.Stderr, "Environment: %s\n", k.LoginURL.String())
+	fmt.Fprintf(os.Stderr, "Username@Service: %s@%s\n", k.Username, k.Service)
+	fmt.Fprint(os.Stderr, "Password: ")
 	bytepw, err := term.ReadPassword(int(syscall.Stdin))
-	if isTerminal {
-		fmt.Println() // in case the stdin is a terminal
-	}
+	fmt.Fprintln(os.Stderr, "")
 	if err != nil {
 		return err
 	}
@@ -53,14 +43,11 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	if isTerminal {
-		if runtime.GOOS == "windows" {
-			fmt.Printf("SET FIWARE_TOKEN=%s\n", token)
-		} else {
-			fmt.Printf("export FIWARE_TOKEN=%s\n", token)
-		}
+	if runtime.GOOS == "windows" {
+		fmt.Fprintf(os.Stderr, "SET FIWARE_TOKEN=%s\n", token)
 	} else {
-		fmt.Println(token)
+		fmt.Fprintf(os.Stderr, "export FIWARE_TOKEN=%s\n", token)
 	}
+	fmt.Println(token)
 	return nil
 }

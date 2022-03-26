@@ -71,7 +71,11 @@ type EntityMapping struct {
 }
 
 // AttributeMapping es cada uno de los AttributeMappings de un EntityMapping
-type AttributeMapping struct { /* TBD */
+type AttributeMapping struct {
+	OriginalAttributeName string `json:"originalAttributeName,omitempty"`
+	OriginalAttributeType string `json:"originalAttributeType,omitempty"`
+	NewAttributeName      string `json:"newAttributeName,omitempty"`
+	NewAttributeType      string `json:"newAttributeType,omitempty"`
 }
 
 // Suscription representa una suscripcion
@@ -239,13 +243,13 @@ type DeviceCommand struct {
 }
 
 type Rule struct {
-	Name        string       `json:"name,omitempty"`
-	Description string       `json:"description,omitempty"`
-	Misc        string       `json:"misc,omitempty"`
-	Text        string       `json:"text,omitempty"`
-	VR          string       `json:"VR,omitempty"`
-	Action      RuleAction   `json:"action,omitempty"`
-	NoSignal    RuleNoSignal `json:"nosignal,omitempty"`
+	Name        string        `json:"name,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Misc        string        `json:"misc,omitempty"`
+	Text        string        `json:"text,omitempty"`
+	VR          string        `json:"VR,omitempty"`
+	Action      *RuleAction   `json:"action,omitempty"`
+	NoSignal    *RuleNoSignal `json:"nosignal,omitempty"`
 	RuleStatus
 }
 

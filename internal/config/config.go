@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"runtime"
+	"strings"
 )
 
 type stringError string
@@ -33,11 +35,43 @@ type Config struct {
 }
 
 func (c *Config) String() string {
-	data, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return err.Error()
+	pairs := map[string]string{
+		"name":       c.Name,
+		"keystone":   c.KeystoneURL,
+		"orion":      c.OrionURL,
+		"iotam":      c.IotamURL,
+		"perseo":     c.PerseoURL,
+		"service":    c.Service,
+		"subservice": c.Subservice,
+		"username":   c.Username,
 	}
-	return fmt.Sprintf("config settings:\n%s", string(data))
+	serialize := func(m map[string]string, format, sep string, skipEmpty bool) string {
+		items := make([]string, 0, len(m))
+		for k, v := range m {
+			if !skipEmpty || v != "" {
+				items = append(items, fmt.Sprintf(format, k, v))
+			}
+		}
+		return strings.Join(items, sep)
+	}
+	result := []string{"{"}
+	result = append(result, serialize(pairs, "  %q: %q", ",\n", false)) // serialize as json
+	if len(c.Params) > 0 {
+		result = append(result,
+			"params: {",
+			serialize(c.Params, "    %q: %q", ",\n", false),
+			"}",
+		)
+	}
+	result = append(result, "}")
+	// add single line too for copy/paste
+	delete(pairs, "name") // do not overwrite name
+	result = append(result, "fiware context set:", serialize(pairs, "%s %q", " ", true))
+	// And params
+	if len(c.Params) > 0 {
+		result = append(result, "fiware context params:", serialize(pairs, "%s %q", " ", true))
+	}
+	return strings.Join(result, "\n")
 }
 
 // Store can manage several configs
@@ -66,6 +100,7 @@ func (s *Store) read() ([]Config, error) {
 		}
 		return nil, err
 	}
+	defer infile.Close()
 	decoder := json.NewDecoder(infile)
 	var result []Config
 	if err := decoder.Decode(&result); err != nil {
@@ -82,8 +117,13 @@ func (s Store) save(c []Config) error {
 	}
 	defer os.Remove(file.Name())
 	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(c); err != nil {
+	err = encoder.Encode(c)
+	file.Close() // Close before returning an renaming, for windows.
+	if err != nil {
 		return err
+	}
+	if runtime.GOOS == "windows" {
+		os.Chmod(s.Path, 0644) // So that os.Rename works. See https://github.com/golang/go/issues/38287
 	}
 	return os.Rename(file.Name(), s.Path)
 }
