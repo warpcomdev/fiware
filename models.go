@@ -243,21 +243,21 @@ type DeviceCommand struct {
 }
 
 type Rule struct {
-	Name        string        `json:"name,omitempty"`
-	Description string        `json:"description,omitempty"`
-	Misc        string        `json:"misc,omitempty"`
-	Text        string        `json:"text,omitempty"`
-	VR          string        `json:"VR,omitempty"`
-	Action      *RuleAction   `json:"action,omitempty"`
-	NoSignal    *RuleNoSignal `json:"nosignal,omitempty"`
+	Name        string       `json:"name"`
+	Description string       `json:"description,omitempty"`
+	Misc        string       `json:"misc,omitempty"`
+	Text        string       `json:"text,omitempty"`
+	VR          string       `json:"VR,omitempty"`
+	Action      RuleAction   `json:"action,omitempty"`
+	NoSignal    RuleNoSignal `json:"nosignal,omitempty"`
 	RuleStatus
 }
 
 // RuleStatus agrupa atributos de estado que no se usan al crear una Rule
 type RuleStatus struct {
-	ID         string `json:"_id"`
 	Subservice string `json:"subservice,omitempty"`
 	Service    string `json:"service,omitempty"`
+	ID         string `json:"_id,omitempty"`
 }
 
 type RuleAction struct {
