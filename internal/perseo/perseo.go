@@ -59,6 +59,9 @@ func (o *Perseo) PostRules(client *http.Client, headers http.Header, rules []fiw
 		if rule.Name == "" {
 			return errors.New("All rules must have name")
 		}
+		if rule.Text != "" {
+			rule.NoSignal = nil // those two are mutually exclusive
+		}
 		path, err := o.URL.Parse("rules")
 		if err != nil {
 			return err

@@ -243,13 +243,13 @@ type DeviceCommand struct {
 }
 
 type Rule struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description,omitempty"`
-	Misc        string       `json:"misc,omitempty"`
-	Text        string       `json:"text,omitempty"`
-	VR          string       `json:"VR,omitempty"`
-	Action      RuleAction   `json:"action,omitempty"`
-	NoSignal    RuleNoSignal `json:"nosignal,omitempty"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Misc        string          `json:"misc,omitempty"`
+	Text        string          `json:"text,omitempty"`
+	VR          string          `json:"VR,omitempty"`
+	Action      json.RawMessage `json:"action,omitempty"`   // TODO: estructurar de alguna forma?
+	NoSignal    json.RawMessage `json:"nosignal,omitempty"` // TODO: estructurar de alguna forma?
 	RuleStatus
 }
 
@@ -258,12 +258,4 @@ type RuleStatus struct {
 	Subservice string `json:"subservice,omitempty"`
 	Service    string `json:"service,omitempty"`
 	ID         string `json:"_id,omitempty"`
-}
-
-type RuleAction struct {
-	json.RawMessage // TODO: estructurar de alguna forma?
-}
-
-type RuleNoSignal struct {
-	json.RawMessage // TODO: estructurar de alguna forma?
 }
