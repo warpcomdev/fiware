@@ -52,7 +52,9 @@ func getConfig(c *cli.Context, store *config.Store) (zero config.Config, h http.
 
 	token := c.String("token")
 	if token == "" {
-		return zero, nil, errors.New("no token found in environment, please login first")
+		if token = selected.HasToken(); token == "" {
+			return zero, nil, errors.New("no token found, please login first")
+		}
 	}
 	header := k.Headers(selected.Subservice, token)
 	return selected, header, nil

@@ -1,14 +1,14 @@
 package config
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
-	"sort"
-	"strings"
 )
 
 type stringError string
@@ -20,6 +20,7 @@ func (s stringError) Error() string {
 const (
 	ErrNoContext        stringError = "no context in use"
 	ErrParametersNumber stringError = "please provide parameter - value pairs"
+	HiddenToken                     = "***"
 )
 
 // Config almacena información de conexión a un entorno
@@ -32,40 +33,22 @@ type Config struct {
 	Service     string            `json:"service"`
 	Subservice  string            `json:"subservice"`
 	Username    string            `json:"username"`
+	Token       string            `json:"token"`
 	Params      map[string]string `json:"params,omitempty"`
 }
 
-// naive function to turn a map into a sequence of string pairs
-func map2pairs(m map[string]string) [][2]string {
-	keys := make([]string, 0, len(m))
-	for k, v := range m {
-		if v != "" {
-			keys = append(keys, k)
-		}
-	}
-	sort.Strings(keys)
-	result := make([][2]string, 0, len(keys))
-	for _, k := range keys {
-		result = append(result, [2]string{k, m[k]})
-	}
-	return result
-}
-
-func formatPairs(pairs [][2]string, format string, sep string) string {
-	result := make([]string, 0, len(pairs))
-	for _, pair := range pairs {
-		result = append(result, fmt.Sprintf(format, pair[0], pair[1]))
-	}
-	return strings.Join(result, sep)
-}
-
-func formatMap(pairs map[string]string, format string, sep string) string {
-	return formatPairs(map2pairs(pairs), format, sep)
+func writePair(w *bufio.Writer, sep1, k, sep2, v string) {
+	w.WriteString(sep1)
+	w.WriteString(k)
+	w.WriteString(sep2)
+	fmt.Fprintf(w, "%q", v) // in case it contains invalid chars
 }
 
 func (c *Config) String() string {
+	var buffer bytes.Buffer
+	w := bufio.NewWriter(&buffer)
+	e := json.NewEncoder(w)
 	pairs := [][2]string{
-		{"name", c.Name},
 		{"keystone", c.KeystoneURL},
 		{"orion", c.OrionURL},
 		{"iotam", c.IotamURL},
@@ -74,30 +57,48 @@ func (c *Config) String() string {
 		{"subservice", c.Subservice},
 		{"username", c.Username},
 	}
-	settings := formatPairs(pairs, "  %q: %q", ",\n")
-	if len(c.Params) > 0 {
-		params := strings.Join([]string{
-			"  \"params\": {",
-			formatMap(c.Params, "    %q: %q", ",\n"),
-			"  }",
-		}, "\n")
-		settings = strings.Join([]string{settings, params}, ",\n")
-	}
-	result := []string{"{", settings, "}"}
-	// add single line too for copy/paste
-	pairs = pairs[1:] // skip "name"
-	result = append(result, fmt.Sprintf(
-		"> fiware context set %s",
-		formatPairs(pairs, "%s %q", " ")),
+	detailed := append(
+		[][2]string{{"name", c.Name}},
+		pairs...,
 	)
-	// And params
-	if len(c.Params) > 0 {
-		result = append(result, fmt.Sprintf(
-			"> fiware context params %s",
-			formatMap(c.Params, "%s %q", " ")),
-		)
+	if c.Token != "" {
+		detailed = append(detailed, [2]string{"token", HiddenToken})
 	}
-	return strings.Join(result, "\n")
+	w.WriteString("{")
+	sep := "\n  \""
+	for _, pair := range detailed {
+		writePair(w, sep, pair[0], "\": ", pair[1])
+		sep = ",\n  \""
+	}
+	if len(c.Params) <= 0 {
+		w.WriteString("\n}\n> fiware context set")
+	} else {
+		w.WriteString(",\n  \"params\": ")
+		e.SetIndent("  ", "  ")
+		e.Encode(c.Params)
+		e.SetIndent("", "")
+		// Encode adds a "\n", we don't need to add another
+		w.WriteString("}\n> fiware context set")
+	}
+	for _, pair := range pairs {
+		writePair(w, " ", pair[0], " ", pair[1])
+	}
+	if len(c.Params) > 0 {
+		w.WriteString("\n> fiware context params")
+		for k, v := range c.Params {
+			writePair(w, " ", k, " ", v)
+		}
+	}
+	w.WriteString("\n")
+	w.Flush()
+	return string(buffer.Bytes())
+}
+
+func (c *Config) HasToken() string {
+	if c.Token == HiddenToken {
+		return ""
+	}
+	return c.Token
 }
 
 // Store can manage several configs
@@ -337,6 +338,11 @@ func (s *Store) Set(pairs []string) error {
 				}
 			}
 			selected.Name = value
+		case "token":
+			if value == HiddenToken {
+				value = ""
+			}
+			selected.Token = value
 		default:
 			return fmt.Errorf("unknown config parameter %s", param)
 		}

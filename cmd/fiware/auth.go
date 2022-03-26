@@ -43,11 +43,15 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	if runtime.GOOS == "windows" {
-		fmt.Fprintf(os.Stderr, "SET FIWARE_TOKEN=%s\n", token)
-	} else {
-		fmt.Fprintf(os.Stderr, "export FIWARE_TOKEN=%s\n", token)
+	if c.Bool("save") {
+		if err := store.Set([]string{"token", token}); err != nil {
+			return err
+		}
 	}
-	fmt.Println(token)
+	if runtime.GOOS == "windows" {
+		fmt.Printf("SET FIWARE_TOKEN=%s\n", token)
+	} else {
+		fmt.Println(token)
+	}
 	return nil
 }

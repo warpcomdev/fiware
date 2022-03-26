@@ -136,22 +136,6 @@ ejemplo = {
 
 El contexto con el que se ejecute el template contendrá los valores `{ "dato1": "a", "valor": [1, 2, 3] }`.
 
-### Parámetros de contexto 
-
-Tanto los ficheros de datos como las plantillas pueden acceder a los párametros que se hayan definido en el contexto (ver [contextos](#contextos)).
-
-- Ficheros de datos *jsonnet*: los parámetros de contexto son accesibles mediante [std.extVar](https://jsonnet.org/ref/stdlib.html#std.extVar(x)).
-
-- Ficheros de datos *starlark*: Si el fichero contiene una variable global con el mismo nombre que el fichero (sin extensión), y es `Callable`, la función es invocada con un diccionario que contiene todos los parámetros.
-
-- Plantillas *golang text/template*: Los parámetros están accesibles en la variable global `{{ .params }}`.
-
-Así, para compartir con el template un atributo como por ejemplo la URL del servidor cygnus, se puede añadir al contexto con el comando:
-
-```fiware context params cygnus_url http://cygnus.fiware.com:8080```
-
-Y ese valor será accesible desde *jsonnet*, *starlark* y la plantilla.
-
 ## Configuración
 
 ### Contextos
@@ -273,6 +257,20 @@ OPTIONS:
 
 Para eliminar un parámetro, se debe establecer con el valor "".
 
+Tanto los ficheros de datos como las plantillas pueden acceder a los párametros que se hayan definido en el contexto:
+
+- Ficheros de datos *jsonnet*: los parámetros de contexto son accesibles mediante [std.extVar](https://jsonnet.org/ref/stdlib.html#std.extVar(x)).
+
+- Ficheros de datos *starlark*: Si el fichero contiene una variable global con el mismo nombre que el fichero (sin extensión), y es `Callable`, la función es invocada con un diccionario que contiene todos los parámetros.
+
+- Plantillas *golang text/template*: Los parámetros están accesibles en la variable global `{{ .params }}`.
+
+Así, para compartir con el template un atributo como por ejemplo la URL del servidor cygnus, se puede añadir al contexto con el comando:
+
+```fiware context params cygnus_url http://cygnus.fiware.com:8080```
+
+Y ese valor será accesible desde *jsonnet*, *starlark* y las plantillas.
+
 ## Operación de entornos
 
 ### Login
@@ -294,7 +292,9 @@ OPTIONS:
    --help, -h  show help (default: false)
 ```
 
-La información de autenticación **no se almacena en el contexto ni en ningún fichero persistente**. Para poder efectuar operaciones en el entorno, es necesario configurar la variable de entorno **FIWARE_TOKEN** con el valor devuelto por el comando `fiware auth`.
+Por defecto, la información de autenticación **no se almacena en el contexto ni en ningún fichero persistente**. Para poder efectuar operaciones en el entorno, es necesario configurar la variable de entorno **FIWARE_TOKEN** con el valor devuelto por el comando `fiware auth`.
+
+Excepcionalmente, se puede usar el flag `-s` para guardar el token junto con la información de contexto, aunque no está recomendado y por eso el flag `-s` es oculto.
 
 ### Get
 

@@ -155,6 +155,15 @@ func main() {
 				Action: func(c *cli.Context) error {
 					return auth(c, currentStore)
 				},
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "save",
+						Aliases: []string{"s"},
+						Usage:   "save token to context",
+						Hidden:  true,
+						Value:   false,
+					},
+				},
 			},
 
 			{
