@@ -8,7 +8,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/template"
 )
 
-func render(c *cli.Context, params interface{}) error {
+func render(c *cli.Context, params map[string]string) error {
 	output := c.String("output")
 	var outFile *os.File = os.Stdout
 	if output != "" {

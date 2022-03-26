@@ -67,6 +67,7 @@ El comando `fiware template` lee el modelo de datos de un fichero proporcionado 
 - Fichero de datos:
    - json
    - [jsonnet](https://jsonnet.org/)
+   - [startlark](https://github.com/bazelbuild/starlark) (ficheros *.star*, *.py*)
 - Template:
    - [golang text/template](https://pkg.go.dev/text/template).
 
@@ -86,12 +87,6 @@ OPTIONS:
    --output FILE, -o FILE  write template output to FILE
    --help, -h              show help (default: false)
 ```
-
-Además de los datos definidos en el fichero de vertical, se añade al modelo un atributo `params` con todos los parámetros que se hayan definido en el contexto (ver [contextos](#contextos)). Así, para compartir con el template un atributo como por ejemplo la URL del servidor cygnus, se puede añadir al contexto con el comando:
-
-```fiware context params cygnus_url http://cygnus.fiware.com:8080```
-
-Y ese valor será accesible desde dentro del template, usando la ruta `{{ .params.cygnus_url }}`.
 
 La aplicación tiene varias plantillas predefinidas que pueden servir de punto de partida rápido para generar la documentación de un vertical:
 
@@ -124,6 +119,38 @@ create view :target_schema.:scope:my_custom_view as (
    ...
 );
 ```
+
+*NOTA sobre starlark*
+
+En el caso de los ficheros *starlark*, se selecciona únicamente la variable global cuyo nombre coincida con el del fichero (sin la extensión), y esa variable es la que se utiliza como contexto al ejecutar el template.
+
+Por ejemplo, si se especifica un fichero de datos *ejemplo.star* con el siguiente contenido:
+
+```python
+valores = [1, 2, 3]
+ejemplo = {
+   'dato1': "a",
+   'valor': valores
+}
+```
+
+El contexto con el que se ejecute el template contendrá los valores `{ "dato1": "a", "valor": [1, 2, 3] }`.
+
+### Parámetros de contexto 
+
+Tanto los ficheros de datos como las plantillas pueden acceder a los párametros que se hayan definido en el contexto (ver [contextos](#contextos)).
+
+- Ficheros de datos *jsonnet*: los parámetros de contexto son accesibles mediante [std.extVar](https://jsonnet.org/ref/stdlib.html#std.extVar(x)).
+
+- Ficheros de datos *starlark*: Si el fichero contiene una variable global con el mismo nombre que el fichero (sin extensión), y es `Callable`, la función es invocada con un diccionario que contiene todos los parámetros.
+
+- Plantillas *golang text/template*: Los parámetros están accesibles en la variable global `{{ .params }}`.
+
+Así, para compartir con el template un atributo como por ejemplo la URL del servidor cygnus, se puede añadir al contexto con el comando:
+
+```fiware context params cygnus_url http://cygnus.fiware.com:8080```
+
+Y ese valor será accesible desde *jsonnet*, *starlark* y la plantilla.
 
 ## Configuración
 
@@ -223,6 +250,28 @@ saas
 $ ./fiware ctx use lab_demoservice
 using context lab_demoservice
 ```
+
+### Parámetros de contexto
+
+Además de los atributos fijos que tiene cada contexto para poder conectar a los diferentes servidores del entorno, un contexto puede tener también una lista de *parámetros*.
+
+Estos parámetros no los utiliza directamente la aplicación, sino que están pensados para que se usen desde los ficheros de datos o los templates.
+
+Los parámetros se configuran con la orden `fiware context params ...`:
+
+```bash
+$ fiware context params
+NAME:
+   fiware context params - Set a template parameter
+
+USAGE:
+   fiware context params [command options] [arguments...]
+
+OPTIONS:
+   --help, -h  show help (default: false)
+```
+
+Para eliminar un parámetro, se debe establecer con el valor "".
 
 ## Operación de entornos
 

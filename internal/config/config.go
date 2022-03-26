@@ -341,7 +341,12 @@ func (s *Store) SetParams(pairs []string) error {
 			params = make(map[string]string)
 		}
 		for i := 0; i < len(pairs); i += 2 {
-			params[pairs[i]] = pairs[i+1]
+			key, val := pairs[i], pairs[i+1]
+			if val == "" {
+				delete(params, key)
+			} else {
+				params[key] = val
+			}
 		}
 		selected.Params = params
 		ctx[0] = selected

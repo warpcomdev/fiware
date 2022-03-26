@@ -33,7 +33,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	}
 
 	var vertical fiware.Vertical
-	if err := template.Load(c.String("data"), &vertical); err != nil {
+	if err := template.Load(c.String("data"), selected.Params, &vertical); err != nil {
 		return err
 	}
 

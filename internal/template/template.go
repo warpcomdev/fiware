@@ -44,14 +44,17 @@ func newTemplate() (*template.Template, error) {
 	return tpl, nil
 }
 
-func Load(datafile string, output interface{}) error {
+func Load(datafile string, params map[string]string, output interface{}) error {
 	if datafile != "" {
 		// Use starlark for .star or .py files
 		lowerName := strings.ToLower(datafile)
 		if strings.HasSuffix(lowerName, ".star") || strings.HasSuffix(lowerName, ".py") {
-			return loadStarlark(datafile, output)
+			return loadStarlark(datafile, params, output)
 		}
 		vm := jsonnet.MakeVM()
+		for k, v := range params {
+			vm.ExtVar(k, v)
+		}
 		jsonStr, err := vm.EvaluateFile(datafile)
 
 		if err != nil {
@@ -64,7 +67,7 @@ func Load(datafile string, output interface{}) error {
 	return nil
 }
 
-func loadStarlark(datafile string, output interface{}) error {
+func loadStarlark(datafile string, params map[string]string, output interface{}) error {
 	// Execute Starlark program in a file.
 	thread := &starlark.Thread{Name: "datafile"}
 	globals, err := starlark.ExecFile(thread, datafile, nil, nil)
@@ -73,15 +76,22 @@ func loadStarlark(datafile string, output interface{}) error {
 	}
 	base, ext := path.Base(datafile), path.Ext(datafile)
 	base = base[0 : len(base)-len(ext)]
-	call, ok := globals[base]
+	data, ok := globals[base]
 	if !ok {
-		return fmt.Errorf("datafile %s should have a global callable %s", datafile, base)
+		return fmt.Errorf("datafile %s should have a global variable %s", datafile, base)
 	}
-	value, err := starlark.Call(thread, call, starlark.Tuple{starlark.NewDict(0)}, nil)
-	if err != nil {
-		return err
+	if _, ok := data.(starlark.Callable); ok {
+		ext := starlark.NewDict(len(params))
+		for k, v := range params {
+			ext.SetKey(starlark.String(k), starlark.String(v))
+		}
+		result, err := starlark.Call(thread, data, starlark.Tuple{ext}, nil)
+		if err != nil {
+			return err
+		}
+		data = result
 	}
-	valBytes, err := json.Marshal(value)
+	valBytes, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -99,7 +109,7 @@ const (
 	ErrFailedParamsExisting stringError = "failed to insert params, `params` key already exists"
 )
 
-func Render(datafile string, templates []string, params interface{}, output io.Writer) error {
+func Render(datafile string, templates []string, params map[string]string, output io.Writer) error {
 
 	// First, add built-in templates
 	tpl, err := newTemplate()
@@ -108,7 +118,7 @@ func Render(datafile string, templates []string, params interface{}, output io.W
 	}
 
 	var data interface{}
-	if err := Load(datafile, &data); err != nil {
+	if err := Load(datafile, params, &data); err != nil {
 		return err
 	}
 	if params != nil {

@@ -115,7 +115,7 @@ func main() {
 					if err := currentStore.Read(); err != nil {
 						return err
 					}
-					var params interface{}
+					var params map[string]string
 					selected := currentStore.Current
 					if selected.Name != "" {
 						if len(selected.Params) > 0 {
