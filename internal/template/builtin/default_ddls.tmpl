@@ -1,0 +1,90 @@
+{{- define "default_ddls_sets" }}
+{{- range .tables }}
+
+\set {{ .name }}_table '{{ .name }}';
+\set {{ .name }}_pkey '{{ .name }}_pkey';
+{{- if .lastdata }}
+\set {{ .name }}_lastdata '{{ .name }}_lastdata';
+{{- end }}
+{{- range .indexes }}
+\set {{ .name }} '{{ .name }}'
+{{- end }}
+{{- end }}
+
+\set separator '_'
+\set scope :scope
+\set scope_sep :scope:separator
+
+SELECT CASE
+  WHEN :'scope'= ':scope'
+  THEN ''
+  ELSE :'scope_sep'
+END AS "scope"  \gset
+{{- end }}
+
+{{- define "default_ddls_tables" }}
+{{- range .tables }}
+{{- $table_name := .name }}
+
+-----------------------------------
+-- Table {{ .name }}
+-----------------------------------
+DROP TABLE IF EXISTS :target_schema.:scope:{{ $table_name }}_table CASCADE;
+
+CREATE TABLE IF NOT EXISTS :target_schema.:scope:{{ $table_name }}_table (
+  {{- range .columns }}
+  {{ .name }} {{ .type }}{{ if .notNull }} NOT NULL{{ end }}{{ if .default }} DEFAULT '{{ .default }}'{{ end }},
+  {{- end }}
+  -- Metadata
+  {{- range .columns }}
+  {{ .name }}_md text,
+  {{- end }}
+  -- Common entity attributes
+  entityid character varying(64) NOT NULL,
+  entitytype text,
+  recvtime timestamp with time zone NOT NULL,
+  fiwareservicepath text,
+  -- PRIMARY KEYS
+  CONSTRAINT :scope:{{ $table_name }}_pkey PRIMARY KEY ({{ .primaryKey | join ", "}})
+);
+
+{{ range .indexes }}
+{{- if .geometry }}
+CREATE INDEX :scope:{{ .name }} ON :target_schema.:scope:{{ $table_name }}_table USING gist ({{ .columns | join ", " }});
+{{- else }}
+CREATE INDEX :scope:{{ .name }} ON :target_schema.:scope:{{ $table_name }}_table ({{ .columns | join ", " }});
+{{- end }}
+{{- end }}
+
+{{- if .lastdata }}
+
+-----------------------------------
+-- View {{ $table_name }}_lastdata
+-----------------------------------
+
+DROP VIEW IF EXISTS {{ $table_name }}_lastdata CASCADE;
+CREATE VIEW {{ $table_name }}_lastdata AS
+SELECT
+  {{- range .columns }}
+  t.{{ .name }},
+  {{- end }}
+  t.entityid,
+  t.entitytype
+FROM (
+  SELECT
+    {{- range .columns }}
+    {{ .name }},
+    {{- end }}
+    entityid,
+    entitytype,
+    ROW_NUMBER() OVER (PARTITION BY entityid ORDER BY timeinstant DESC) AS rn
+  FROM :target_schema.:scope:{{ $table_name }}_table
+  WHERE timeinstant > NOW() - :'duration'::interval
+) t
+WHERE t.rn = 1;
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{ template "default_ddls_sets" . }}
+{{ template "default_ddls_tables" . }}

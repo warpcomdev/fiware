@@ -1,0 +1,35 @@
+{{- define "defaultEntityMapping" }}
+{
+  "originalEntityId": {{ .originalEntityId | quote }},
+  "newEntityId": {{ .newEntityId | quote }},
+  "originalEntityType": {{ .originalEntityType | quote }}
+  "newEntityType": {{ .newEntityType | quote }},
+  "attributeMappings": []
+}
+{{- end -}}
+{
+  {{- with .originalService }}
+  "originalService": {{ . | quote }}
+  {{- end }}
+  {{- with .newService }}
+  "newService": {{ . | quote }}
+  {{- end }}
+  "serviceMappings": [
+    {{- define "defaultServiceMapping" }}
+    {
+      "originalServicePath": {{ .originalServicePath | quote }},
+      "newServicePath": {{ .newServicePath | quote }},
+      "entityMappings": [
+        {{- range (initial .entityMappings) }}
+        {{- include "defaultEntityMapping" . | indent 8 }},
+        {{- end }}
+        {{- include "defaultEntityMapping" (last .entityMappings) | indent 8}}
+      ]
+    }
+    {{- end }}
+    {{- range (initial .serviceMappings) }}
+    {{- template "defaultServiceMapping" . }},
+    {{- end }}
+    {{- template "defaultServiceMapping" (last .serviceMappings) }}
+  ]
+}

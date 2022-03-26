@@ -1,0 +1,54 @@
+# Descripción del modelo del vertical de {{.name}}
+
+![Esquema DB]({{.name}}_vertical.png)
+
+(Fuente: extracción de diagrama desde entorno de lab servicio {{.subservice}} con [DBWeaver](https://dbeaver.io))
+
+## Inicialización de la base de datos
+
+Es necesario ejecutar el script de las DDLs.
+
+Para ello podemos utilizar el siguiente comando de psql (CLI para PgSQL):
+
+**Notas**:
+
+- Se incluye una selección de flags como ejemplo, algunas podrían no ser necesarias o podrían faltar otras, dependiendo del entorno.
+
+- La flag `-f` indica la ubicación del script con las DDLs para el vertical. Esto es un ejemplo y puede variar según el entorno, es necesario conocer previamente
+  donde se ubica el script deseado.
+
+`psql -h mi_host -p mi_puerto -d mi_db -U mi_usuario -f {{.name}}-vertical/model/db/ddls.sql -v target_schema=esquema -v duration="20 days"`
+
+Donde:
+
+- `f` indica la ubicación del script con las DDLs para el vertical. Esto es un ejemplo y puede variar según el entorno, es necesario conocer previamente donde se ubica el script deseado.
+- `target_schema` es la variable que define el esquema de destino de las diferentes tablas, el valor de la misma formará parte del nombre de otros elementos como índices, claves primarias, etc. De forma que sea más fácil identificar a qué esquema/servicio pertenecen.
+- `duration` indica la duración de las vistas filtradas de lastdata. Ejemplo: "20 days"
+
+En caso de tener un servicio **mancomunado**, donde un varios municipios pueden compartir los mismos paneles de urbo2 dentro del mismo servicio, pero cada uno con sus datos, existen dos opciones:
+
+1. Si el número de municipios es reducido y para cada uno de ellos se quiere utilizar tablas y vistas independientes, habría que ejecutar el script de la siguiente manera:
+
+`psql -h mi_host -p mi_puerto -d mi_db -U mi_usuario -f {{.name}}-vertical/model/db/ddls.sql -v target_schema=esquema -v duration="20 days" -v scope=mi_municipio`
+
+`scope` identificará al municipio y creará un prefijo en las tablas (y claves primarias) de tal manera que cada municipio tenga sus propias tablas y vistas propias del vertical
+
+En aquellos casos que se necesiten más niveles de anidamiento (e.g. comunidad autonoma/provincia/municipio/vertical) bastará con definir la variable scope como una concatenación de los niveles que se quieran meter (e.g. scope=leon_molinaseca)
+
+2. En el caso de tener un número elevado de municipios, como en el caso de las Diputaciones, se recomienda provisionar el modelo de datos sin `scope` y filtrar la información a través del campo `municipality`. Cabe notar que esta opción también facilita la configuración de un scope global que pueda acceder a los datos de todos los municipios o incluso a una lista concreta de ellos.
+
+## Descripción de las tablas
+
+El vertical se compone de las siguientes tablas en el datasource PostgreSQL:
+
+{{- $vertical := .name | lower }}
+{{ range .entityTypes }}
+- {{ $vertical }}_{{ .entityType | lower }}: : Recopila la información recibida por las entidades de tipo `{{.entityType}}`.
+{{- end }}
+
+Además, se han incorporado las siguientes vistas:
+
+{{- $vertical = .name | lower }}
+{{ range .entityTypes }}
+- {{ $vertical }}_{{ .entityType | lower }}_lastdata: Recopila **solo** los últimos datos recibidos por las entidades de tipo `{{.entityType}}`.
+{{- end }}

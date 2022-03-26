@@ -1,0 +1,22 @@
+Las subscripciones que son necesarias para el funcionamiento del vertical son las siguientes.
+
+Observar que en el caso de usar el vertical en modo mancomunado habrá que crear este mismo juego de subscripciones en cada uno de los subservicios correspondientes a los elementos del mancomunado.
+{{- range .suscriptions }}
+{{- $entity := index .subject.entities 0 }}
+
+### Subscripción a {{ $entity.type }}
+* **Estado**: Activa
+* **Descripción**: POSTGRESQL {{ $entity.type }}
+* **Fecha de expiración**: en blanco
+* **Segundos entre notificaciones**: en blanco
+* **Protocolo**: HTTP
+* **URL de notificación**:
+    * Entorno Onpremise: {{ $.params.cygnus_onpremise | default "http://onpremise.fiware.cygnus.com:8000/notify" }}
+    * Entorno SaaS: {{ $.params.cygnus_saas | default "http://saas.fiware.cygnus.com:8000/notify" }}
+* **Formato de atributos**: normalized
+* **Atributos a notificar**: {{ .notification.attrs | join ", " }}
+* **Condición**: {{ .subject.condition.attrs | join "," }}
+* **Entidades**:
+    * ID: `{{ $entity.idPattern }}` (con checkbox de patrón de búsqueda marcado)
+    * Type: {{ $entity.type }}
+{{- end }}
