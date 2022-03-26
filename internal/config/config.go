@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"sort"
 	"strings"
 )
 
@@ -34,42 +35,67 @@ type Config struct {
 	Params      map[string]string `json:"params,omitempty"`
 }
 
-func (c *Config) String() string {
-	pairs := map[string]string{
-		"name":       c.Name,
-		"keystone":   c.KeystoneURL,
-		"orion":      c.OrionURL,
-		"iotam":      c.IotamURL,
-		"perseo":     c.PerseoURL,
-		"service":    c.Service,
-		"subservice": c.Subservice,
-		"username":   c.Username,
-	}
-	serialize := func(m map[string]string, format, sep string, skipEmpty bool) string {
-		items := make([]string, 0, len(m))
-		for k, v := range m {
-			if !skipEmpty || v != "" {
-				items = append(items, fmt.Sprintf(format, k, v))
-			}
+// naive function to turn a map into a sequence of string pairs
+func map2pairs(m map[string]string) [][2]string {
+	keys := make([]string, 0, len(m))
+	for k, v := range m {
+		if v != "" {
+			keys = append(keys, k)
 		}
-		return strings.Join(items, sep)
 	}
-	result := []string{"{"}
-	result = append(result, serialize(pairs, "  %q: %q", ",\n", false)) // serialize as json
+	sort.Strings(keys)
+	result := make([][2]string, 0, len(keys))
+	for _, k := range keys {
+		result = append(result, [2]string{k, m[k]})
+	}
+	return result
+}
+
+func formatPairs(pairs [][2]string, format string, sep string) string {
+	result := make([]string, 0, len(pairs))
+	for _, pair := range pairs {
+		result = append(result, fmt.Sprintf(format, pair[0], pair[1]))
+	}
+	return strings.Join(result, sep)
+}
+
+func formatMap(pairs map[string]string, format string, sep string) string {
+	return formatPairs(map2pairs(pairs), format, sep)
+}
+
+func (c *Config) String() string {
+	pairs := [][2]string{
+		{"name", c.Name},
+		{"keystone", c.KeystoneURL},
+		{"orion", c.OrionURL},
+		{"iotam", c.IotamURL},
+		{"perseo", c.PerseoURL},
+		{"service", c.Service},
+		{"subservice", c.Subservice},
+		{"username", c.Username},
+	}
+	settings := formatPairs(pairs, "  %q: %q", ",\n")
 	if len(c.Params) > 0 {
-		result = append(result,
-			"params: {",
-			serialize(c.Params, "    %q: %q", ",\n", false),
-			"}",
-		)
+		params := strings.Join([]string{
+			"  \"params\": {",
+			formatMap(c.Params, "    %q: %q", ",\n"),
+			"  }",
+		}, "\n")
+		settings = strings.Join([]string{settings, params}, ",\n")
 	}
-	result = append(result, "}")
+	result := []string{"{", settings, "}"}
 	// add single line too for copy/paste
-	delete(pairs, "name") // do not overwrite name
-	result = append(result, "fiware context set:", serialize(pairs, "%s %q", " ", true))
+	pairs = pairs[1:] // skip "name"
+	result = append(result, fmt.Sprintf(
+		"> fiware context set %s",
+		formatPairs(pairs, "%s %q", " ")),
+	)
 	// And params
 	if len(c.Params) > 0 {
-		result = append(result, "fiware context params:", serialize(pairs, "%s %q", " ", true))
+		result = append(result, fmt.Sprintf(
+			"> fiware context params %s",
+			formatMap(c.Params, "%s %q", " ")),
+		)
 	}
 	return strings.Join(result, "\n")
 }
