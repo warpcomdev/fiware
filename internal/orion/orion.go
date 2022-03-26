@@ -47,6 +47,7 @@ func (o *Orion) PostSuscriptions(client *http.Client, headers http.Header, subs 
 	var errList error
 	for _, sub := range subs {
 		sub.SuscriptionStatus = fiware.SuscriptionStatus{}
+		sub.Notification.NotificationStatus = fiware.NotificationStatus{}
 		path, err := o.URL.Parse("v2/subscriptions")
 		if err != nil {
 			return err
