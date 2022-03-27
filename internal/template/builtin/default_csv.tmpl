@@ -1,0 +1,43 @@
+{{- block "default_csv" . }}
+{{- $columns := dict }}
+{{- $ordered := list }}
+{{- range .entityTypes }}
+  {{- range .attrs }}
+    {{- if not (hasKey $columns .name) }}
+      {{- $ordered = append $ordered . }}
+      {{- $_ := set $columns .name .type }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+entityID,entityType{{- range $ordered }},{{ .name }}<{{ .type }}>{{ end }}
+{{- range .entities }}
+  {{- $currentEntity := . }}
+  {{- $namedAtribs := dict }}
+  {{- range $k, $v := .attrs }}
+    {{- $_ := set $namedAtribs $k $v }}
+  {{- end }}
+{{ .entityID }},{{ .entityType }}
+  {{- range $ordered }},
+    {{- $name  := .name -}}
+    {{- $value := get $namedAtribs $name -}}
+    {{- if eq .type "Number" -}}
+      {{ $value -}}
+    {{- else -}}
+      {{- with $currentEntity.metadatas -}}
+        {{- if hasKey . $name -}}
+          {{- $value = dict "value" $value "metadatas" (get . $name) -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if typeIsLike "string" $value -}}
+        {{- if or (contains "," $value) (contains `"` $value) -}}
+          {{ $value | quote | replace `\"` `""` -}}
+        {{- else -}}
+          {{- $value -}}
+        {{- end -}}
+      {{- else -}}
+        {{- toJson $value | quote | replace `\"` `""` -}}
+      {{- end }}
+    {{- end -}}
+  {{- end -}}
+{{- end }}
+{{- end }}

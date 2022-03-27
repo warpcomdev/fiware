@@ -28,7 +28,7 @@ COMMANDS:
      post         Post some resource (services, devices, suscriptions, rules)
      delete       Delete some resource (services, devices, suscriptions, rules)
    template:
-     decode    decode NGSI README.md file
+     decode    decode NGSI README.md or CSV file
      template  template for vertical data
 
 GLOBAL OPTIONS:
@@ -40,12 +40,12 @@ GLOBAL OPTIONS:
 
 ### Decode
 
-El comando `fiware decode` lee el fichero `models/ngsi/README.md` de una vertical, y genera una versión *estandar* del modelo descriptivo de la vertical, con el conjunto mínimo de name-mappings, suscripciones y tablas de base de datos que la vertical requiere.
+El comando `fiware decode` infiere el modelo de una vertical a partir o bien de su fichero `models/ngsi/README.md`, o de un `CSV` de entidades volcado del Context Broker, y genera una versión *estandar* del modelo descriptivo de la vertical con el conjunto mínimo de name-mappings, suscripciones y tablas de base de datos que la vertical requiere.
 
 ```bash
 $ fiware decode -h
 NAME:
-   fiware decode - decode NGSI README.md file
+   fiware decode - decode NGSI README.md or CSV file
 
 USAGE:
    fiware decode [command options] [arguments...]

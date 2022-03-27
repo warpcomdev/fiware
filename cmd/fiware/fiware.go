@@ -69,7 +69,7 @@ func main() {
 			{
 				Name:     "decode",
 				Category: "template",
-				Usage:    "decode NGSI README.md file",
+				Usage:    "decode NGSI README.md or CSV file",
 				Action: func(c *cli.Context) error {
 					if c.NArg() <= 0 {
 						return errors.New("please provide the path to NGSI README file")

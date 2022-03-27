@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/warpcomdev/fiware"
@@ -101,49 +100,28 @@ func from_line(line string) []fiware.Attribute {
 		//    break
 	}
 	// Turn value into the proper type
-	var value []json.RawMessage
-	var conversionError error
-	if len(text) > 0 {
-		value = make([]json.RawMessage, 0, len(text))
-		lower := strings.ToLower(_typ)
+	value := make([]fiware.Attribute, 0, len(text))
+	lower := strings.ToLower(_typ)
+	for _, v := range text {
+		v = strings.TrimSpace(v)
 		switch {
-		case lower == "number":
-			log.Printf("Converting %s to float", text)
-			for _, v := range text {
-				f, err := strconv.ParseFloat(v, 64)
-				if err != nil {
-					conversionError = err
-					break
-				}
-				value = append(value, []byte(strconv.FormatFloat(f, 'f', 2, 64)))
+		case _typ == "number":
+			if v == "" {
+				value = append(value, fiware.Attribute{Value: []byte("null")})
+			} else {
+				value = append(value, importNumber(v))
 			}
 		case strings.Contains(lower, "json"):
-			log.Printf("Converting %s to json", text)
-			for _, v := range text {
-				var j interface{}
-				if err := json.Unmarshal([]byte(v), &j); err != nil {
-					conversionError = err
-					break
-				}
-				f, err := json.Marshal(j)
-				if err != nil {
-					conversionError = err
-					break
-				}
-				value = append(value, f)
+			if v == "" {
+				value = append(value, fiware.Attribute{Value: []byte("null")})
+			} else {
+				value = append(value, importJson(v))
 			}
 		default:
-			for _, v := range text {
-				value = append(value, []byte(fmt.Sprintf("%q", v)))
-			}
-		}
-		if conversionError != nil {
-			log.Printf("Could not convert %s because of %v, assuming it's a text placeholder", text, conversionError)
-			for _, v := range text {
-				value = append(value, []byte(fmt.Sprintf("%q", v)))
-			}
+			value = append(value, importOther(v))
 		}
 	}
+	// Finally, check for wifi-style repeats
 	matches := wifi_repeats.FindStringSubmatch(name)
 	if len(matches) <= 0 {
 		attrib := fiware.Attribute{
@@ -151,7 +129,8 @@ func from_line(line string) []fiware.Attribute {
 			Type: _typ,
 		}
 		if len(value) > 0 {
-			attrib.Value = value[0]
+			attrib.Value = value[0].Value
+			attrib.Metadatas = value[0].Metadatas
 		}
 		return []fiware.Attribute{attrib}
 	}
@@ -170,7 +149,8 @@ func from_line(line string) []fiware.Attribute {
 			Type: _typ,
 		}
 		if vals > 0 {
-			attrib.Value = value[index%vals]
+			attrib.Value = value[index%vals].Value
+			attrib.Metadatas = value[index%vals].Metadatas
 		}
 		result = append(result, attrib)
 	}
@@ -178,8 +158,8 @@ func from_line(line string) []fiware.Attribute {
 }
 
 // Builds model from list of lines
-func from_lines(lines []string) fiware.Entity {
-	model := fiware.Entity{ID: "", Type: "", Attrs: make([]fiware.Attribute, 0, 16)}
+func from_lines(lines []string) fiware.EntityType {
+	model := fiware.EntityType{ID: "", Type: "", Attrs: make([]fiware.Attribute, 0, 16)}
 	visited := make(map[string]struct{})
 	for _, line := range lines {
 		for _, attrib := range from_line(line) {
@@ -215,8 +195,8 @@ func from_lines(lines []string) fiware.Entity {
 // - atributo = tipo|type: entity type
 // - tipo: Text, TextUnrestricted, Number, Reference, geo:json, geox:json ...
 // - Any other column: "Ejemplo:", "Ejemplo=", "Valor:", "Valor=",...
-func get_models(filename string) []fiware.Entity {
-	models := make([]fiware.Entity, 0, 16)
+func get_models(filename string) ([]fiware.EntityType, []fiware.Entity) {
+	models := make([]fiware.EntityType, 0, 16)
 	latest := make([]string, 0, 256)
 	inside := false
 	infile, err := os.Open(filename)
@@ -263,7 +243,7 @@ func get_models(filename string) []fiware.Entity {
 			}
 		}
 	}
-	return models
+	return models, nil
 }
 
 //go:embed vertical.jsonnet
@@ -291,19 +271,33 @@ func Decode(outfile, verticalName, subserviceName, path string) error {
 		defer handle.Close()
 	}
 
-	models := get_models(path)
+	var (
+		models    []fiware.EntityType
+		instances []fiware.Entity
+	)
+	if strings.HasSuffix(strings.ToLower(path), ".csv") {
+		models, instances = get_models_csv(path)
+	} else {
+		models, instances = get_models(path)
+	}
 	indent := "    "
 	modelText, err := json.MarshalIndent(models, indent, indent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal models: %w", err)
 	}
+	instanceText, err := json.MarshalIndent(instances, indent, indent)
+	if err != nil {
+		return fmt.Errorf("failed to marshal instances: %w", err)
+	}
 
 	handle.WriteString(verticalTemplate[:fromIndex])
 	handle.WriteString(fmt.Sprintf(
-		"\n%s'name': %q,\n%s'subservice': %q,\n%s'entityTypes':",
+		"\n%s\"name\": %q,\n%s\"subservice\": %q,\n%s\"entityTypes\": ",
 		indent, verticalName, indent, subserviceName, indent,
 	))
 	handle.Write(modelText)
+	handle.WriteString(fmt.Sprintf(",\n%s\"entities\": ", indent))
+	handle.Write(instanceText)
 	handle.WriteString(",\n")
 	handle.WriteString(verticalTemplate[toIndex+len(toMarker):])
 	handle.WriteString("\n")

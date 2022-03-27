@@ -16,7 +16,9 @@ type Vertical struct {
 	Subservice string `json:"subservice"` // `turismo`, `wifi`, `contadores`, etc.
 	// Tipos de entidad definidos en la vertical.
 	// El ID y los valores de los atributos son opcionales.
-	EntityTypes []Entity `json:"entityTypes,omitempty"`
+	EntityTypes []EntityType `json:"entityTypes,omitempty"`
+	// Entidades específicas de alguno de los tipos anteriores
+	Entities []Entity `json:"entities,omitempty"`
 	// ServiceMappings para cygnus
 	ServiceMappings []ServiceMapping `json:"serviceMappings,omitempty"`
 	// Suscripciones al context broker
@@ -30,8 +32,8 @@ type Vertical struct {
 	Rules []Rule `json:"rules,omitempty"`
 }
 
-// Entity representa una entidad
-type Entity struct {
+// EntityType representa un tipo de entidad
+type EntityType struct {
 	ID   string `json:"entityID"`
 	Type string `json:"entityType"`
 	// Usamos una lista en vez de un map para poder
@@ -42,9 +44,23 @@ type Entity struct {
 
 // Attribute representa un atributo de una entidad
 type Attribute struct {
-	Name  string          `json:"name"`
-	Type  string          `json:"type"`
-	Value json.RawMessage `json:"value,omitempty"`
+	Name      string          `json:"name"`
+	Type      string          `json:"type"`
+	Value     json.RawMessage `json:"value,omitempty"`
+	Metadatas json.RawMessage `json:"metadatas,omitempty"`
+}
+
+// Entity representa una instancia de EntityType
+type Entity struct {
+	ID   string `json:"entityID"`
+	Type string `json:"entityType"`
+	// Aquí no hace falta mantener el orden,
+	// porque el orden correcto de los atributos ya
+	// está en el EntityType.
+	// Los Metadatas se sacan aparte porque generalmente
+	// el json generado es más tratable de esta forma
+	Attrs     map[string]json.RawMessage `json:"attrs"`
+	MetaDatas map[string]json.RawMessage `json:"metadatas,omitempty"`
 }
 
 // ServiceMapping es cada uno de los serviceMappings de cygnus
