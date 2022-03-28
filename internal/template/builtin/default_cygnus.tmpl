@@ -7,23 +7,33 @@
   "attributeMappings": []
 }
 {{- end -}}
+{{- define "defaultServicePathMapping" }}
 {
-  {{- with .originalService }}
-  "originalService": {{ . | quote }}
-  {{- end }}
-  {{- with .newService }}
-  "newService": {{ . | quote }}
-  {{- end }}
+  "originalServicePath": {{ .originalServicePath | quote }},
+  "newServicePath": {{ .newServicePath | quote }},
+  "entityMappings": [
+    {{- range (initial .entityMappings) }}
+    {{- include "defaultEntityMapping" . | indent 4 }},
+    {{- end }}
+    {{- include "defaultEntityMapping" (last .entityMappings) | indent 4}}
+  ]
+}
+{{- end -}}
+{
   "serviceMappings": [
     {{- define "defaultServiceMapping" }}
     {
-      "originalServicePath": {{ .originalServicePath | quote }},
-      "newServicePath": {{ .newServicePath | quote }},
-      "entityMappings": [
-        {{- range (initial .entityMappings) }}
-        {{- include "defaultEntityMapping" . | indent 8 }},
+      {{- with .originalService }}
+      "originalService": {{ . | quote }}
+      {{- end }}
+      {{- with .newService }}
+      "newService": {{ . | quote }}
+      {{- end }}
+      "servicePathMappings": [
+        {{- range (initial .servicePathMappings) }}
+        {{- include "defaultServicePathMapping" . | indent 8 }},
         {{- end }}
-        {{- include "defaultEntityMapping" (last .entityMappings) | indent 8}}
+        {{- include "defaultServicePathMapping" (last .servicePathMappings) | indent 8 }}
       ]
     }
     {{- end }}
@@ -31,5 +41,5 @@
     {{- template "defaultServiceMapping" . }},
     {{- end }}
     {{- template "defaultServiceMapping" (last .serviceMappings) }}
-  ]
+  }
 }

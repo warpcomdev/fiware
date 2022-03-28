@@ -39,15 +39,19 @@ local settings = {
 
     serviceMappings: [
         {
-            originalServicePath: "/" + $.subservice,
-            newServicePath: "/",
-            entityMappings: defaultEntityMappings,
-        },
-        {
-            // Servicios mancomunados
-            originalServicePath: "/(.*)/" + $.subservice,
-            newServicePath: "/$1",
-            entityMappings: defaultEntityMappings,
+            servicePathMappings: [
+                {
+                    originalServicePath: "/" + $.subservice,
+                    newServicePath: "/",
+                    entityMappings: defaultEntityMappings
+                },
+                {
+                    // Servicios mancomunados
+                    originalServicePath: "/(.*)/" + $.subservice,
+                    newServicePath: "/$1",
+                    entityMappings: defaultEntityMappings
+                },
+            ],
         },
     ],
 
