@@ -51,4 +51,10 @@ var (
 		Hidden:  true,
 		Value:   false,
 	}
+
+	relaxedFlag = &cli.BoolFlag{
+		Name:  "relaxed",
+		Usage: "Do not validate data schema",
+		Value: false,
+	}
 )

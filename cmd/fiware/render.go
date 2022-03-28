@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/urfave/cli/v2"
@@ -28,10 +29,34 @@ func render(c *cli.Context, params map[string]string) error {
 	}
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var data verticalWithParams
-	if err := importer.Load(datapath, params, &data.Vertical, libpath); err != nil {
-		return err
+	var data interface{}
+	if c.Bool(relaxedFlag.Name) {
+		var relaxedData map[string]interface{}
+		if err := importer.Load(datapath, params, &relaxedData, libpath); err != nil {
+			return err
+		}
+		if len(params) > 0 {
+			relaxedData["params"] = params
+		}
+		data = relaxedData
+	} else {
+		var strictData verticalWithParams
+		if err := importer.Load(datapath, params, &strictData.Vertical, libpath); err != nil {
+			return err
+		}
+		strictData.Params = params
+		// Convierto a map[string]interface{} pasando por json,
+		// porque no quiero que los diseñadores de los templates
+		// necesiten conocer el formato de los objetos golang.
+		// Mejor que puedan trabajar con la misma estructura de atributos
+		// que en el fichero de datos.
+		text, err := json.Marshal(strictData)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(text, &data); err != nil {
+			return err
+		}
 	}
-	data.Params = params
 	return template.Render(c.Args().Slice(), data, outFile)
 }

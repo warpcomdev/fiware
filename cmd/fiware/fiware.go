@@ -112,6 +112,7 @@ func main() {
 					dataFlag,
 					libFlag,
 					outputFlag,
+					relaxedFlag,
 				},
 				BashComplete: func(c *cli.Context) {
 					if c.NArg() <= 0 {
