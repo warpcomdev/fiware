@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -11,8 +10,8 @@ import (
 	"go.starlark.net/starlark"
 )
 
-// LoadStarlark reads a Jsonnet file with the provided params as arguments
-func LoadStarlark(datafile string, params map[string]string, output interface{}, pathLib string) error {
+// loadStarlark reads a Jsonnet file with the provided params as arguments
+func loadStarlark(datafile string, params map[string]string, pathLib string) (string, error) {
 	// Execute Starlark program in a file.
 	importer := &builtinStarlarkImporter{path: pathLib}
 	thread := &starlark.Thread{
@@ -21,13 +20,13 @@ func LoadStarlark(datafile string, params map[string]string, output interface{},
 	}
 	globals, err := starlark.ExecFile(thread, datafile, nil, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	base, ext := path.Base(datafile), path.Ext(datafile)
 	base = base[0 : len(base)-len(ext)]
 	data, ok := globals[base]
 	if !ok {
-		return fmt.Errorf("datafile %s should have a global variable %s", datafile, base)
+		return "", fmt.Errorf("datafile %s should have a global variable %s", datafile, base)
 	}
 	if _, ok := data.(starlark.Callable); ok {
 		ext := starlark.NewDict(len(params))
@@ -36,11 +35,11 @@ func LoadStarlark(datafile string, params map[string]string, output interface{},
 		}
 		result, err := starlark.Call(thread, data, starlark.Tuple{ext}, nil)
 		if err != nil {
-			return err
+			return "", err
 		}
 		data = result
 	}
-	return json.Unmarshal([]byte(data.String()), &output)
+	return data.String(), nil
 }
 
 type entry struct {

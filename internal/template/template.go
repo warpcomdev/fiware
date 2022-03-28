@@ -40,35 +40,12 @@ func newTemplate() (*template.Template, error) {
 	return tpl, nil
 }
 
-type stringError string
-
-func (s stringError) Error() string {
-	return string(s)
-}
-
-const (
-	ErrFailedParamsNoMap    stringError = "failed to insert params, data is not a map"
-	ErrFailedParamsExisting stringError = "failed to insert params, `params` key already exists"
-)
-
-func Render(templates []string, data interface{}, params map[string]string, output io.Writer) error {
+func Render(templates []string, data interface{}, output io.Writer) error {
 
 	// First, add built-in templates
 	tpl, err := newTemplate()
 	if err != nil {
 		return err
-	}
-
-	if params != nil {
-		m, ok := data.(map[string]interface{})
-		if !ok {
-			return ErrFailedParamsNoMap
-		}
-		if _, ok := m["params"]; ok {
-			return ErrFailedParamsExisting
-		}
-		m["params"] = params
-		data = m
 	}
 
 	// Then, any other file
