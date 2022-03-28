@@ -1,6 +1,7 @@
 package decode
 
 import (
+	"bufio"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -20,12 +21,37 @@ type header struct {
 	IsJson   bool
 }
 
+// skips possible BOM at beginning of utf-8 file.
+// See http://www.unicode.org/faq/utf_bom.html#BOM
+func skipBOM(filename string) (io.ReadCloser, error) {
+	fd, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	br := bufio.NewReader(fd)
+	r, _, err := br.ReadRune()
+	if err != nil {
+		fd.Close()
+		return nil, err
+	}
+	if r != '\uFEFF' {
+		br.UnreadRune() // Not a BOM -- put the rune back
+	}
+	type readCloser struct {
+		io.Reader
+		io.Closer
+	}
+	return readCloser{Reader: br, Closer: fd}, nil
+}
+
 // Parse CSV header
 func parseHeader(headers []string) []header {
 	result := make([]header, 0, len(headers))
 	for _, item := range headers {
 		item_name, item_type := item, ""
-		if strings.Contains(item, "<") {
+		if !strings.Contains(item, "<") {
+			item_name = strings.TrimSpace(item_name)
+		} else {
 			parts := strings.SplitN(item, "<", 2)
 			item_name = strings.TrimSpace(parts[0])
 			item_type = strings.TrimSpace(strings.SplitN(parts[1], ">", 2)[0])
@@ -62,7 +88,7 @@ type entityWithSet struct {
 }
 
 func get_models_csv(filename string) ([]fiware.EntityType, []fiware.Entity) {
-	infile, err := os.Open(filename)
+	infile, err := skipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
 	}
@@ -74,8 +100,8 @@ func get_models_csv(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		log.Fatalf("Failed to read CSV header: %v", err)
 	}
 	headers, row := parseHeader(first), 1
-	if len(headers) < 2 || headers[0].Name != "entityID" || headers[1].Name != "entityType" {
-		log.Fatal("Headers must begin with entityID, entityType")
+	if len(headers) < 2 || strings.ToLower(headers[0].Name) != "entityid" || strings.ToLower(headers[1].Name) != "entitytype" {
+		log.Fatalf("Headers must begin with entityID, entityType, not '%s', '%s'", headers[0].Name, headers[1].Name)
 	}
 	headers = headers[2:]
 	mixedEntities := make([]fiware.EntityType, 0, 64)

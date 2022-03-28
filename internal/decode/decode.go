@@ -199,7 +199,7 @@ func get_models(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	models := make([]fiware.EntityType, 0, 16)
 	latest := make([]string, 0, 256)
 	inside := false
-	infile, err := os.Open(filename)
+	infile, err := skipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
 	}
