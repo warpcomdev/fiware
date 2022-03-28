@@ -9,10 +9,10 @@ import (
 
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
+	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/iotam"
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
-	"github.com/warpcomdev/fiware/internal/template"
 )
 
 var canPost []string = []string{
@@ -32,8 +32,9 @@ func postResource(c *cli.Context, config *config.Store) error {
 		return err
 	}
 
+	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
 	var vertical fiware.Vertical
-	if err := template.Load(c.String("data"), selected.Params, &vertical); err != nil {
+	if err := importer.Load(datapath, selected.Params, &vertical, libpath); err != nil {
 		return err
 	}
 

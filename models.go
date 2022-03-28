@@ -125,6 +125,7 @@ type NotificationStatus struct {
 	LastNotification  string `json:"lastNotification,omitempty"`
 	LastSuccess       string `json:"lastSuccess,omitempty"`
 	LastSuccessCode   int    `json:"lastSuccessCode,omitempty"`
+	FailsCounter      int    `json:"failsCounter,omitempty"`
 	TimesSent         int    `json:"timesSent,omitempty"`
 }
 

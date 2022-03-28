@@ -42,7 +42,7 @@ func getConfig(c *cli.Context, store *config.Store) (zero config.Config, h http.
 		return zero, nil, err
 	}
 
-	subservice := c.String("subservice")
+	subservice := c.String(subServiceFlag.Name)
 	if subservice != "" {
 		selected.Subservice = subservice
 	}
@@ -50,7 +50,7 @@ func getConfig(c *cli.Context, store *config.Store) (zero config.Config, h http.
 		return zero, nil, errors.New("no subservice selected")
 	}
 
-	token := c.String("token")
+	token := c.String(tokenFlag.Name)
 	if token == "" {
 		if token = selected.HasToken(); token == "" {
 			return zero, nil, errors.New("no token found, please login first")
@@ -69,7 +69,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	output := c.String("output")
+	output := c.String(outputFlag.Name)
 	var outfile *os.File = os.Stdout
 	if output != "" {
 		outfile, err = os.Create(output)
@@ -109,12 +109,12 @@ func getResource(c *cli.Context, store *config.Store) error {
 			return fmt.Errorf("don't know how to get resource %s", arg)
 		}
 	}
-	data, err := json.MarshalIndent(vertical, "", "  ")
-	if err != nil {
+	encoder := json.NewEncoder(outfile)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(vertical); err != nil {
 		return err
 	}
-	outfile.Write(data)
-	outfile.WriteString("\n")
 	return nil
 }
 

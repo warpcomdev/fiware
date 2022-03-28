@@ -84,6 +84,7 @@ CATEGORY:
 
 OPTIONS:
    --data FILE, -d FILE    read vertical data from FILE
+   --lib DIR, -l DIR       load data modules / libs from DIR
    --output FILE, -o FILE  write template output to FILE
    --help, -h              show help (default: false)
 ```
@@ -364,7 +365,8 @@ CATEGORY:
 OPTIONS:
    --token value, -t value         authentication token (default: <empty>) [$FIWARE_TOKEN, $X_AUTH_TOKEN]
    --subservice value, --ss value  subservice name
-   --data FILE, -d FILE            Read vertical data from FILE
+   --data FILE, -d FILE            read vertical data from FILE
+   --lib DIR, -l DIR               load data modules / libs from DIR
    --help, -h
 ```
 
@@ -388,7 +390,8 @@ CATEGORY:
 OPTIONS:
    --token value, -t value         authentication token (default: <empty>) [$FIWARE_TOKEN, $X_AUTH_TOKEN]
    --subservice value, --ss value  subservice name
-   --data FILE, -d FILE            Read vertical data from FILE
+   --data FILE, -d FILE            read vertical data from FILE
+   --lib DIR, -l DIR               load data modules / libs from DIR
    --help, -h                      show help (default: false)
 ```
 

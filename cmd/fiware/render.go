@@ -5,11 +5,12 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/template"
 )
 
 func render(c *cli.Context, params map[string]string) error {
-	output := c.String("output")
+	output := c.String(outputFlag.Name)
 	var outFile *os.File = os.Stdout
 	if output != "" {
 		var err error
@@ -19,5 +20,11 @@ func render(c *cli.Context, params map[string]string) error {
 		}
 		defer outFile.Close()
 	}
-	return template.Render(c.String("data"), c.Args().Slice(), params, outFile)
+
+	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
+	var data interface{}
+	if err := importer.Load(datapath, params, &data, libpath); err != nil {
+		return err
+	}
+	return template.Render(c.Args().Slice(), data, params, outFile)
 }

@@ -75,32 +75,16 @@ func main() {
 						return errors.New("please provide the path to NGSI README file")
 					}
 					return decode.Decode(
-						c.String("output"),
-						c.String("vertical"),
-						c.String("subservice"),
+						c.String(outputFlag.Name),
+						c.String(verticalFlag.Name),
+						c.String(subServiceFlag.Name),
 						c.Args().Get(0),
 					)
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "output",
-						Aliases: []string{"o"},
-						Usage:   "write output to `FILE`",
-					},
-					&cli.StringFlag{
-						Name:        "vertical",
-						Aliases:     []string{"v"},
-						DefaultText: "vertical",
-						Usage:       "vertical name (without '-vertical' suffix)",
-						Required:    true,
-					},
-					&cli.StringFlag{
-						Name:        "subservice",
-						Aliases:     []string{"ss"},
-						DefaultText: "subservice",
-						Usage:       "subservice name (without '/' prefix)",
-						Required:    true,
-					},
+					outputFlag,
+					verticalFlag,
+					subServiceFlag,
 				},
 			},
 
@@ -125,17 +109,9 @@ func main() {
 					return render(c, params)
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:     "data",
-						Aliases:  []string{"d"},
-						Usage:    "read vertical data from `FILE`",
-						Required: true,
-					},
-					&cli.StringFlag{
-						Name:    "output",
-						Aliases: []string{"o"},
-						Usage:   "write template output to `FILE`",
-					},
+					dataFlag,
+					libFlag,
+					outputFlag,
 				},
 				BashComplete: func(c *cli.Context) {
 					if c.NArg() <= 0 {
@@ -156,13 +132,7 @@ func main() {
 					return auth(c, currentStore)
 				},
 				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:    "save",
-						Aliases: []string{"s"},
-						Usage:   "save token to context",
-						Hidden:  true,
-						Value:   false,
-					},
+					saveFlag,
 				},
 			},
 
@@ -177,23 +147,9 @@ func main() {
 					return getResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "token",
-						Aliases:     []string{"t"},
-						Usage:       "authentication token",
-						DefaultText: "<empty>",
-						EnvVars:     []string{"FIWARE_TOKEN", "X_AUTH_TOKEN"},
-					},
-					&cli.StringFlag{
-						Name:    "subservice",
-						Aliases: []string{"ss"},
-						Usage:   "subservice name",
-					},
-					&cli.StringFlag{
-						Name:    "output",
-						Aliases: []string{"o"},
-						Usage:   "Write output to `FILE`",
-					},
+					tokenFlag,
+					subServiceFlag,
+					outputFlag,
 				},
 			},
 
@@ -208,24 +164,10 @@ func main() {
 					return postResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "token",
-						Aliases:     []string{"t"},
-						Usage:       "authentication token",
-						DefaultText: "<empty>",
-						EnvVars:     []string{"FIWARE_TOKEN", "X_AUTH_TOKEN"},
-					},
-					&cli.StringFlag{
-						Name:    "subservice",
-						Aliases: []string{"ss"},
-						Usage:   "subservice name",
-					},
-					&cli.StringFlag{
-						Name:     "data",
-						Aliases:  []string{"d"},
-						Usage:    "Read vertical data from `FILE`",
-						Required: true,
-					},
+					tokenFlag,
+					subServiceFlag,
+					dataFlag,
+					libFlag,
 				},
 			},
 
@@ -240,24 +182,10 @@ func main() {
 					return deleteResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "token",
-						Aliases:     []string{"t"},
-						Usage:       "authentication token",
-						DefaultText: "<empty>",
-						EnvVars:     []string{"FIWARE_TOKEN", "X_AUTH_TOKEN"},
-					},
-					&cli.StringFlag{
-						Name:    "subservice",
-						Aliases: []string{"ss"},
-						Usage:   "subservice name",
-					},
-					&cli.StringFlag{
-						Name:     "data",
-						Aliases:  []string{"d"},
-						Usage:    "Read vertical data from `FILE`",
-						Required: true,
-					},
+					tokenFlag,
+					subServiceFlag,
+					dataFlag,
+					libFlag,
 				},
 			},
 

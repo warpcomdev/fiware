@@ -43,7 +43,7 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	if c.Bool("save") {
+	if c.Bool(saveFlag.Name) {
 		if err := store.Set([]string{"token", token}); err != nil {
 			return err
 		}
