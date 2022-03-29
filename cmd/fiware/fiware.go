@@ -89,6 +89,27 @@ func main() {
 			},
 
 			{
+				Name:     "export",
+				Category: "template",
+				Usage:    "Read datafile and export with context params",
+				Action: func(c *cli.Context) error {
+					if err := currentStore.Read(); err != nil {
+						return err
+					}
+					if currentStore.Current.Name == "" {
+						return errors.New("no contexts defined")
+					}
+					selected := currentStore.Current
+					return export(c, selected.Params)
+				},
+				Flags: []cli.Flag{
+					dataFlag,
+					libFlag,
+					outputFlag,
+				},
+			},
+
+			{
 				Name:     "template",
 				Category: "template",
 				Usage:    "template for vertical data",

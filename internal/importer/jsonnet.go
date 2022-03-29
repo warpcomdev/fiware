@@ -18,8 +18,9 @@ func Load(datafile string, params map[string]string, output interface{}, libPath
 		lowerName := strings.ToLower(datafile)
 		if strings.HasSuffix(lowerName, ".star") || strings.HasSuffix(lowerName, ".py") {
 			jsonStr, err = loadStarlark(datafile, params, libPath)
+		} else {
+			jsonStr, err = loadJsonnet(datafile, params, libPath)
 		}
-		jsonStr, err = loadJsonnet(datafile, params, libPath)
 	}
 	if err != nil {
 		return err

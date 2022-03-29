@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -77,16 +75,12 @@ func getResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	output := c.String(outputFlag.Name)
-	var outfile *os.File = os.Stdout
-	if output != "" {
-		outfile, err = os.Create(output)
-		if err != nil {
-			return err
-		}
-		defer outfile.Close()
-		fmt.Printf("writing output to file %s\n", output)
+	output := outputFile(c.String(outputFlag.Name))
+	outfile, err := output.Create()
+	if err != nil {
+		return err
 	}
+	defer outfile.Close()
 
 	vertical := &fiware.Vertical{Subservice: selected.Subservice}
 	for _, arg := range c.Args().Slice() {
@@ -118,25 +112,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		}
 	}
 
-	var lower = strings.ToLower(output)
-	var encoder serializerWithSetup
-	if output != "" && (strings.HasSuffix(lower, ".py") || strings.HasSuffix(lower, ".star")) {
-		ext := filepath.Ext(output)
-		encoder = &importer.StarlarkSerializer{
-			Name: output[0 : len(output)-len(ext)],
-		}
-	} else {
-		encoder = &importer.JsonnetSerializer{}
-	}
-
-	encoder.Setup(outfile, selected.Params)
-	encoder.Begin()
-	vertical.Serialize(encoder)
-	encoder.End()
-	if err := encoder.Error(); err != nil {
-		return fmt.Errorf("failed to encode: %v", err)
-	}
-	return nil
+	return output.Encode(outfile, vertical, selected.Params)
 }
 
 func getDevices(ctx config.Config, header http.Header, vertical *fiware.Vertical) error {

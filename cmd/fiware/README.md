@@ -8,7 +8,7 @@ Esta aplicación permite conectar a un entorno fiware (de desarrollo, en la nube
 
 Utilice el comando `fiware -h` o `go run fiware -h` para obtener detalles del modo de uso:
 
-```bash
+```
 NAME:
    fiware - A new cli application
 
@@ -29,6 +29,7 @@ COMMANDS:
      delete       Delete some resource (services, devices, suscriptions, rules)
    template:
      decode    decode NGSI README.md or CSV file
+     export    Read datafile and export with context params
      template  template for vertical data
 
 GLOBAL OPTIONS:
@@ -42,7 +43,7 @@ GLOBAL OPTIONS:
 
 El comando `fiware decode` infiere el modelo de una vertical a partir o bien de su fichero `models/ngsi/README.md`, o de un `CSV` de entidades volcado del Context Broker, y genera una versión *estandar* del modelo descriptivo de la vertical con el conjunto mínimo de name-mappings, suscripciones y tablas de base de datos que la vertical requiere.
 
-```bash
+```
 $ fiware decode -h
 NAME:
    fiware decode - decode NGSI README.md or CSV file
@@ -71,7 +72,7 @@ El comando `fiware template` lee el modelo de datos de un fichero proporcionado 
 - Template:
    - [golang text/template](https://pkg.go.dev/text/template).
 
-```bash
+```
 $ fiware template -h
 NAME:
    fiware template - template for vertical data
@@ -137,6 +138,32 @@ ejemplo = {
 
 El contexto con el que se ejecute el template contendrá los valores `{ "dato1": "a", "valor": [1, 2, 3] }`.
 
+### Export
+
+El comando `fiware export` lee el modelo de una vertical y lo vuelve a escribir, localizando los literales de texto que coincidan con alguno de los parámetros del contexto (ver [parámetros de contexto](#parámetros-de-contexto) y reemplazando esos literales por el parámetro de contexto correspondiente, para poder transportar de manera sencilla recursos de un contexto a otro.
+
+En particular está pensado para transportar suscripciones, que pueden hacer referencia a diferentes URLs en diferentes contextos. Pero no se limita a suscripciones, sino que sustituye valores literales por parámetros en cualquiera d elos objetos soportados.
+
+También puede usarse para transcodificar una configuración entre diferentes formatos (de jsonnet a starlark, por ejemplo). El formato de entrada y de salida se determina a partir de la extensión d elos ficheros correspondientes.
+
+```
+$ fiware export -h
+NAME:
+   fiware export - Read datafile and export with context params
+
+USAGE:
+   fiware export [command options] [arguments...]
+
+CATEGORY:
+   template
+
+OPTIONS:
+   --data FILE, -d FILE    read vertical data from FILE
+   --lib DIR, -l DIR       load data modules / libs from DIR
+   --output FILE, -o FILE  write output to FILE
+   --help, -h              show help (default: false)
+```
+
 ## Configuración
 
 ### Contextos
@@ -158,7 +185,7 @@ La herramienta puede gestionar varios **contextos** de conexión, que representa
 
 La aplicación puede gestionar múltiples contextos usando el comando `fiware context`:
 
-```bash
+```
 $ fiware context help
 NAME:
    fiware context - Manage contexts
@@ -190,7 +217,7 @@ Using new context fiware_demo
 
 Una vez creado el contexto, se pueden configurar los distintos valores con `fiware ctx set`:
 
-```bash
+```
 $ fiware ctx set keystone "http://fiware.platform.com:5001" orion "http://fiware.platform.com:1026" service demoservice
 using context fiware_demo
 context settings:
@@ -208,7 +235,7 @@ context settings:
 
 Los valores se pueden cambiar tambien individualmente:
 
-```bash
+```
 $ fiware ctx set perseo "http://fiware.platform.com:9090"
 using context fiware_demo
 context settings:
@@ -244,7 +271,7 @@ Estos parámetros no los utiliza directamente la aplicación, sino que están pe
 
 Los parámetros se configuran con la orden `fiware context params ...`:
 
-```bash
+```
 $ fiware context params
 NAME:
    fiware context params - Set a template parameter
@@ -278,7 +305,7 @@ Y ese valor será accesible desde *jsonnet*, *starlark* y las plantillas.
 
 El comando `fiware login` inicia sesión usando el servidor keystone, servicio y usuario configurados en el contexto, solicitando el password en la terminal:
 
-```bash
+```
 $ fiware auth -h
 NAME:
    fiware login - Login into keystone
@@ -301,7 +328,7 @@ Excepcionalmente, se puede usar el flag `-s` para guardar el token junto con la 
 
 El comando `fiware get` obtiene información sobre uno o varios tipos de objetos en la plataforma:
 
-```bash
+```
 NAME:
    fiware get - Get some resource (services, devices, suscriptions, rules)
 
@@ -320,7 +347,7 @@ OPTIONS:
 
 El resultado del comando se formatea usando el modelo descrito por el paquete ["github.com/warpcomdev/fiware"](../../models.go), con el objetivo de poder compararlo con otros modelos de vertical generados a partir de otra información (por ejemplo, la extraída por la aplicación [decode](../decode/README.md)).
 
-```bash
+```
 $ fiware get groups
 {
   "name": "",
@@ -352,7 +379,7 @@ writing output to file manager.json
 
 El comando `fiware post` envía una petición API POST para alguno de los tipos de objetos en la plataforma:
 
-```bash
+```
 NAME:
    fiware post - Post some resource (services, devices, suscriptions, rules)
 
@@ -376,7 +403,7 @@ El comando lee los datos del fichero jsonnet que se le indique con el flag `-dat
 
 El comando `fiware delete` envía una petición API DELETE para alguno de los tipos de objetos en la plataforma:
 
-```bash
+```
 $ fiware delete -h
 NAME:
    fiware delete - Delete some resource (services, devices, suscriptions, rules)

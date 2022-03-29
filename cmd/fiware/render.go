@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 
 	"github.com/urfave/cli/v2"
 
@@ -17,16 +16,12 @@ type verticalWithParams struct {
 }
 
 func render(c *cli.Context, params map[string]string) error {
-	output := c.String(outputFlag.Name)
-	var outFile *os.File = os.Stdout
-	if output != "" {
-		var err error
-		outFile, err = os.Create(output)
-		if err != nil {
-			return err
-		}
-		defer outFile.Close()
+	output := outputFile(c.String(outputFlag.Name))
+	outFile, err := output.Create()
+	if err != nil {
+		return err
 	}
+	defer outFile.Close()
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
 	var data interface{}
@@ -59,4 +54,20 @@ func render(c *cli.Context, params map[string]string) error {
 		}
 	}
 	return template.Render(c.Args().Slice(), data, outFile)
+}
+
+func export(c *cli.Context, params map[string]string) error {
+	output := outputFile(c.String(outputFlag.Name))
+	outFile, err := output.Create()
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
+	var vertical fiware.Vertical
+	if err := importer.Load(datapath, params, &vertical, libpath); err != nil {
+		return err
+	}
+	return output.Encode(outFile, &vertical, params)
 }
