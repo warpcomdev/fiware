@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -23,6 +24,13 @@ var canGet []string = []string{
 	"devices",
 	"suscriptions",
 	"rules",
+}
+
+type serializerWithSetup interface {
+	fiware.Serializer
+	Setup(importer.Writer, map[string]string)
+	Begin()
+	End()
 }
 
 func getConfig(c *cli.Context, store *config.Store) (zero config.Config, h http.Header, err error) {
@@ -109,7 +117,18 @@ func getResource(c *cli.Context, store *config.Store) error {
 			return fmt.Errorf("don't know how to get resource %s", arg)
 		}
 	}
-	encoder := &importer.JsonnetSerializer{}
+
+	var lower = strings.ToLower(output)
+	var encoder serializerWithSetup
+	if output != "" && (strings.HasSuffix(lower, ".py") || strings.HasSuffix(lower, ".star")) {
+		ext := filepath.Ext(output)
+		encoder = &importer.StarlarkSerializer{
+			Name: output[0 : len(output)-len(ext)],
+		}
+	} else {
+		encoder = &importer.JsonnetSerializer{}
+	}
+
 	encoder.Setup(outfile, selected.Params)
 	encoder.Begin()
 	vertical.Serialize(encoder)

@@ -94,3 +94,31 @@ func (b *builtinStarlarkImporter) Load(thread *starlark.Thread, module string) (
 	}
 	return nil, os.ErrNotExist
 }
+
+type StarlarkSerializer struct {
+	bufferedSerializer
+	Name string
+}
+
+func (j *StarlarkSerializer) Begin() {
+	j.Depth += 1 // keep everything indented inside the function
+	j.bufferedSerializer.Begin()
+}
+
+func (j *StarlarkSerializer) End() {
+	// Prepend matched variables
+	fmt.Fprintf(j.original, "def %s(env):\n", j.Name)
+	if len(j.Matched) > 0 {
+		for k, v := range j.Matched {
+			if _, err := fmt.Fprintf(j.original, "  %s = env[%q]; # %q;\n", k, k, v); err != nil {
+				j.err = err
+				return
+			}
+		}
+		if _, err := j.original.WriteString("\n  return "); err != nil {
+			j.err = err
+			return
+		}
+	}
+	j.bufferedSerializer.End()
+}

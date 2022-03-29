@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -19,14 +20,24 @@ type Writer interface {
 type JsonSerializer struct {
 	Writer        Writer
 	ReverseParams map[string]string
+	Matched       map[string]string
 	Depth         int
 	sep           string
 	err           error
 }
 
+type bufferedSerializer struct {
+	JsonSerializer
+	// We buffer the writer to prepend locals later
+	original Writer
+	buffer   bytes.Buffer
+	buffered *bufio.Writer
+}
+
 func (j *JsonSerializer) Setup(w Writer, params map[string]string) {
 	j.Writer = w
 	j.ReverseParams = make(map[string]string)
+	j.Matched = make(map[string]string)
 	for k, v := range params {
 		j.ReverseParams[v] = k
 	}
@@ -34,7 +45,8 @@ func (j *JsonSerializer) Setup(w Writer, params map[string]string) {
 
 func (j *JsonSerializer) Begin() {
 	j.sep = "\n"
-	if _, err := j.Writer.WriteString("{"); err != nil {
+	indent := j.indent()
+	if _, err := fmt.Fprintf(j.Writer, "%s{", indent); err != nil {
 		j.err = err
 		return
 	}
@@ -45,7 +57,9 @@ func (j *JsonSerializer) End() {
 	if j.err != nil {
 		return
 	}
-	j.Writer.WriteString("\n}\n")
+	j.Depth -= 1
+	indent := j.indent()
+	fmt.Fprintf(j.Writer, "\n%s}\n", indent)
 }
 
 func (j *JsonSerializer) indent() string {
@@ -66,6 +80,8 @@ func (j *JsonSerializer) Param(s string) {
 	if j.ReverseParams != nil {
 		if r, ok := j.ReverseParams[s]; ok {
 			if _, err := j.Writer.WriteString(r); err == nil {
+				j.Matched[r] = s
+			} else {
 				j.err = err
 			}
 			return
@@ -228,4 +244,21 @@ func (j *JsonSerializer) EndList() {
 
 func (j *JsonSerializer) Error() error {
 	return j.err
+}
+
+func (j *bufferedSerializer) Setup(w Writer, params map[string]string) {
+	j.original = w
+	j.buffered = bufio.NewWriter(&(j.buffer))
+	j.JsonSerializer.Setup(j.buffered, params)
+}
+
+func (j *bufferedSerializer) End() {
+	j.JsonSerializer.End()
+	if j.err != nil {
+		return
+	}
+	j.buffered.Flush()
+	if _, err := j.original.Write(j.buffer.Bytes()); err != nil {
+		j.err = err
+	}
 }

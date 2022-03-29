@@ -51,15 +51,22 @@ func loadJsonnet(datafile string, params map[string]string, pathLib string) (str
 }
 
 type JsonnetSerializer struct {
-	JsonSerializer
+	bufferedSerializer
 }
 
-func (j *JsonnetSerializer) Begin() {
-	if len(j.ReverseParams) > 0 {
-		for k, v := range j.ReverseParams {
-			fmt.Fprintf(j.Writer, "local %s = %q;\n", v, k)
+func (j *JsonnetSerializer) End() {
+	// Prepend matched variables
+	if len(j.Matched) > 0 {
+		for k, v := range j.Matched {
+			if _, err := fmt.Fprintf(j.original, "local %s = std.extVar(%q); // %q;\n", k, k, v); err != nil {
+				j.err = err
+				return
+			}
 		}
-		j.Writer.WriteString("\n")
+		if _, err := j.original.WriteString("\n"); err != nil {
+			j.err = err
+			return
+		}
 	}
-	j.JsonSerializer.Begin()
+	j.bufferedSerializer.End()
 }
