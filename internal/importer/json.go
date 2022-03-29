@@ -16,6 +16,8 @@ type Writer interface {
 	io.StringWriter
 }
 
+const minIndent = "  "
+
 // Serializes a JSON object to a string.
 type JsonSerializer struct {
 	Writer        Writer
@@ -68,7 +70,7 @@ func (j *JsonSerializer) indent() string {
 	}
 	var result string
 	for i := 0; i < j.Depth; i++ {
-		result = result + "  "
+		result = result + minIndent
 	}
 	return result
 }

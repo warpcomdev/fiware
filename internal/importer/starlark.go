@@ -110,12 +110,12 @@ func (j *StarlarkSerializer) End() {
 	fmt.Fprintf(j.original, "def %s(env):\n", j.Name)
 	if len(j.Matched) > 0 {
 		for k, v := range j.Matched {
-			if _, err := fmt.Fprintf(j.original, "  %s = env[%q]; # %q;\n", k, k, v); err != nil {
+			if _, err := fmt.Fprintf(j.original, "%s%s = env[%q] # %q;\n", minIndent, k, k, v); err != nil {
 				j.err = err
 				return
 			}
 		}
-		if _, err := j.original.WriteString("\n  return "); err != nil {
+		if _, err := fmt.Fprintf(j.original, "\n%sreturn", minIndent); err != nil {
 			j.err = err
 			return
 		}
