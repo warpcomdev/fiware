@@ -49,3 +49,17 @@ func loadJsonnet(datafile string, params map[string]string, pathLib string) (str
 	}
 	return jsonStr, nil
 }
+
+type JsonnetSerializer struct {
+	JsonSerializer
+}
+
+func (j *JsonnetSerializer) Begin() {
+	if len(j.ReverseParams) > 0 {
+		for k, v := range j.ReverseParams {
+			fmt.Fprintf(j.Writer, "local %s = %q;\n", v, k)
+		}
+		j.Writer.WriteString("\n")
+	}
+	j.JsonSerializer.Begin()
+}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
+	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/iotam"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/orion"
@@ -109,11 +109,13 @@ func getResource(c *cli.Context, store *config.Store) error {
 			return fmt.Errorf("don't know how to get resource %s", arg)
 		}
 	}
-	encoder := json.NewEncoder(outfile)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(vertical); err != nil {
-		return err
+	encoder := &importer.JsonnetSerializer{}
+	encoder.Setup(outfile, selected.Params)
+	encoder.Begin()
+	vertical.Serialize(encoder)
+	encoder.End()
+	if err := encoder.Error(); err != nil {
+		return fmt.Errorf("failed to encode: %v", err)
 	}
 	return nil
 }

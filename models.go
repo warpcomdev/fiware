@@ -8,7 +8,12 @@ import (
 	"encoding/json"
 )
 
-// Tipos de datos que se usan para relacionarse con la vertical
+// Tipos de datos que se usan para relacionarse con la vertical.
+// Todos los tipos deben implementar la interfaz `Serializable`,
+// para poder ser exportados a diferentes formatos (json, jsonnet,
+// starlark, etc).
+// La interfaz se implementa automáticamente con el siguiente generador:
+//go:generate go run cmd/generate/generate.go
 
 // Vertical representa una vertical
 type Vertical struct {
@@ -46,8 +51,8 @@ type EntityType struct {
 type Attribute struct {
 	Name      string          `json:"name"`
 	Type      string          `json:"type"`
-	Value     json.RawMessage `json:"value,omitempty"`
-	Metadatas json.RawMessage `json:"metadatas,omitempty"`
+	Value     json.RawMessage `json:"value,omitempty" compact:"true"`
+	Metadatas json.RawMessage `json:"metadatas,omitempty" compact:"true"`
 }
 
 // Entity representa una instancia de EntityType
@@ -59,8 +64,8 @@ type Entity struct {
 	// está en el EntityType.
 	// Los Metadatas se sacan aparte porque generalmente
 	// el json generado es más tratable de esta forma
-	Attrs     map[string]json.RawMessage `json:"attrs"`
-	MetaDatas map[string]json.RawMessage `json:"metadatas,omitempty"`
+	Attrs     map[string]json.RawMessage `json:"attrs" compact:"true"`
+	MetaDatas map[string]json.RawMessage `json:"metadatas,omitempty" compact:"true"`
 }
 
 // ServiceMapping es cada uno de los serviceMappings de cygnus
@@ -110,11 +115,11 @@ type SuscriptionStatus struct {
 
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
-	Attrs            []string            `json:"attrs,omitempty"`
-	AttrsFormat      string              `json:"attrsFormat"`
-	HTTP             *NotificationHTTP   `json:"http,omitempty"`
-	HTTPCustom       *NotificationCustom `json:"httpCustom,omitempty"`
-	OnlyChangedAttrs bool                `json:"onlyChangedAttrs,omitempty"`
+	Attrs            []string           `json:"attrs,omitempty"`
+	AttrsFormat      string             `json:"attrsFormat"`
+	HTTP             NotificationHTTP   `json:"http,omitempty"`
+	HTTPCustom       NotificationCustom `json:"httpCustom,omitempty"`
+	OnlyChangedAttrs bool               `json:"onlyChangedAttrs,omitempty"`
 	NotificationStatus
 }
 
@@ -134,10 +139,18 @@ type NotificationHTTP struct {
 	URL string `json:"url"`
 }
 
+func (n NotificationHTTP) IsEmpty() bool {
+	return n.URL == ""
+}
+
 // NotificationHTTP son los datos de una notificacion
 type NotificationCustom struct {
 	URL     string            `json:"url"`
 	Headers map[string]string `json:"headers,omitempty"`
+}
+
+func (n NotificationCustom) IsEmpty() bool {
+	return n.URL == "" && len(n.Headers) <= 0
 }
 
 // Subject es el sujeto de la suscripcion
@@ -148,13 +161,17 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs      []string           `json:"attrs,omitempty"`
-	Expression *SubjectExpression `json:"expression,omitempty"`
+	Attrs      []string          `json:"attrs,omitempty"`
+	Expression SubjectExpression `json:"expression,omitempty"`
 }
 
 // SubjectExpression es la expresion en la condicion
 type SubjectExpression struct {
 	Q string `json:"q,omitempty"`
+}
+
+func (s SubjectExpression) IsEmpty() bool {
+	return s.Q == ""
 }
 
 // SubjectEntity es la entidad sujeto de la suscripcion
