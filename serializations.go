@@ -79,6 +79,150 @@ func (x Vertical) Serialize(s Serializer) {
 	}
 }
 
+func (x Rule) Serialize(s Serializer) {
+	s.KeyString("name", x.Name)
+	if x.Description != "" {
+		s.KeyString("description", x.Description)
+	}
+	if x.Misc != "" {
+		s.KeyString("misc", x.Misc)
+	}
+	if x.Text != "" {
+		s.KeyString("text", x.Text)
+	}
+	if x.VR != "" {
+		s.KeyString("VR", x.VR)
+	}
+	if len(x.Action) > 0 {
+		s.KeyRaw("action", x.Action, false)
+	}
+	if len(x.NoSignal) > 0 {
+		s.KeyRaw("nosignal", x.NoSignal, false)
+	}
+	x.RuleStatus.Serialize(s)
+}
+
+func (x RuleStatus) Serialize(s Serializer) {
+	if x.Subservice != "" {
+		s.KeyString("subservice", x.Subservice)
+	}
+	if x.Service != "" {
+		s.KeyString("service", x.Service)
+	}
+	if x.ID != "" {
+		s.KeyString("_id", x.ID)
+	}
+}
+
+func (x EntityType) Serialize(s Serializer) {
+	s.KeyString("entityID", x.ID)
+	s.KeyString("entityType", x.Type)
+	s.BeginList("attrs")
+	for _, y := range x.Attrs {
+		s.BeginBlock("")
+		s.Serialize(y)
+		s.EndBlock()
+	}
+	s.EndList()
+}
+
+func (x Attribute) Serialize(s Serializer) {
+	s.KeyString("name", x.Name)
+	s.KeyString("type", x.Type)
+	if len(x.Value) > 0 {
+		s.KeyRaw("value", x.Value, true)
+	}
+	if len(x.Metadatas) > 0 {
+		s.KeyRaw("metadatas", x.Metadatas, true)
+	}
+}
+
+func (x Entity) Serialize(s Serializer) {
+	s.KeyString("entityID", x.ID)
+	s.KeyString("entityType", x.Type)
+	s.BeginBlock("attrs")
+	for k, v := range x.Attrs {
+		s.KeyRaw(k, v, true)
+	}
+	s.EndBlock()
+	if len(x.MetaDatas) > 0 {
+		s.BeginBlock("metadatas")
+		for k, v := range x.MetaDatas {
+			s.KeyRaw(k, v, true)
+		}
+		s.EndBlock()
+	}
+}
+
+func (x ServiceMapping) Serialize(s Serializer) {
+	if x.OriginalService != "" {
+		s.KeyString("originalService", x.OriginalService)
+	}
+	if x.NewService != "" {
+		s.KeyString("newService", x.NewService)
+	}
+	s.BeginList("servicePathMappings")
+	for _, y := range x.ServicePathMappings {
+		s.BeginBlock("")
+		s.Serialize(y)
+		s.EndBlock()
+	}
+	s.EndList()
+}
+
+func (x ServicePathMapping) Serialize(s Serializer) {
+	if x.OriginalServicePath != "" {
+		s.KeyString("originalServicePath", x.OriginalServicePath)
+	}
+	if x.NewServicePath != "" {
+		s.KeyString("newServicePath", x.NewServicePath)
+	}
+	s.BeginList("entityMappings")
+	for _, y := range x.EntityMappings {
+		s.BeginBlock("")
+		s.Serialize(y)
+		s.EndBlock()
+	}
+	s.EndList()
+}
+
+func (x EntityMapping) Serialize(s Serializer) {
+	if x.OriginalEntityId != "" {
+		s.KeyString("originalEntityId", x.OriginalEntityId)
+	}
+	if x.NewEntityId != "" {
+		s.KeyString("newEntityId", x.NewEntityId)
+	}
+	if x.OriginalEntityType != "" {
+		s.KeyString("originalEntityType", x.OriginalEntityType)
+	}
+	if x.NewEntityType != "" {
+		s.KeyString("newEntityType", x.NewEntityType)
+	}
+	s.BeginList("attributeMappings")
+	for _, y := range x.AttributeMappings {
+		s.BeginBlock("")
+		s.Serialize(y)
+		s.EndBlock()
+	}
+	s.EndList()
+}
+
+func (x AttributeMapping) Serialize(s Serializer) {
+	if x.OriginalAttributeName != "" {
+		s.KeyString("originalAttributeName", x.OriginalAttributeName)
+	}
+	if x.OriginalAttributeType != "" {
+		s.KeyString("originalAttributeType", x.OriginalAttributeType)
+	}
+	if x.NewAttributeName != "" {
+		s.KeyString("newAttributeName", x.NewAttributeName)
+	}
+	if x.NewAttributeType != "" {
+		s.KeyString("newAttributeType", x.NewAttributeType)
+	}
+}
+
 func (x Suscription) Serialize(s Serializer) {
 	s.KeyString("description", x.Description)
 	if x.Status != "" {
@@ -317,6 +461,27 @@ func (x Service) Serialize(s Serializer) {
 	x.GroupStatus.Serialize(s)
 }
 
+func (x GroupStatus) Serialize(s Serializer) {
+	if x.ID != "" {
+		s.KeyString("_id", x.ID)
+	}
+	if x.V != 0 {
+		s.KeyInt("__v", x.V)
+	}
+	if x.IOTAgent != "" {
+		s.KeyString("iotagent", x.IOTAgent)
+	}
+	if x.ServicePath != "" {
+		s.KeyString("service_path", x.ServicePath)
+	}
+	if x.Service != "" {
+		s.KeyString("service", x.Service)
+	}
+	if x.CBHost != "" {
+		s.KeyString("cbHost", x.CBHost)
+	}
+}
+
 func (x DeviceAttribute) Serialize(s Serializer) {
 	s.KeyString("object_id", x.ObjectId)
 	s.KeyString("name", x.Name)
@@ -341,27 +506,6 @@ func (x DeviceCommand) Serialize(s Serializer) {
 	}
 	if x.Type != "" {
 		s.KeyString("type", x.Type)
-	}
-}
-
-func (x GroupStatus) Serialize(s Serializer) {
-	if x.ID != "" {
-		s.KeyString("_id", x.ID)
-	}
-	if x.V != 0 {
-		s.KeyInt("__v", x.V)
-	}
-	if x.IOTAgent != "" {
-		s.KeyString("iotagent", x.IOTAgent)
-	}
-	if x.ServicePath != "" {
-		s.KeyString("service_path", x.ServicePath)
-	}
-	if x.Service != "" {
-		s.KeyString("service", x.Service)
-	}
-	if x.CBHost != "" {
-		s.KeyString("cbHost", x.CBHost)
 	}
 }
 
@@ -436,149 +580,5 @@ func (x DeviceStatus) Serialize(s Serializer) {
 	}
 	if x.ServicePath != "" {
 		s.KeyString("service_path", x.ServicePath)
-	}
-}
-
-func (x Rule) Serialize(s Serializer) {
-	s.KeyString("name", x.Name)
-	if x.Description != "" {
-		s.KeyString("description", x.Description)
-	}
-	if x.Misc != "" {
-		s.KeyString("misc", x.Misc)
-	}
-	if x.Text != "" {
-		s.KeyString("text", x.Text)
-	}
-	if x.VR != "" {
-		s.KeyString("VR", x.VR)
-	}
-	if len(x.Action) > 0 {
-		s.KeyRaw("action", x.Action, false)
-	}
-	if len(x.NoSignal) > 0 {
-		s.KeyRaw("nosignal", x.NoSignal, false)
-	}
-	x.RuleStatus.Serialize(s)
-}
-
-func (x RuleStatus) Serialize(s Serializer) {
-	if x.Subservice != "" {
-		s.KeyString("subservice", x.Subservice)
-	}
-	if x.Service != "" {
-		s.KeyString("service", x.Service)
-	}
-	if x.ID != "" {
-		s.KeyString("_id", x.ID)
-	}
-}
-
-func (x EntityType) Serialize(s Serializer) {
-	s.KeyString("entityID", x.ID)
-	s.KeyString("entityType", x.Type)
-	s.BeginList("attrs")
-	for _, y := range x.Attrs {
-		s.BeginBlock("")
-		s.Serialize(y)
-		s.EndBlock()
-	}
-	s.EndList()
-}
-
-func (x Attribute) Serialize(s Serializer) {
-	s.KeyString("name", x.Name)
-	s.KeyString("type", x.Type)
-	if len(x.Value) > 0 {
-		s.KeyRaw("value", x.Value, true)
-	}
-	if len(x.Metadatas) > 0 {
-		s.KeyRaw("metadatas", x.Metadatas, true)
-	}
-}
-
-func (x Entity) Serialize(s Serializer) {
-	s.KeyString("entityID", x.ID)
-	s.KeyString("entityType", x.Type)
-	s.BeginBlock("attrs")
-	for k, v := range x.Attrs {
-		s.KeyRaw(k, v, true)
-	}
-	s.EndBlock()
-	if len(x.MetaDatas) > 0 {
-		s.BeginBlock("metadatas")
-		for k, v := range x.MetaDatas {
-			s.KeyRaw(k, v, true)
-		}
-		s.EndBlock()
-	}
-}
-
-func (x ServiceMapping) Serialize(s Serializer) {
-	if x.OriginalService != "" {
-		s.KeyString("originalService", x.OriginalService)
-	}
-	if x.NewService != "" {
-		s.KeyString("newService", x.NewService)
-	}
-	s.BeginList("servicePathMappings")
-	for _, y := range x.ServicePathMappings {
-		s.BeginBlock("")
-		s.Serialize(y)
-		s.EndBlock()
-	}
-	s.EndList()
-}
-
-func (x ServicePathMapping) Serialize(s Serializer) {
-	if x.OriginalServicePath != "" {
-		s.KeyString("originalServicePath", x.OriginalServicePath)
-	}
-	if x.NewServicePath != "" {
-		s.KeyString("newServicePath", x.NewServicePath)
-	}
-	s.BeginList("entityMappings")
-	for _, y := range x.EntityMappings {
-		s.BeginBlock("")
-		s.Serialize(y)
-		s.EndBlock()
-	}
-	s.EndList()
-}
-
-func (x EntityMapping) Serialize(s Serializer) {
-	if x.OriginalEntityId != "" {
-		s.KeyString("originalEntityId", x.OriginalEntityId)
-	}
-	if x.NewEntityId != "" {
-		s.KeyString("newEntityId", x.NewEntityId)
-	}
-	if x.OriginalEntityType != "" {
-		s.KeyString("originalEntityType", x.OriginalEntityType)
-	}
-	if x.NewEntityType != "" {
-		s.KeyString("newEntityType", x.NewEntityType)
-	}
-	s.BeginList("attributeMappings")
-	for _, y := range x.AttributeMappings {
-		s.BeginBlock("")
-		s.Serialize(y)
-		s.EndBlock()
-	}
-	s.EndList()
-}
-
-func (x AttributeMapping) Serialize(s Serializer) {
-	if x.OriginalAttributeName != "" {
-		s.KeyString("originalAttributeName", x.OriginalAttributeName)
-	}
-	if x.OriginalAttributeType != "" {
-		s.KeyString("originalAttributeType", x.OriginalAttributeType)
-	}
-	if x.NewAttributeName != "" {
-		s.KeyString("newAttributeName", x.NewAttributeName)
-	}
-	if x.NewAttributeType != "" {
-		s.KeyString("newAttributeType", x.NewAttributeType)
 	}
 }
