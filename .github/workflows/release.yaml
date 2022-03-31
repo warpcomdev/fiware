@@ -24,6 +24,9 @@ jobs:
       with:
         go-version: 1.18
 
+    - name: generate code (it shouldn't change)
+      run: go generate
+
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:

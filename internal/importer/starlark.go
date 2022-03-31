@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/warpcomdev/fiware/internal/serialize"
 	"go.starlark.net/starlark"
 )
 
@@ -96,29 +97,29 @@ func (b *builtinStarlarkImporter) Load(thread *starlark.Thread, module string) (
 }
 
 type StarlarkSerializer struct {
-	bufferedSerializer
+	serialize.BufferedSerializer
 	Name string
 }
 
 func (j *StarlarkSerializer) Begin() {
 	j.Depth += 1 // keep everything indented inside the function
-	j.bufferedSerializer.Begin()
+	j.BufferedSerializer.Begin()
 }
 
 func (j *StarlarkSerializer) End() {
 	// Prepend matched variables
-	fmt.Fprintf(j.original, "def %s(env):\n", j.Name)
+	fmt.Fprintf(j.Original, "def %s(env):\n", j.Name)
 	if len(j.Matched) > 0 {
 		for k, v := range j.Matched {
-			if _, err := fmt.Fprintf(j.original, "%s%s = env[%q] # %q;\n", minIndent, k, k, v); err != nil {
-				j.err = err
+			if _, err := fmt.Fprintf(j.Original, "%s%s = env[%q] # %q;\n", serialize.MinIndent, k, k, v); err != nil {
+				j.Err = err
 				return
 			}
 		}
-		if _, err := fmt.Fprintf(j.original, "\n%sreturn", minIndent); err != nil {
-			j.err = err
+		if _, err := fmt.Fprintf(j.Original, "\n%sreturn", serialize.MinIndent); err != nil {
+			j.Err = err
 			return
 		}
 	}
-	j.bufferedSerializer.End()
+	j.BufferedSerializer.End()
 }

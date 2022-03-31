@@ -1,14 +1,11 @@
-package importer
+package serialize
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-
-	"github.com/warpcomdev/fiware"
 )
 
 type Writer interface {
@@ -16,26 +13,19 @@ type Writer interface {
 	io.StringWriter
 }
 
-const minIndent = "  "
+const MinIndent = "  "
 
 // Serializes a JSON object to a string.
 type JsonSerializer struct {
-	Writer        Writer
-	ReverseParams map[string]string
-	Matched       map[string]string
-	Depth         int
+	Writer        Writer            // Where to write
+	ReverseParams map[string]string // match strings and turn into parameters
+	Matched       map[string]string // Which params were matched
+	Depth         int               // indentation depth, if -1 then do not indent
+	Err           error
 	sep           string
-	err           error
 }
 
-type bufferedSerializer struct {
-	JsonSerializer
-	// We buffer the writer to prepend locals later
-	original Writer
-	buffer   bytes.Buffer
-	buffered *bufio.Writer
-}
-
+// Setup must be called before starting serializing
 func (j *JsonSerializer) Setup(w Writer, params map[string]string) {
 	j.Writer = w
 	j.ReverseParams = make(map[string]string)
@@ -45,18 +35,20 @@ func (j *JsonSerializer) Setup(w Writer, params map[string]string) {
 	}
 }
 
+// Begin serializing a new object
 func (j *JsonSerializer) Begin() {
 	j.sep = "\n"
 	indent := j.indent()
 	if _, err := fmt.Fprintf(j.Writer, "%s{", indent); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.Depth += 1
 }
 
+// End object serialization
 func (j *JsonSerializer) End() {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	j.Depth -= 1
@@ -65,18 +57,19 @@ func (j *JsonSerializer) End() {
 }
 
 func (j *JsonSerializer) indent() string {
-	if j.err != nil {
+	if j.Err != nil || j.Depth < 0 {
 		return ""
 	}
 	var result string
 	for i := 0; i < j.Depth; i++ {
-		result = result + minIndent
+		result = result + MinIndent
 	}
 	return result
 }
 
+// Param called on every string, to check if it must be replaced
 func (j *JsonSerializer) Param(s string) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	if j.ReverseParams != nil {
@@ -84,80 +77,86 @@ func (j *JsonSerializer) Param(s string) {
 			if _, err := j.Writer.WriteString(r); err == nil {
 				j.Matched[r] = s
 			} else {
-				j.err = err
+				j.Err = err
 			}
 			return
 		}
 	}
 	if _, err := fmt.Fprintf(j.Writer, "%q", s); err != nil {
-		j.err = err
+		j.Err = err
 	}
 }
 
+// KeyString dumps a key and value pair, value is string
 func (j *JsonSerializer) KeyString(k, v string) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	if _, err := fmt.Fprintf(j.Writer, "%s%s%q: ", j.sep, j.indent(), k); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.Param(v)
 	j.sep = ",\n"
 }
 
+// KeyString dumps a string
 func (j *JsonSerializer) String(v string) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	if _, err := fmt.Fprintf(j.Writer, "%s%s", j.sep, j.indent()); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.Param(v)
 	j.sep = ",\n"
 }
 
+// KeyInt dumps a key and value pair, value is int
 func (j *JsonSerializer) KeyInt(k string, v int) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	if _, err := fmt.Fprintf(j.Writer, "%s%s%q: %d", j.sep, j.indent(), k, v); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.sep = ",\n"
 }
 
+// KeyFloat dumps a key and value pair, value is float
 func (j *JsonSerializer) KeyFloat(k string, v float64) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	if _, err := fmt.Fprintf(j.Writer, "%s%s%q: %f", j.sep, j.indent(), k, v); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.sep = ",\n"
 }
 
+// KeyBool dumps a key and value pair, value is bool
 func (j *JsonSerializer) KeyBool(k string, v bool) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	if _, err := fmt.Fprintf(j.Writer, "%s%s%q: %v", j.sep, j.indent(), k, v); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.sep = ",\n"
 }
 
+// KeyRaw dumps a key and value pair, value is json.RawMessage
 func (j *JsonSerializer) KeyRaw(k string, v json.RawMessage, compact bool) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	indent := j.indent()
 	if _, err := fmt.Fprintf(j.Writer, "%s%s%q: ", j.sep, indent, k); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	if !compact {
@@ -169,29 +168,31 @@ func (j *JsonSerializer) KeyRaw(k string, v json.RawMessage, compact bool) {
 		}
 	}
 	if _, err := j.Writer.Write(v); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.sep = ",\n"
 }
 
-func (j *JsonSerializer) Serialize(s fiware.Serializable) {
+// Serialize recursos into a Serializable object
+func (j *JsonSerializer) Serialize(s Serializable) {
 	s.Serialize(j)
 }
 
+// BeginBlock opens a block with an optional key
 func (j *JsonSerializer) BeginBlock(optionalTitle string) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	indent := j.indent()
 	if optionalTitle != "" {
 		if _, err := fmt.Fprintf(j.Writer, "%s%s%q: {", j.sep, indent, optionalTitle); err != nil {
-			j.err = err
+			j.Err = err
 			return
 		}
 	} else {
 		if _, err := fmt.Fprintf(j.Writer, "%s%s{", j.sep, indent); err != nil {
-			j.err = err
+			j.Err = err
 			return
 		}
 	}
@@ -199,32 +200,34 @@ func (j *JsonSerializer) BeginBlock(optionalTitle string) {
 	j.sep = "\n"
 }
 
+// Endblock closes a block
 func (j *JsonSerializer) EndBlock() {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	j.Depth -= 1
 	indent := j.indent()
 	if _, err := fmt.Fprintf(j.Writer, "\n%s}", indent); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.sep = ",\n"
 }
 
+// BeginList opens a list with an optional key
 func (j *JsonSerializer) BeginList(optionalTitle string) {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	indent := j.indent()
 	if optionalTitle != "" {
 		if _, err := fmt.Fprintf(j.Writer, "%s%s%q: [", j.sep, indent, optionalTitle); err != nil {
-			j.err = err
+			j.Err = err
 			return
 		}
 	} else {
 		if _, err := fmt.Fprintf(j.Writer, "%s: ", j.sep); err != nil {
-			j.err = err
+			j.Err = err
 			return
 		}
 	}
@@ -232,35 +235,20 @@ func (j *JsonSerializer) BeginList(optionalTitle string) {
 	j.sep = "\n"
 }
 
+// EndList closes a list
 func (j *JsonSerializer) EndList() {
-	if j.err != nil {
+	if j.Err != nil {
 		return
 	}
 	j.Depth -= 1
 	if _, err := fmt.Fprintf(j.Writer, "\n%s]", j.indent()); err != nil {
-		j.err = err
+		j.Err = err
 		return
 	}
 	j.sep = ",\n"
 }
 
+// Error accumulates errors while encoding to check at the end
 func (j *JsonSerializer) Error() error {
-	return j.err
-}
-
-func (j *bufferedSerializer) Setup(w Writer, params map[string]string) {
-	j.original = w
-	j.buffered = bufio.NewWriter(&(j.buffer))
-	j.JsonSerializer.Setup(j.buffered, params)
-}
-
-func (j *bufferedSerializer) End() {
-	j.JsonSerializer.End()
-	if j.err != nil {
-		return
-	}
-	j.buffered.Flush()
-	if _, err := j.original.Write(j.buffer.Bytes()); err != nil {
-		j.err = err
-	}
+	return j.Err
 }

@@ -266,7 +266,7 @@ type DeviceAttribute struct {
 	Type       string `json:"type,omitempty"`
 	Expression string `json:"expression,omitempty"`
 	EntityName string `json:"entity_name,omitempty"`
-	EntityType string `json:"entity_type"`
+	EntityType string `json:"entity_type,omitempty"`
 }
 
 // DeviceCommand describe un comando de dispositivo

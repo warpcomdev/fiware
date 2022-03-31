@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/go-jsonnet"
+	"github.com/warpcomdev/fiware/internal/serialize"
 )
 
 func Load(datafile string, params map[string]string, output interface{}, libPath string) error {
@@ -52,22 +53,22 @@ func loadJsonnet(datafile string, params map[string]string, pathLib string) (str
 }
 
 type JsonnetSerializer struct {
-	bufferedSerializer
+	serialize.BufferedSerializer
 }
 
 func (j *JsonnetSerializer) End() {
 	// Prepend matched variables
 	if len(j.Matched) > 0 {
 		for k, v := range j.Matched {
-			if _, err := fmt.Fprintf(j.original, "local %s = std.extVar(%q); // %q;\n", k, k, v); err != nil {
-				j.err = err
+			if _, err := fmt.Fprintf(j.Original, "local %s = std.extVar(%q); // %q;\n", k, k, v); err != nil {
+				j.Err = err
 				return
 			}
 		}
-		if _, err := j.original.WriteString("\n"); err != nil {
-			j.err = err
+		if _, err := j.Original.WriteString("\n"); err != nil {
+			j.Err = err
 			return
 		}
 	}
-	j.bufferedSerializer.End()
+	j.BufferedSerializer.End()
 }

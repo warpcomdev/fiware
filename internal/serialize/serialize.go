@@ -1,4 +1,4 @@
-package fiware
+package serialize
 
 import "encoding/json"
 

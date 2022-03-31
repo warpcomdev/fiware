@@ -9,19 +9,20 @@ import (
 
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/importer"
+	"github.com/warpcomdev/fiware/internal/serialize"
 )
 
 type outputFile string
 
 type closeWriter interface {
-	importer.Writer
+	serialize.Writer
 	io.Closer
 }
 
 func (output outputFile) Create() (closeWriter, error) {
 	if output == "" {
 		return struct {
-			importer.Writer
+			serialize.Writer
 			io.Closer
 		}{
 			os.Stdout,
@@ -36,7 +37,7 @@ func (output outputFile) Create() (closeWriter, error) {
 	return outfile, nil
 }
 
-func (output outputFile) Encode(outfile importer.Writer, vertical *fiware.Vertical, params map[string]string) error {
+func (output outputFile) Encode(outfile serialize.Writer, vertical *fiware.Vertical, params map[string]string) error {
 	var lower = strings.ToLower(string(output))
 	var encoder serializerWithSetup
 	if output != "" && (strings.HasSuffix(lower, ".py") || strings.HasSuffix(lower, ".star")) {
