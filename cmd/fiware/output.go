@@ -40,13 +40,16 @@ func (output outputFile) Create() (closeWriter, error) {
 func (output outputFile) Encode(outfile serialize.Writer, vertical *fiware.Vertical, params map[string]string) error {
 	var lower = strings.ToLower(string(output))
 	var encoder serializerWithSetup
-	if output != "" && (strings.HasSuffix(lower, ".py") || strings.HasSuffix(lower, ".star")) {
+	switch {
+	case output != "" && (strings.HasSuffix(lower, ".jsonnet") || strings.HasSuffix(lower, ".libsonnet")):
+		encoder = &importer.JsonnetSerializer{}
+	case output != "" && (strings.HasSuffix(lower, ".py") || strings.HasSuffix(lower, ".star")):
 		ext := filepath.Ext(string(output))
 		encoder = &importer.StarlarkSerializer{
 			Name: string(output[0 : len(output)-len(ext)]),
 		}
-	} else {
-		encoder = &importer.JsonnetSerializer{}
+	default:
+		encoder = &importer.CueSerializer{}
 	}
 	encoder.Setup(outfile, params)
 	encoder.Begin()

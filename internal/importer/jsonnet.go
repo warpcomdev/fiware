@@ -17,10 +17,13 @@ func Load(datafile string, params map[string]string, output interface{}, libPath
 	if datafile != "" {
 		// Use starlark for .star or .py files
 		lowerName := strings.ToLower(datafile)
-		if strings.HasSuffix(lowerName, ".star") || strings.HasSuffix(lowerName, ".py") {
-			jsonStr, err = loadStarlark(datafile, params, libPath)
-		} else {
+		switch {
+		case strings.HasSuffix(lowerName, ".jsonnet") || strings.HasSuffix(lowerName, ".libsonnet"):
 			jsonStr, err = loadJsonnet(datafile, params, libPath)
+		case strings.HasSuffix(lowerName, ".star") || strings.HasSuffix(lowerName, ".py"):
+			jsonStr, err = loadStarlark(datafile, params, libPath)
+		default:
+			jsonStr, err = loadCue(datafile, params, libPath)
 		}
 	}
 	if err != nil {

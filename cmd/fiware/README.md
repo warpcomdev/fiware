@@ -66,8 +66,8 @@ OPTIONS:
 El comando `fiware template` lee el modelo de datos de un fichero proporcionado con el flag `-d FILE`, y le aplica un template para generar un fichero de texto. Actualmente, los formatos soportados son:
 
 - Fichero de datos:
-   - json
-   - [jsonnet](https://jsonnet.org/)
+   - [cue](https://cuelang.org/) (ficheros *.cue*)
+   - [jsonnet](https://jsonnet.org/) (otros)
    - [startlark](https://github.com/bazelbuild/starlark) (ficheros *.star*, *.py*)
 - Template:
    - [golang text/template](https://pkg.go.dev/text/template).
@@ -144,7 +144,7 @@ El comando `fiware export` lee el modelo de una vertical y lo vuelve a escribir,
 
 En particular está pensado para transportar suscripciones, que pueden hacer referencia a diferentes URLs en diferentes contextos. Pero no se limita a suscripciones, sino que sustituye valores literales por parámetros en cualquiera d elos objetos soportados.
 
-También puede usarse para transcodificar una configuración entre diferentes formatos (de jsonnet a starlark, por ejemplo). El formato de entrada y de salida se determina a partir de la extensión d elos ficheros correspondientes.
+También puede usarse para transcodificar una configuración entre diferentes formatos (de jsonnet a cue, por ejemplo). El formato de entrada y de salida se determina a partir de la extensión de los ficheros correspondientes.
 
 ```
 $ fiware export -h
@@ -286,6 +286,8 @@ OPTIONS:
 Para eliminar un parámetro, se debe establecer con el valor "".
 
 Tanto los ficheros de datos como las plantillas pueden acceder a los párametros que se hayan definido en el contexto:
+
+- Ficheros de datos *cue*: Los parámetros de contexto son accesibles a través de la variable `params: {[string]: string}`.
 
 - Ficheros de datos *jsonnet*: los parámetros de contexto son accesibles mediante [std.extVar](https://jsonnet.org/ref/stdlib.html#std.extVar(x)).
 
