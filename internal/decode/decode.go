@@ -35,7 +35,7 @@ var wifi_repeats = regexp.MustCompile(`^(?P<pre>[^{]+){(?P<mid>[^}]+)}(?P<post>.
 
 // Generate attribute from README line
 func from_line(line string) []fiware.Attribute {
-	log.Printf("Parsing line %s", line)
+	// log.Printf("Parsing line %s", line)
 	// Warning: WiFi vertical uses field names like
 	// dlBandwidth{User\|Device} to summarize two lines in one
 	line = strings.ReplaceAll(line, "\\|", "__PLACEHOLDER_SEPARATOR__")
@@ -55,7 +55,7 @@ func from_line(line string) []fiware.Attribute {
 		log.Printf("Skipping %s %s (not added to models or suscriptions)", _typ, name)
 		return nil
 	}*/
-	log.Printf("Parsing attribute %s type %s", name, _typ)
+	//log.Printf("Parsing attribute %s type %s", name, _typ)
 	seek := []string{
 		"Ejemplos", "ejemplos", "Ejemplo", "ejemplo", "Valores", "valores", "Valor", "valor",
 		"Examples", "examples", "Example", "example", "Values", "values", "Value", "value",
@@ -90,7 +90,7 @@ func from_line(line string) []fiware.Attribute {
 				} else {
 					text = []string{strings.TrimSpace(remaining)}
 				}
-				log.Printf("Found %s: %s", substr, text)
+				// log.Printf("Found %s: %s", substr, text)
 				break
 			}
 		}
@@ -177,10 +177,11 @@ func from_lines(lines []string) fiware.EntityType {
 				}
 			default:
 				if _, existing := visited[name]; existing {
-					log.Fatalf("El atributo %s de la entidad %s está repetido", attrib.Name, model.Type)
+					log.Printf("El atributo %s de la entidad %s está repetido", attrib.Name, model.Type)
+				} else {
+					visited[name] = struct{}{}
+					model.Attrs = append(model.Attrs, attrib)
 				}
-				visited[name] = struct{}{}
-				model.Attrs = append(model.Attrs, attrib)
 			}
 		}
 	}

@@ -20,20 +20,4 @@ Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que cre
 * **Entidades**:
     * ID: `{{ $entity.idPattern }}` (con checkbox de patrón de búsqueda marcado)
     * Type: {{ $entity.type }}
-
-### Subscripción a {{ $entity.type }} lastdata
-* **Estado**: Activa
-* **Descripción**: POSTGRESQL LastData {{ $entity.type }}
-* **Fecha y hora de expiración**: en blanco
-* **Segundos entre notificaciones**: en blanco
-* **Protocolo**: HTTP
-* **URL de notificación**:
-    * Entorno Onpremise: http://iot-cygnus:5059/notify
-    * Entorno SaaS: http://pro-core-smc-cygnus:5082/notify
-* **Formato de atributos**: normalized
-* **Atributos a notificar**: {{ .notification.attrs | join ", " }}
-* **Condición**: {{ .subject.condition.attrs | join "," }}
-* **Entidades**:
-    * ID: `{{ $entity.idPattern }}` (con checkbox de patrón de búsqueda marcado)
-    * Type: {{ $entity.type }}
 {{- end }}

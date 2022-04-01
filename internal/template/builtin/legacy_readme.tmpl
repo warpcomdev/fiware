@@ -44,5 +44,11 @@ El vertical se compone de las siguientes tablas en el datasource PostgreSQL:
 {{- $vertical := .name | lower }}
 {{ range .entityTypes }}
 - {{ $vertical }}_{{ .entityType | lower }}: : Recopila la información recibida por las entidades de tipo `{{.entityType}}`.
+{{- end }}
+
+Además, se han incorporado las siguientes vistas:
+
+{{- $vertical = .name | lower }}
+{{ range .entityTypes }}
 - {{ $vertical }}_{{ .entityType | lower }}_lastdata: Recopila **solo** los últimos datos recibidos por las entidades de tipo `{{.entityType}}`.
 {{- end }}
