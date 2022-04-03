@@ -286,9 +286,12 @@ func Decode(outfile, verticalName, subserviceName, path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal models: %w", err)
 	}
-	instanceText, err := json.MarshalIndent(instances, indent, indent)
-	if err != nil {
-		return fmt.Errorf("failed to marshal instances: %w", err)
+	var instanceText []byte
+	if len(instances) > 0 {
+		instanceText, err = json.MarshalIndent(instances, indent, indent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal instances: %w", err)
+		}
 	}
 
 	handle.WriteString(verticalTemplate[:fromIndex])
@@ -297,8 +300,10 @@ func Decode(outfile, verticalName, subserviceName, path string) error {
 		indent, verticalName, indent, subserviceName, indent,
 	))
 	handle.Write(modelText)
-	handle.WriteString(fmt.Sprintf(",\n%s\"entities\": ", indent))
-	handle.Write(instanceText)
+	if len(instanceText) > 0 {
+		handle.WriteString(fmt.Sprintf(",\n%s\"entities\": ", indent))
+		handle.Write(instanceText)
+	}
 	handle.WriteString(",\n")
 	handle.WriteString(verticalTemplate[toIndex+len(toMarker):])
 	handle.WriteString("\n")

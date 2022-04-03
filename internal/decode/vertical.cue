@@ -66,6 +66,7 @@ import (
             }
         }
         notification: {
+            attrsFormat: "extended"
             attrs: [for attr in _entityType.attrs
             // Por defecto, no notificamos los atributos
             // relacionados con comandos
