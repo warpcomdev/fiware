@@ -247,12 +247,12 @@ func get_models(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	return models, nil
 }
 
-//go:embed vertical.jsonnet
+//go:embed vertical.cue
 var verticalTemplate string
 
 const (
-	fromMarker = "/* BEGIN REPLACE */"
-	toMarker   = "/* END REPLACE */"
+	fromMarker = "// BEGIN REPLACE"
+	toMarker   = "// END REPLACE"
 )
 
 func Decode(outfile, verticalName, subserviceName, path string) error {
