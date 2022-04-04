@@ -1,0 +1,20 @@
+{{ include "default_ddls_sets" . }}
+{{- range .tables }}
+{{- $table_name := .name }}
+
+-------------------------------------------------------
+-- {{ $table_name }}_lastdata populate
+-------------------------------------------------------
+INSERT INTO :target_schema.:scope:{{ $table_name }}_lastdata (
+  entityid, entitytype, recvtime{{ range .columns }},{{printf "\n  %s" .name}}{{ end }})
+SELECT
+  entityid, entitytype, recvtime{{ range .columns }},{{ printf "\n  %s" .name}}{{ end }}
+FROM (SELECT *, ROW_NUMBER() OVER PARTITION BY (entityid, timeinstant DESC) AS rn
+  FROM :target_schema.:scope:{{ $table_name }}_table
+  WHERE timeinstant > NOW() - interval '10 days'
+) AS source
+WHERE source.rn = 1
+ON CONFLICT(entityid) DO UPDATE SET
+  entitytype=source.entitytype,
+  recvtime=source.recvtime{{ range .columns }},{{ printf "\n  %s" .name}}=source.{{.name}}{{ end }}
+{{- end }}

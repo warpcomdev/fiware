@@ -97,6 +97,8 @@ La aplicación tiene varias plantillas predefinidas que pueden servir de punto d
 - `default_subs.tmpl`: Genera el típico fichero de suscripciones de la vertical.
 - `default_readme.tmpl`: Genera el típico fichero `README.md` del modelo de datos la vertical.
 - `default_ddls.tmpl`: Genera el típico fichero SQL de la vertical, con un conjunto típico de tablas y vistas.
+- `default_csv.tmpl`: Genera el típico CSV de entidades.
+- `default_lastdata.tmpl`: Genera un script SQL para hacer una carga inicial de las tablas lastdata.
 
 Las plantillas predefinidas también publican algunos bloques reutilizables, en particular:
 
@@ -104,6 +106,12 @@ Las plantillas predefinidas también publican algunos bloques reutilizables, en 
 - `default_ddls_tables`: Genera los comandos SQL `create table` (y las vistas lastdata) del fichero SQL.
 - `dump`: Vuelca todos los parámetros del template en formato json.
 
+Por último, se conservan algunas plantillas *legacy* adaptadas a los formatos antiguos de tablas y suscripciones:
+
+- `legacy_ddls.tmpl`: Genera el típico fichero de DDLs pero usando vistas para lastdata, en vez de tablas
+- `legacy_readme.tmpl`: El típico README de las DDLs, pero usando vistas lastdata en vez de tablas
+- `legacy_subs.tmpl`: El fichero de suscripciones sin la suscripción a lastdata
+ 
 De esta forma, es posible extender los formatos por defecto creando una plantilla personalizada para cada vertical en cuestión, que contenga únicamente las vistas personalizadas y reutilice los bloques comunes de las plantillas predefinidas.
 
 Por ejemplo, una vertical con vistas personalizadas podría usar la siguiente plantilla para generar su fichero `ddls.sql`:

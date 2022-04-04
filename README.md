@@ -20,4 +20,6 @@ Este modelo se ha construido con tres premisas:
 
   Los atributos de cada modelo que sólo son relevantes para lectura (por ejemplo, la fecha de último disparo de una suscripción, que puede leerse pero no escribirse) se modelan como una sub-estructura opcional dentro de la estructura que define el recurso.
 
+El schema del modelo resultante se ha documentado formalmente en el fichero [serializations.cue](./serializations.cue). La especificación utiliza el lenguaje [cue](https://cuelang.org/). La versión actual del schema se ha generado automáticamente a partir del código, aunque a futuro podría ser alrevés y ser el código el que se autogenerase en función del schema.
+
 A partir de este modelo, se proporciona una herramienta de línea de comandos [fiware](cmd/fiware/README.md) que permite consumir el modelo y operar con él en instancias de la plataforma Fiware que implementen las APIs de Orion, Perseo, Keystone, IoTA, etc.
