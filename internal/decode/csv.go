@@ -135,6 +135,8 @@ func get_models_csv(filename string) ([]fiware.EntityType, []fiware.Entity) {
 				continue
 			}
 			switch {
+			case col == "null" || col == "\"null\"":
+				current.Attrs[index] = fiware.Attribute{Value: []byte("null")}
 			case h.IsNumber:
 				current.Attrs[index] = importNumber(col)
 			case h.IsJson:

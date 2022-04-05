@@ -1,0 +1,50 @@
+# Vertical {{.name}} {{.subservice}}
+
+El modelo utiliza los siguientes tipos de entidad:
+{{ range .entityTypes }}
+* **[{{.entityType}}](#referencia-de-campos-{{.entityType|lower}}):** {{ .entityType }}
+{{- end }}
+
+{{- $hasCommands := false }}
+{{- range .entityTypes }}
+{{- range .attrs }}
+{{- if (hasPrefix .type "command") }}
+{{- $hasCommands = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if $hasCommands }}
+Como complemento a este documento, el [documento de comandado](commands.md) explica los distintos tipos de comando en este vertical y su interacción.
+{{- end }}
+    
+# Entidades principales
+{{- range .entityTypes }}
+{{- $entityType := .entityType }}
+
+## Referencia de campos ({{.entityType}})
+
+|Atributo|Tipo|Descripción|Información adicional|Ud|Rango|
+|--------|----|-----------|---------------------|--|-----|
+| id | - | ID de la entidad. | Ejemplo: `{{.entityID}}` | - | - |
+| type | - | Tipo de entidad. | Valor: `{{.entityType}}` | - | - |
+{{- range .attrs }}
+| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | - | Ejemplo: `{{ .value }}` | - | - |
+{{- end }}
+
+Ejemplo de `{{.entityType}}` (en formato NGSIv2):
+
+```json
+{
+    "id": "{{.entityID}}",
+    "type": "{{.entityType}}",
+    {{- range .attrs }}
+    "{{.name}}": {
+        "type": "{{.type}}",
+        "value": {{.value | quote}}
+    },
+    {{- end }}
+}
+```
+{{- end }}
+
+_**Nota**: Aunque se tenga un servicio mancomunado clasificado por el atributo `municipality`, es necesario que los IDs de las entidades sean únicos, es decir, no deben existir activos con el mismo ID aunque pertenezcan a municipios diferentes. El motivo es que en el CB se debe tener el último estado de todas las entidades. En el caso de que haya IDs que se repitan, una posible solución sería añadirle el prefijo del municipio. Ejemplo: `lamoraleja-001`, `almedijar-001`, etc._

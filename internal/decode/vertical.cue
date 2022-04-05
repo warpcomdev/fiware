@@ -18,9 +18,12 @@ import (
         #attr: {
             name: string
             type: string
-            value: string | *""
+            value: #any | *""
+            metadatas?: [...#any]
         }
     }
+
+    #any: _
 
     // BEGIN REPLACE
     // Esta sección de la configuración es de ejemplo.
@@ -80,13 +83,13 @@ import (
     suscriptions: [for entityType in entityTypes {
         #subscription & {
             _entityType: entityType,
-            description: "Suscripción a postgres para " + entityType.entityType
+            description: "Suscripción a POSTGRES para " + entityType.entityType
             notification: http: url: "http://iot-cygnus:5057/notify"
         }
     }] + [for entityType in entityTypes {
         #subscription & {
             _entityType: entityType,
-            description: "Suscripción a postgres (lastdata) para " + entityType.entityType
+            description: "Suscripción a POSTGRES (lastdata) para " + entityType.entityType
             notification: http: url: "http://iot-cygnus:5059/notify"
         }
     }]

@@ -5,31 +5,20 @@ Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que cre
 {{- range .suscriptions }}
 {{- $entity := index .subject.entities 0 }}
 
-### Subscripción a {{ $entity.type }} (histórico)
+### {{.description}}
 * **Estado**: Activa
-* **Descripción**: POSTGRESQL {{ $entity.type }}
+* **Descripción**: {{.description}}
 * **Fecha y hora de expiración**: en blanco
 * **Segundos entre notificaciones**: en blanco
 * **Protocolo**: HTTP
 * **URL de notificación**:
-    * Entorno Onpremise: http://iot-cygnus:5057/notify
-    * Entorno SaaS: http://pro-core-smc-cygnus:5080/notify
-* **Formato de atributos**: normalized
-* **Atributos a notificar**: {{ .notification.attrs | join ", " }}
-* **Condición**: {{ .subject.condition.attrs | join "," }}
-* **Entidades**:
-    * ID: `{{ $entity.idPattern }}` (con checkbox de patrón de búsqueda marcado)
-    * Type: {{ $entity.type }}
-
-### Subscripción a {{ $entity.type }} lastdata
-* **Estado**: Activa
-* **Descripción**: POSTGRESQL LastData {{ $entity.type }}
-* **Fecha y hora de expiración**: en blanco
-* **Segundos entre notificaciones**: en blanco
-* **Protocolo**: HTTP
-* **URL de notificación**:
+    {{- if (contains "lastdata" (lower .description)) }}
     * Entorno Onpremise: http://iot-cygnus:5059/notify
     * Entorno SaaS: http://pro-core-smc-cygnus:5082/notify
+    {{- else }}
+    * Entorno Onpremise: http://iot-cygnus:5057/notify
+    * Entorno SaaS: http://pro-core-smc-cygnus:5080/notify
+    {{- end }}
 * **Formato de atributos**: normalized
 * **Atributos a notificar**: {{ .notification.attrs | join ", " }}
 * **Condición**: {{ .subject.condition.attrs | join "," }}

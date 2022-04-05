@@ -1,6 +1,5 @@
 {{- define "default_ddls_sets" }}
 {{- range .tables }}
-
 \set {{ .name }}_table '{{ .name }}';
 \set {{ .name }}_pkey '{{ .name }}_pkey';
 {{- if .lastdata }}
@@ -10,8 +9,7 @@
 {{- range .indexes }}
 \set {{ .name }} '{{ .name }}'
 {{- end }}
-{{- end }}
-
+{{ end }}
 \set separator '_'
 \set scope :scope
 \set scope_sep :scope:separator
@@ -21,7 +19,7 @@ SELECT CASE
   THEN ''
   ELSE :'scope_sep'
 END AS "scope"  \gset
-{{- end }}
+{{ end }}
 
 {{- define "default_ddls_tables" }}
 {{- range .tables }}
@@ -83,6 +81,5 @@ CREATE TABLE IF NOT EXISTS :target_schema.:scope:{{ $table_name }}_lastdata (
 {{- end }}
 {{- end }}
 {{- end }}
-
-{{ template "default_ddls_sets" . }}
-{{ template "default_ddls_tables" . }}
+{{- template "default_ddls_sets" . }}
+{{- template "default_ddls_tables" . }}
