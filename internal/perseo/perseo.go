@@ -55,6 +55,80 @@ func (o *Perseo) Rules(client *http.Client, headers http.Header) ([]fiware.Rule,
 func (o *Perseo) PostRules(client *http.Client, headers http.Header, rules []fiware.Rule) error {
 	var errList error
 	for _, rule := range rules {
+		// HACK: No quiero que se añada a las acciones el servicio y el subservicio,
+		// a menos que use variables (contenga "${}").
+		// Así que decodifico la acción y compruebo si tiene los campos
+		// "service" y "subservice", y de ser así los omito.
+		var actionList []map[string]interface{}
+		if len(rule.Action) > 0 {
+			var action interface{}
+			if err := json.Unmarshal(rule.Action, &action); err == nil {
+				actionList = make([]map[string]interface{}, 0, 4)
+				allMaps := true
+				switch action := action.(type) {
+				case map[string]interface{}:
+					actionList = append(actionList, action)
+				case []interface{}:
+					for _, item := range action {
+						m, ok := item.(map[string]interface{})
+						if !ok {
+							allMaps = false
+							break
+						}
+						actionList = append(actionList, m)
+					}
+				default:
+					allMaps = false
+				}
+				// Si no he podido procesarlo todo,
+				// vaciar la lista
+				if !allMaps {
+					actionList = nil
+				}
+			}
+		}
+		var replaced bool // indica si hemos reemplazado alguna accion
+		if len(actionList) > 0 {
+			// PAra prever el caso en que descargamos reglas de
+			// un servicio, y queremos aplicarlas a otro.
+			keys := map[string]string{
+				"service":    rule.Service,
+				"subservice": rule.Subservice,
+			}
+			for index, current := range actionList {
+				// Preservamos todas las claves si al menos una es variable
+				preserve := false
+				for key, defValue := range keys {
+					if k, ok := current[key]; ok {
+						if s, ok := k.(string); ok {
+							if s != defValue {
+								preserve = true
+							}
+						}
+					}
+				}
+				if !preserve {
+					for key := range keys {
+						if _, ok := current[key]; ok {
+							delete(current, key)
+							replaced = true
+							fmt.Printf("Removing attribute %s from action %d in rule %s\n", key, index, rule.Name)
+						}
+					}
+					actionList[index] = current
+				}
+			}
+		}
+		if replaced {
+			var newAction interface{} = actionList
+			if len(actionList) == 1 {
+				newAction = actionList[0]
+			}
+			if newBytes, err := json.Marshal(newAction); err == nil {
+				rule.Action = newBytes
+			}
+		}
+		// FIN DE HACK
 		rule.RuleStatus = fiware.RuleStatus{}
 		if rule.Name == "" {
 			return errors.New("All rules must have name")
