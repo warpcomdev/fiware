@@ -4,7 +4,7 @@ Esta aplicación permite conectar a un entorno fiware (de desarrollo, en la nube
 
 - Enumerar suscripciones, device groups, devices y reglas de CEP.
 - Crear suscripciones, device groups, devices y reglas de CEP.
-- Eliminar suscripciones, device groups, devices y reglas de CEP.
+- Eliminar suscripciones, device groups, devices, reglas de CEP y entidades.
 
 Utilice el comando `fiware -h` o `go run fiware -h` para obtener detalles del modo de uso:
 
@@ -69,6 +69,7 @@ El comando `fiware template` lee el modelo de datos de un fichero proporcionado 
    - [cue](https://cuelang.org/) (ficheros *.cue*)
    - [jsonnet](https://jsonnet.org/) (otros)
    - [startlark](https://github.com/bazelbuild/starlark) (ficheros *.star*, *.py*)
+   - [csv]: Solo soportado para entidades descargadas del portal
 - Template:
    - [golang text/template](https://pkg.go.dev/text/template).
 
@@ -416,7 +417,7 @@ El comando `fiware delete` envía una petición API DELETE para alguno de los ti
 ```
 $ fiware delete -h
 NAME:
-   fiware delete - Delete some resource (services, devices, suscriptions, rules)
+   fiware delete - Delete some resource (services, devices, suscriptions, rules, entities)
 
 USAGE:
    fiware delete [command options] [arguments...]

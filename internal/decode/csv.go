@@ -87,7 +87,7 @@ type entityWithSet struct {
 	set map[setKey]struct{}
 }
 
-func get_models_csv(filename string) ([]fiware.EntityType, []fiware.Entity) {
+func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	infile, err := skipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)

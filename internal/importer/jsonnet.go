@@ -1,41 +1,11 @@
 package importer
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/google/go-jsonnet"
 	"github.com/warpcomdev/fiware/internal/serialize"
 )
-
-func Load(datafile string, params map[string]string, output interface{}, libPath string) error {
-	var (
-		jsonStr string
-		err     error
-	)
-	if datafile != "" {
-		// Use starlark for .star or .py files
-		lowerName := strings.ToLower(datafile)
-		switch {
-		case strings.HasSuffix(lowerName, ".jsonnet") || strings.HasSuffix(lowerName, ".libsonnet"):
-			jsonStr, err = loadJsonnet(datafile, params, libPath)
-		case strings.HasSuffix(lowerName, ".star") || strings.HasSuffix(lowerName, ".py"):
-			jsonStr, err = loadStarlark(datafile, params, libPath)
-		default:
-			jsonStr, err = loadCue(datafile, params, libPath)
-		}
-	}
-	if err != nil {
-		return err
-	}
-	decoder := json.NewDecoder(strings.NewReader(jsonStr))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(output); err != nil {
-		return fmt.Errorf("failed to unmarshal file %s: %w", datafile, err)
-	}
-	return nil
-}
 
 // loadJsonnet reads a Jsonnet file with the provided params as std.extVars
 func loadJsonnet(datafile string, params map[string]string, pathLib string) (string, error) {

@@ -42,7 +42,7 @@ func (o *Orion) Suscriptions(client *http.Client, headers http.Header) ([]fiware
 	return response, nil
 }
 
-// PostSuscriptions posts a list of rules to Perseo
+// PostSuscriptions posts a list of suscriptions to orion
 func (o *Orion) PostSuscriptions(client *http.Client, headers http.Header, subs []fiware.Suscription) error {
 	var errList error
 	for _, sub := range subs {
@@ -59,7 +59,7 @@ func (o *Orion) PostSuscriptions(client *http.Client, headers http.Header, subs 
 	return errList
 }
 
-// DeleteSuscriptions deletes a list of rules from Perseo
+// DeleteSuscriptions deletes a list of suscriptions from Orion
 func (o *Orion) DeleteSuscriptions(client *http.Client, headers http.Header, subs []fiware.Suscription) error {
 	var errList error
 	for _, sub := range subs {
@@ -75,4 +75,36 @@ func (o *Orion) DeleteSuscriptions(client *http.Client, headers http.Header, sub
 		}
 	}
 	return errList
+}
+
+// DeleteSuscriptions deletes a list of suscriptions from Orion
+func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []fiware.Entity) error {
+	type deleteEntity struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	}
+	req := struct {
+		ActionType string         `json:"actionType"`
+		Entities   []deleteEntity `json:"entities"`
+	}{
+		ActionType: "delete",
+		Entities:   make([]deleteEntity, 0, len(ents)),
+	}
+	for _, e := range ents {
+		req.Entities = append(req.Entities, deleteEntity{
+			ID:   e.ID,
+			Type: e.Type,
+		})
+	}
+	if len(req.Entities) <= 0 {
+		return nil
+	}
+	path, err := o.URL.Parse("v2/op/update")
+	if err != nil {
+		return err
+	}
+	if _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
+		return err
+	}
+	return nil
 }

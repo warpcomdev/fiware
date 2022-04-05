@@ -20,6 +20,7 @@ var canDelete []string = []string{
 	"devices",
 	"suscriptions",
 	"rules",
+	"entities",
 }
 
 func deleteResource(c *cli.Context, store *config.Store) error {
@@ -60,6 +61,10 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			}
 		case "rules":
 			if err := deleteRules(selected, header, vertical); err != nil {
+				return err
+			}
+		case "entities":
+			if err := deleteEntities(selected, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -111,4 +116,15 @@ func deleteRules(ctx config.Config, header http.Header, vertical fiware.Vertical
 		func(g fiware.Rule) string { return g.Name },
 	)
 	return api.DeleteRules(http.DefaultClient, header, vertical.Rules)
+}
+
+func deleteEntities(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+	api, err := orion.New(ctx.OrionURL)
+	if err != nil {
+		return err
+	}
+	listMessage("DELETing entities ", vertical.Entities,
+		func(g fiware.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
+	)
+	return api.DeleteEntities(http.DefaultClient, header, vertical.Entities)
 }
