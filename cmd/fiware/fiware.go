@@ -1,42 +1,19 @@
 package main
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path"
 	"strings"
-	"time"
 
-	ieproxy "github.com/mattn/go-ieproxy"
 	"github.com/urfave/cli/v2"
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
 	"github.com/warpcomdev/fiware/internal/template"
 )
-
-func firstArg(c *cli.Context, msg string) (string, error) {
-	if c.Args().Len() <= 0 {
-		return "", errors.New("please provide a name for the new context")
-	}
-	return c.Args().Get(0), nil
-}
-
-func httpClient() *http.Client {
-	return &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			// TODO: Hacer esto configurable
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			// Para entornos con VPNS restrictivas
-			Proxy: ieproxy.GetProxyFunc(),
-		},
-	}
-}
 
 func main() {
 
