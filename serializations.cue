@@ -68,6 +68,7 @@ rules?: [...#Rule]
 
 #Notification: {
 	attrs?: [...string]
+	exceptAttrs?: [...string]
 	attrsFormat:        string
 	http?:              #NotificationHTTP
 	httpCustom?:        #NotificationCustom
@@ -138,7 +139,7 @@ rules?: [...#Rule]
 	protocol:       string
 	transport?:     string
 	timestamp?:     bool
-	explicitAttrs?: bool
+	explicitAttrs?: #Json
 	internal_attributes?: [...#DeviceAttribute]
 	attributes: [...#DeviceAttribute]
 	lazy?: [...#DeviceAttribute]

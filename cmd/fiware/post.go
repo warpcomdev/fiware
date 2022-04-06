@@ -77,7 +77,7 @@ func postDevices(ctx config.Config, header http.Header, vertical fiware.Vertical
 	listMessage("POSTing devices with IDs", vertical.Devices,
 		func(g fiware.Device) string { return g.DeviceId },
 	)
-	return api.PostDevices(http.DefaultClient, header, vertical.Devices)
+	return api.PostDevices(httpClient(), header, vertical.Devices)
 }
 
 func postServices(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -88,7 +88,7 @@ func postServices(ctx config.Config, header http.Header, vertical fiware.Vertica
 	listMessage("POSTing groups with API Keys", vertical.Services,
 		func(g fiware.Service) string { return g.APIKey },
 	)
-	return api.PostServices(http.DefaultClient, header, vertical.Services)
+	return api.PostServices(httpClient(), header, vertical.Services)
 }
 
 func postSuscriptions(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -99,7 +99,7 @@ func postSuscriptions(ctx config.Config, header http.Header, vertical fiware.Ver
 	listMessage("POSTing suscriptions with descriptions", vertical.Suscriptions,
 		func(g fiware.Suscription) string { return g.Description },
 	)
-	return api.PostSuscriptions(http.DefaultClient, header, vertical.Suscriptions)
+	return api.PostSuscriptions(httpClient(), header, vertical.Suscriptions)
 }
 
 func postRules(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -110,7 +110,7 @@ func postRules(ctx config.Config, header http.Header, vertical fiware.Vertical) 
 	listMessage("POSTing rules with names", vertical.Rules,
 		func(g fiware.Rule) string { return g.Name },
 	)
-	return api.PostRules(http.DefaultClient, header, vertical.Rules)
+	return api.PostRules(httpClient(), header, vertical.Rules)
 }
 
 func listMessage[T any](msg string, items []T, label func(T) string) {

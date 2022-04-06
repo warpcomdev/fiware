@@ -116,6 +116,7 @@ type SuscriptionStatus struct {
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
 	Attrs            []string           `json:"attrs,omitempty"`
+	ExceptAttrs      []string           `json:"exceptAttrs,omitempty"`
 	AttrsFormat      string             `json:"attrsFormat"`
 	HTTP             NotificationHTTP   `json:"http,omitempty"`
 	HTTPCustom       NotificationCustom `json:"httpCustom,omitempty"`
@@ -213,7 +214,7 @@ type Service struct {
 	Protocol           string            `json:"protocol"`
 	Transport          string            `json:"transport,omitempty"`
 	Timestamp          bool              `json:"timestamp,omitempty"`
-	ExplicitAttrs      bool              `json:"explicitAttrs,omitempty"`
+	ExplicitAttrs      json.RawMessage   `json:"explicitAttrs,omitempty"`
 	InternalAttributes []DeviceAttribute `json:"internal_attributes,omitempty"`
 	Attributes         []DeviceAttribute `json:"attributes"`
 	Lazy               []DeviceAttribute `json:"lazy,omitempty"`

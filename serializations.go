@@ -254,6 +254,13 @@ func (x Notification) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.ExceptAttrs) > 0 {
+		s.BeginList("exceptAttrs")
+		for _, y := range x.ExceptAttrs {
+			s.String(y)
+		}
+		s.EndList()
+	}
 	s.KeyString("attrsFormat", x.AttrsFormat)
 	if !x.HTTP.IsEmpty() {
 		s.BeginBlock("http")
@@ -466,8 +473,8 @@ func (x Service) Serialize(s serialize.Serializer) {
 	if x.Timestamp {
 		s.KeyBool("timestamp", x.Timestamp)
 	}
-	if x.ExplicitAttrs {
-		s.KeyBool("explicitAttrs", x.ExplicitAttrs)
+	if len(x.ExplicitAttrs) > 0 {
+		s.KeyRaw("explicitAttrs", x.ExplicitAttrs, false)
 	}
 	if len(x.InternalAttributes) > 0 {
 		s.BeginList("internal_attributes")

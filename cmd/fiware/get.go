@@ -120,7 +120,7 @@ func getDevices(ctx config.Config, header http.Header, vertical *fiware.Vertical
 	if err != nil {
 		return err
 	}
-	devices, err := api.Devices(http.DefaultClient, header)
+	devices, err := api.Devices(httpClient(), header)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func getServices(ctx config.Config, header http.Header, vertical *fiware.Vertica
 	if err != nil {
 		return err
 	}
-	groups, err := api.Services(http.DefaultClient, header)
+	groups, err := api.Services(httpClient(), header)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func getSuscriptions(ctx config.Config, header http.Header, vertical *fiware.Ver
 	if err != nil {
 		return err
 	}
-	suscriptions, err := api.Suscriptions(http.DefaultClient, header)
+	suscriptions, err := api.Suscriptions(httpClient(), header)
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func getRules(ctx config.Config, header http.Header, vertical *fiware.Vertical) 
 	if err != nil {
 		return err
 	}
-	rules, err := api.Rules(http.DefaultClient, header)
+	rules, err := api.Rules(httpClient(), header)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"runtime"
 	"syscall"
@@ -39,7 +38,7 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	token, err := k.Login(http.DefaultClient, string(bytepw))
+	token, err := k.Login(httpClient(), string(bytepw))
 	if err != nil {
 		return err
 	}

@@ -82,7 +82,7 @@ func deleteDevices(ctx config.Config, header http.Header, vertical fiware.Vertic
 	listMessage("DELETing devices with IDs", vertical.Devices,
 		func(g fiware.Device) string { return g.DeviceId },
 	)
-	return api.DeleteDevices(http.DefaultClient, header, vertical.Devices)
+	return api.DeleteDevices(httpClient(), header, vertical.Devices)
 }
 
 func deleteServices(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -93,7 +93,7 @@ func deleteServices(ctx config.Config, header http.Header, vertical fiware.Verti
 	listMessage("DELETing groups with API Keys", vertical.Services,
 		func(g fiware.Service) string { return g.APIKey },
 	)
-	return api.DeleteServices(http.DefaultClient, header, vertical.Services)
+	return api.DeleteServices(httpClient(), header, vertical.Services)
 }
 
 func deleteSuscriptions(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -104,7 +104,7 @@ func deleteSuscriptions(ctx config.Config, header http.Header, vertical fiware.V
 	listMessage("DELETing suscriptions with descriptions", vertical.Suscriptions,
 		func(g fiware.Suscription) string { return g.Description },
 	)
-	return api.DeleteSuscriptions(http.DefaultClient, header, vertical.Suscriptions)
+	return api.DeleteSuscriptions(httpClient(), header, vertical.Suscriptions)
 }
 
 func deleteRules(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -115,7 +115,7 @@ func deleteRules(ctx config.Config, header http.Header, vertical fiware.Vertical
 	listMessage("DELETing rules with names", vertical.Rules,
 		func(g fiware.Rule) string { return g.Name },
 	)
-	return api.DeleteRules(http.DefaultClient, header, vertical.Rules)
+	return api.DeleteRules(httpClient(), header, vertical.Rules)
 }
 
 func deleteEntities(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
@@ -126,5 +126,5 @@ func deleteEntities(ctx config.Config, header http.Header, vertical fiware.Verti
 	listMessage("DELETing entities ", vertical.Entities,
 		func(g fiware.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
 	)
-	return api.DeleteEntities(http.DefaultClient, header, vertical.Entities)
+	return api.DeleteEntities(httpClient(), header, vertical.Entities)
 }
