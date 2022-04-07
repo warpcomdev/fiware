@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -61,6 +62,7 @@ func main() {
 
 			{
 				Name:     "decode",
+				Aliases:  []string{"import"},
 				Category: "template",
 				Usage:    "decode NGSI README.md or CSV file",
 				Action: func(c *cli.Context) error {
@@ -106,9 +108,31 @@ func main() {
 				Name:     "template",
 				Category: "template",
 				Usage:    "template for vertical data",
+				UsageText: func() string {
+					msg := append([]string{}, "provide the path to the template file, or the name of a builtin one:\n")
+					if builtins, err := template.Builtins(); err == nil {
+						// Ordeno los builtins por nombre, con los ficheros primero
+						less := func(i, j int) bool {
+							iFile := strings.HasSuffix(builtins[i], ".tmpl")
+							jFile := strings.HasSuffix(builtins[j], ".tmpl")
+							if iFile && !jFile {
+								return true
+							}
+							if jFile && !iFile {
+								return false
+							}
+							return strings.Compare(builtins[i], builtins[j]) < 0
+						}
+						sort.Slice(builtins, less)
+						for _, builtin := range builtins {
+							msg = append(msg, fmt.Sprintf("- %s", builtin))
+						}
+					}
+					return strings.Join(msg, "\n")
+				}(),
 				Action: func(c *cli.Context) error {
 					if c.NArg() <= 0 {
-						return errors.New("please provide the path to NGSI README file")
+						return errors.New("please provide the path to the template file")
 					}
 					if err := currentStore.Read(); err != nil {
 						return err
