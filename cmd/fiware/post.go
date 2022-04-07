@@ -27,7 +27,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canPost, ", "))
 	}
 
-	selected, header, err := getConfig(c, config)
+	selected, _, header, err := getConfig(c, config)
 	if err != nil {
 		return err
 	}

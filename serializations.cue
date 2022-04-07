@@ -10,6 +10,7 @@ tables?: [...#Table]
 services?: [...#Service]
 devices?: [...#Device]
 rules?: [...#Rule]
+projects: [...#Project]
 
 #EntityType: {
 	entityID:   string
@@ -199,6 +200,18 @@ rules?: [...#Rule]
 	subservice?:  string @anonymous(RuleStatus)
 	service?:     string @anonymous(RuleStatus)
 	_id?:         string @anonymous(RuleStatus)
+}
+
+#Project: {
+	is_domain:    bool
+	description?: string
+	tags?:        #Json
+	enabled:      bool
+	id:           string
+	parent_id?:   string
+	domain_id?:   string
+	name:         string
+	links?:       #Json @anonymous(ProjectStatus)
 }
 
 #Json: _ // cuaquier cosa...

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/serialize"
 )
@@ -37,7 +36,7 @@ func (output outputFile) Create() (closeWriter, error) {
 	return outfile, nil
 }
 
-func (output outputFile) Encode(outfile serialize.Writer, vertical *fiware.Vertical, params map[string]string) error {
+func (output outputFile) Encode(outfile serialize.Writer, vertical serialize.Serializable, params map[string]string) error {
 	var lower = strings.ToLower(string(output))
 	var encoder serializerWithSetup
 	switch {

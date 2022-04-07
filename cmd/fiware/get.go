@@ -22,6 +22,7 @@ var canGet []string = []string{
 	"devices",
 	"suscriptions",
 	"rules",
+	"projects",
 }
 
 type serializerWithSetup interface {
@@ -31,21 +32,21 @@ type serializerWithSetup interface {
 	End()
 }
 
-func getConfig(c *cli.Context, store *config.Store) (zero config.Config, h http.Header, err error) {
+func getConfig(c *cli.Context, store *config.Store) (zero config.Config, k *keystone.Keystone, h http.Header, err error) {
 	if err := store.Read(); err != nil {
-		return zero, nil, err
+		return zero, nil, nil, err
 	}
 	if store.Current.Name == "" {
-		return zero, nil, errors.New("no contexts defined")
+		return zero, nil, nil, errors.New("no contexts defined")
 	}
 
 	selected := store.Current
 	if selected.KeystoneURL == "" || selected.Service == "" || selected.Username == "" {
-		return zero, nil, errors.New("current context is not properly configured")
+		return zero, nil, nil, errors.New("current context is not properly configured")
 	}
-	k, err := keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
+	k, err = keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
 	if err != nil {
-		return zero, nil, err
+		return zero, nil, nil, err
 	}
 
 	subservice := c.String(subServiceFlag.Name)
@@ -53,24 +54,24 @@ func getConfig(c *cli.Context, store *config.Store) (zero config.Config, h http.
 		selected.Subservice = subservice
 	}
 	if selected.Subservice == "" {
-		return zero, nil, errors.New("no subservice selected")
+		return zero, nil, nil, errors.New("no subservice selected")
 	}
 
 	token := c.String(tokenFlag.Name)
 	if token == "" {
 		if token = selected.HasToken(); token == "" {
-			return zero, nil, errors.New("no token found, please login first")
+			return zero, nil, nil, errors.New("no token found, please login first")
 		}
 	}
 	header := k.Headers(selected.Subservice, token)
-	return selected, header, nil
+	return selected, k, header, nil
 }
 
 func getResource(c *cli.Context, store *config.Store) error {
 	if c.NArg() <= 0 {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canGet, ", "))
 	}
-	selected, header, err := getConfig(c, store)
+	selected, k, header, err := getConfig(c, store)
 	if err != nil {
 		return err
 	}
@@ -105,6 +106,10 @@ func getResource(c *cli.Context, store *config.Store) error {
 			}
 		case "rules":
 			if err := getRules(selected, header, vertical); err != nil {
+				return err
+			}
+		case "projects":
+			if err := getProjects(selected, k, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -164,5 +169,14 @@ func getRules(ctx config.Config, header http.Header, vertical *fiware.Vertical) 
 		return err
 	}
 	vertical.Rules = rules
+	return nil
+}
+
+func getProjects(ctx config.Config, k *keystone.Keystone, header http.Header, vertical *fiware.Vertical) error {
+	projects, err := k.Projects(httpClient(), header)
+	if err != nil {
+		return err
+	}
+	vertical.Projects = projects
 	return nil
 }

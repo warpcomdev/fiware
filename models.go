@@ -35,6 +35,9 @@ type Vertical struct {
 	Devices  []Device  `json:"devices,omitempty"`
 	// CEP rules
 	Rules []Rule `json:"rules,omitempty"`
+	// Lista de proyectos. Esto no pertenece a la vertical, sino al entorno,
+	// pero me facilita meterlo aqui...
+	Projects []Project `json:"projects,omitemtpy"`
 }
 
 // EntityType representa un tipo de entidad
@@ -293,4 +296,20 @@ type RuleStatus struct {
 	Subservice string `json:"subservice,omitempty"`
 	Service    string `json:"service,omitempty"`
 	ID         string `json:"_id,omitempty"`
+}
+
+type Project struct {
+	IsDomain    bool            `json:"is_domain"`
+	Description string          `json:"description,omitempty"`
+	Tags        json.RawMessage `json:"tags,omitempty"`
+	Enabled     bool            `json:"enabled"`
+	ID          string          `json:"id"`
+	ParentId    string          `json:"parent_id,omitempty"`
+	DomainId    string          `json:"domain_id,omitempty"`
+	Name        string          `json:"name"`
+	ProjectStatus
+}
+
+type ProjectStatus struct {
+	Links json.RawMessage `json:"links,omitempty"`
 }

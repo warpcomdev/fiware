@@ -85,6 +85,13 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	s.BeginList("projects")
+	for _, y := range x.Projects {
+		s.BeginBlock("")
+		s.Serialize(y)
+		s.EndBlock()
+	}
+	s.EndList()
 }
 
 func (x EntityType) MarshalJSON() ([]byte, error) {
@@ -709,5 +716,39 @@ func (x RuleStatus) Serialize(s serialize.Serializer) {
 	}
 	if x.ID != "" {
 		s.KeyString("_id", x.ID)
+	}
+}
+
+func (x Project) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Project) Serialize(s serialize.Serializer) {
+	s.KeyBool("is_domain", x.IsDomain)
+	if x.Description != "" {
+		s.KeyString("description", x.Description)
+	}
+	if len(x.Tags) > 0 {
+		s.KeyRaw("tags", x.Tags, false)
+	}
+	s.KeyBool("enabled", x.Enabled)
+	s.KeyString("id", x.ID)
+	if x.ParentId != "" {
+		s.KeyString("parent_id", x.ParentId)
+	}
+	if x.DomainId != "" {
+		s.KeyString("domain_id", x.DomainId)
+	}
+	s.KeyString("name", x.Name)
+	x.ProjectStatus.Serialize(s)
+}
+
+func (x ProjectStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x ProjectStatus) Serialize(s serialize.Serializer) {
+	if len(x.Links) > 0 {
+		s.KeyRaw("links", x.Links, false)
 	}
 }

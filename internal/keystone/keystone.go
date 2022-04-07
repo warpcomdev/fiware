@@ -9,23 +9,24 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/warpcomdev/fiware"
 )
 
 // Keystone manages Requests to the Identity Manager
 type Keystone struct {
-	LoginURL          *url.URL // /v3/auth/tokens URL
-	RenewURL          *url.URL // /token renewal URL (TBD)
+	URL               *url.URL
 	Username, Service string
 }
 
 // New Keystone client instance
 func New(keystoneURL string, username, service string) (*Keystone, error) {
-	loginURL, err := url.Parse(fmt.Sprintf("%s/v3/auth/tokens", keystoneURL))
+	URL, err := url.Parse(fmt.Sprintf("%s", keystoneURL))
 	if err != nil {
 		return nil, err
 	}
 	return &Keystone{
-		LoginURL: loginURL,
+		URL:      URL,
 		Username: username,
 		Service:  service,
 	}, nil
@@ -98,7 +99,11 @@ func (o *Keystone) Login(client *http.Client, password string) (string, error) {
 		`{"auth": {"identity": {"methods": ["password"], "password": {"user": {"domain": {"name": %q}, "name": %q, "password": %q}}}, "scope": {"domain": {"name": %q}}}}`,
 		o.Service, o.Username, password, o.Service,
 	)
-	header, err := PostJSON(client, nil, o.LoginURL, payload)
+	loginURL, err := o.URL.Parse("/v3/auth/tokens")
+	if err != nil {
+		return "", err
+	}
+	header, err := PostJSON(client, nil, loginURL, payload)
 	if err != nil {
 		return "", err
 	}
@@ -227,4 +232,21 @@ func Update(client *http.Client, method string, headers http.Header, path *url.U
 		return nil, newNetError(req, resp)
 	}
 	return resp.Header, nil
+}
+
+type keystoneProjects struct {
+	Links    json.RawMessage  `json:"links,omitempty"`
+	Projects []fiware.Project `json:"projects"`
+}
+
+func (k *Keystone) Projects(client *http.Client, headers http.Header) ([]fiware.Project, error) {
+	urlProjects, err := k.URL.Parse("/v3/auth/projects")
+	if err != nil {
+		return nil, err
+	}
+	var projects keystoneProjects
+	if err := Query(client, http.MethodGet, headers, urlProjects, &projects, true); err != nil {
+		return nil, err
+	}
+	return projects.Projects, nil
 }

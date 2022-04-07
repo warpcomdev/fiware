@@ -28,7 +28,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canPost, ", "))
 	}
 
-	selected, header, err := getConfig(c, store)
+	selected, _, header, err := getConfig(c, store)
 	if err != nil {
 		return err
 	}

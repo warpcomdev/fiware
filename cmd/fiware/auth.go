@@ -30,7 +30,7 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "Environment: %s\n", k.LoginURL.String())
+	fmt.Fprintf(os.Stderr, "Environment: %s\n", k.URL.String())
 	fmt.Fprintf(os.Stderr, "Username@Service: %s@%s\n", k.Username, k.Service)
 	fmt.Fprint(os.Stderr, "Password: ")
 	bytepw, err := term.ReadPassword(int(syscall.Stdin))
