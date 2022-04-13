@@ -37,7 +37,7 @@ type Vertical struct {
 	Rules []Rule `json:"rules,omitempty"`
 	// Lista de proyectos. Esto no pertenece a la vertical, sino al entorno,
 	// pero me facilita meterlo aqui...
-	Projects []Project `json:"projects,omitemtpy"`
+	Projects []Project `json:"projects,omitempty"`
 }
 
 // EntityType representa un tipo de entidad
@@ -265,19 +265,22 @@ type DeviceStatus struct {
 
 // DeviceAttribute describe un atributo de dispositivo
 type DeviceAttribute struct {
-	ObjectId   string `json:"object_id"`
-	Name       string `json:"name"`
-	Type       string `json:"type,omitempty"`
-	Expression string `json:"expression,omitempty"`
-	EntityName string `json:"entity_name,omitempty"`
-	EntityType string `json:"entity_type,omitempty"`
+	ObjectId   string          `json:"object_id"`
+	Name       string          `json:"name"`
+	Type       string          `json:"type,omitempty"`
+	Value      json.RawMessage `json:"value,omitempty"` // para los staticAttribs
+	Expression string          `json:"expression,omitempty"`
+	EntityName string          `json:"entity_name,omitempty"`
+	EntityType string          `json:"entity_type,omitempty"`
 }
 
 // DeviceCommand describe un comando de dispositivo
 type DeviceCommand struct {
-	ObjectId string `json:"object_id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Type     string `json:"type,omitempty"`
+	ObjectId string          `json:"object_id,omitempty"`
+	Name     string          `json:"name,omitempty"`
+	Type     string          `json:"type,omitempty"`
+	Value    string          `json:"value,omitempty"`
+	MQTT     json.RawMessage `json:"mqtt,omitempty"`
 }
 
 type Rule struct {

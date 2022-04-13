@@ -1,6 +1,7 @@
 package orion
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -77,7 +78,83 @@ func (o *Orion) DeleteSuscriptions(client *http.Client, headers http.Header, sub
 	return errList
 }
 
-// DeleteSuscriptions deletes a list of suscriptions from Orion
+// Entity representa una entidad tal como la ve la API
+type Entity struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	EntityAttrs
+}
+
+type EntityAttr struct {
+	Type      string          `json:"type"`
+	Value     json.RawMessage `json:"value"`
+	Metadatas json.RawMessage `json:"metadatas,omitempty"`
+}
+
+type EntityAttrs map[string]EntityAttr
+
+// Merge fiware EntityType with Entity to build full Entity
+func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
+	typeMap := make(map[string](map[string]fiware.Attribute), len(types))
+	for _, t := range types {
+		ta := make(map[string]fiware.Attribute)
+		for _, a := range t.Attrs {
+			ta[a.Name] = a
+		}
+		typeMap[t.Type] = ta
+	}
+	result := make([]Entity, 0, len(values))
+	for _, v := range values {
+		current := Entity{
+			ID:   v.ID,
+			Type: v.Type,
+		}
+		if tm, ok := typeMap[v.Type]; ok {
+			current.EntityAttrs = make(EntityAttrs)
+			for name, value := range v.Attrs {
+				if am, ok := tm[name]; ok {
+					currentAttr := EntityAttr{
+						Type:  am.Type,
+						Value: value,
+					}
+					if md, ok := v.MetaDatas[name]; ok {
+						currentAttr.Metadatas = md
+					} else {
+						if am.Metadatas != nil {
+							currentAttr.Metadatas = am.Metadatas
+						}
+					}
+				}
+			}
+			result = append(result, current)
+		}
+	}
+	return result
+}
+
+// AppendEntities updates a list of entities
+func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []Entity) error {
+	req := struct {
+		ActionType string   `json:"actionType"`
+		Entities   []Entity `json:"entities"`
+	}{
+		ActionType: "append",
+		Entities:   make([]Entity, 0, len(ents)),
+	}
+	if len(req.Entities) <= 0 {
+		return nil
+	}
+	path, err := o.URL.Parse("v2/op/update")
+	if err != nil {
+		return err
+	}
+	if _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteEntities deletes a list of suscriptions from Orion
 func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []fiware.Entity) error {
 	type deleteEntity struct {
 		ID   string `json:"id"`

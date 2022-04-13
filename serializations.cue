@@ -10,7 +10,7 @@ tables?: [...#Table]
 services?: [...#Service]
 devices?: [...#Device]
 rules?: [...#Rule]
-projects: [...#Project]
+projects?: [...#Project]
 
 #EntityType: {
 	entityID:   string
@@ -158,6 +158,7 @@ projects: [...#Project]
 	object_id:    string
 	name:         string
 	type?:        string
+	value?:       #Json
 	expression?:  string
 	entity_name?: string
 	entity_type?: string
@@ -167,6 +168,8 @@ projects: [...#Project]
 	object_id?: string
 	name?:      string
 	type?:      string
+	value?:     string
+	mqtt?:      #Json
 }
 
 #Device: {

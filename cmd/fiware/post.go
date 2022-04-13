@@ -20,6 +20,7 @@ var canPost []string = []string{
 	"devices",
 	"suscriptions",
 	"rules",
+	"entities",
 }
 
 func postResource(c *cli.Context, config *config.Store) error {
@@ -60,6 +61,10 @@ func postResource(c *cli.Context, config *config.Store) error {
 			}
 		case "rules":
 			if err := postRules(selected, header, vertical); err != nil {
+				return err
+			}
+		case "entities":
+			if err := postEntities(selected, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -111,6 +116,18 @@ func postRules(ctx config.Config, header http.Header, vertical fiware.Vertical) 
 		func(g fiware.Rule) string { return g.Name },
 	)
 	return api.PostRules(httpClient(), header, vertical.Rules)
+}
+
+func postEntities(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+	api, err := orion.New(ctx.OrionURL)
+	if err != nil {
+		return err
+	}
+	merged := orion.Merge(vertical.EntityTypes, vertical.Entities)
+	listMessage("POSTing entities with names", merged,
+		func(g orion.Entity) string { return fmt.Sprintf("%s/%s", g.Type, g.ID) },
+	)
+	return api.UpdateEntities(httpClient(), header, merged)
 }
 
 func listMessage[T any](msg string, items []T, label func(T) string) {

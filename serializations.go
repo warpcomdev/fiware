@@ -85,13 +85,15 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	s.BeginList("projects")
-	for _, y := range x.Projects {
-		s.BeginBlock("")
-		s.Serialize(y)
-		s.EndBlock()
+	if len(x.Projects) > 0 {
+		s.BeginList("projects")
+		for _, y := range x.Projects {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
 	}
-	s.EndList()
 }
 
 func (x EntityType) MarshalJSON() ([]byte, error) {
@@ -542,6 +544,9 @@ func (x DeviceAttribute) Serialize(s serialize.Serializer) {
 	if x.Type != "" {
 		s.KeyString("type", x.Type)
 	}
+	if len(x.Value) > 0 {
+		s.KeyRaw("value", x.Value, false)
+	}
 	if x.Expression != "" {
 		s.KeyString("expression", x.Expression)
 	}
@@ -566,6 +571,12 @@ func (x DeviceCommand) Serialize(s serialize.Serializer) {
 	}
 	if x.Type != "" {
 		s.KeyString("type", x.Type)
+	}
+	if x.Value != "" {
+		s.KeyString("value", x.Value)
+	}
+	if len(x.MQTT) > 0 {
+		s.KeyRaw("mqtt", x.MQTT, false)
 	}
 }
 
