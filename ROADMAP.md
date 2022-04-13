@@ -109,8 +109,8 @@ La lista anterior está ordenada de menor a mayor complejidad a priori. Diferent
 
 Para la explotación desde Urbo se plantean varias opciones. A priori, el enfoque que se ha evaluado es implementar la gestión de verticales como una vertical más:
 
-- La información de las verticales verticales desplegadas se almacenaría como entidades en la plataforma
-- Las tareas de instalación se modelarían como comandos que el CEP enviaría a Jenkins
+- La información de las verticales desplegadas se almacenaría como entidades en la plataforma
+- Las tareas de instalación se modelarían como comandos que el CEP enviaría a Jenkins. Trabajo previo en https://github.com/telefonicasc/tech-transfer/blob/master/topics/trigger_jenkins_jobs_by_api.md
 
 Urbo se relacionaría con el proceso de actualilación a través de esta vertical. Esto simplifica la integración de la solución con Urbo, dando respuesta a dos necesidades:
 
