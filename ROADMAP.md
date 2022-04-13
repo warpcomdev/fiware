@@ -28,7 +28,7 @@ En este caso lo que debe modelarse es el aspecto **operativo**: los parámetros 
 
 # Fase 2. Modelo de entorno
 
-## Modelado de servicios
+## Modelado de plataforma
 
 Modelado de las características de un entorno smart cities donde se va a desplegar una vertical. El entorno se describiría mediante un conjunto de URLs:
 
@@ -47,11 +47,9 @@ Sería conveniente tener un mecanismo para que el cliente pudiera especificar qu
 
 Ojo porque esto en general no podrá resolverse desplegando simplemente todas las funciones que tenga la vertical. Algunas necesariamente dependen del cliente. Por ejemplo, un cliente que tenga la vertical de medioambiente con Inmótica usará el context adapter y no necesitará crear device groups ni devices para implementar los comandos, pero otro que lo tenga con datakorum o hopu usará el iot-agent y necesitará esos devices y groups.
 
-## Modelado operativo
+## Seguridad
 
-Básicamente consiste en las URLs de acceso exterior a las APIs: keystone, orion, perseo, iota manager (para las herramientas de operación).
-
-La consideración principal de este apartado es la gestión de credenciales: cómo va a obtener el operador o Urbo las credenciales necesarias para desplegar los objetos necesarios, incluyendo todo lo que entre en el alcance: APIs, pero también bases de datos, ETLs, etc.
+Modelado de las URLs de acceso exterior a las APIs: keystone, orion, perseo, iota manager (para las herramientas de operación), y en particular de la gestión de credenciales: cómo se vana  gestionar las credenciales necesarias para desplegar los objetos, incluyendo todo lo que entre en el alcance: APIs, pero también bases de datos, ETLs, etc.
 
 # Fase 3 - distribución de modelos
 
@@ -62,7 +60,7 @@ Definir cómo se van a hacer accesibles los distintos tipos de modelos a los cli
 
 # Fase 4. Viabilidad automatización
 
-En función de todo lo anterior se definirá lo que se considera viable incluir en una herramienta de despliegue, y lo que se piense que va a requerir intervención manual. Por ejemplo, se considera que:
+En función de todo lo anterior se definirá lo que se considera viable incluir en una herramienta de despliegue, y lo que se piense que va a requerir intervención manual. A priori se considera que:
 
 - El despliegue de todos los recursos que utilizan APIs de plataforma (suscripciones, reglas CEP, iotas, etc) será automatizable.
 - El despliegue de recursos que utilizan gitops (name mappings de CEP, paneles?) será automatizable.
@@ -71,16 +69,18 @@ En función de todo lo anterior se definirá lo que se considera viable incluir 
 - La actualización de un schema de base de datos requerirá intervención manual. La aplicación puede ayudar permitiendo importar un fichero SQL generado por un integrador.
 - La actualización de una ETL no se ha analizado.
 
+Estos puntos deberán acordarse con el resto de actores (equipos de desarrollo y operaciones)
+
 # Fase 5. Desarrollo
 
 El objetivo final es que las herramientas de instalación tengan:
 
+- Una línea de comandos que pueda ser invocada desde herramientas de operación (como jenkins)
 - Una API REST que pueda ser utilizada desde urbo
-- Una línea de comandos que pueda ser invocada desde herrameintas de operación (como jenkins)
 
-Eventualmente la API REST de la herramienta de gestión pueden ser simplemente la API de Jenkins, al que Urbo llamaría para lanzar trabajos programados que invoquen a la línea de comandos. Así que la API REST se deja fuera de la fase 4. Sí que es necesario que todas las herramientas usen parámetros y formatos equivalentes para simplificar luego ponerle la API por encima.
+Eventualmente la API REST pueden ser simplemente la API de Jenkins, al que Urbo llamaría para lanzar trabajos programados que invoquen a la línea de comandos. Así que la API REST se deja fuera de la fase 5. Sí que es necesario que todas las herramientas usen parámetros y formatos equivalentes para simplificar luego ponerle la API por encima.
 
-La PoC de instalación utilizará una vertical y un proyecto de prueba para implementar todo el modelado definido y desarrollar las herramientas de despliegue de cada componente de la vertical:
+El desarrolo se plantea en modo PoC (sobre una vertical y entorno en particular), en la que implementará el modelado definido y desarrollarán las herramientas de despliegue de cada componente de la vertical:
 
 1. Suscripciones: Trabajo previo en https://github.com/telefonicasc/streetlight-vertical/pulls
 2. Device groups (servicios) del IoTA manager.
@@ -103,31 +103,33 @@ La PoC de instalación utilizará una vertical y un proyecto de prueba para impl
     - Reglas CEP parametrizables (ejemplo: dirección de correo a la que enviar alertas, franjas horarias en las que alertar de la ocupación de plazas de parking, etc)
     - ETLs parametrizables (ej: nombrer de usuario de twitter)
 
-La lista anterior está ordenada de menor a mayor complejidad (a priori).
+La lista anterior está ordenada de menor a mayor complejidad a priori. Diferentes componentes se pueden avanzar en paralelo, por ejemplo no es necesario haber completado la personalziación de reglas CEP para trabajar en el despliegue de bases de datos.
 
 # Fase 6. Explotación desde URBO
 
-Para la explotación desde Urbo habría que resolver varias cosas:
+Para la explotación desde Urbo se plantean varias opciones. A priori, el enfoque que se ha evaluado es implementar la gestión de verticales como una vertical más:
 
-- API REST de la herramienta: inicialmente se podría utilizar la API de Jenkins para lanzar tareas programadas, pero es una API asíncrona, Urbo tendría que lanzar el trabajo y comprobar periódicamente si ha finalizado o no, y si lo ha hecho con éxito. ¿Podría requerir el desarrollo de un nuevo widget?
+- La información de las verticales verticales desplegadas se almacenaría como entidades en la plataforma
+- Las tareas de instalación se modelarían como comandos que el CEP enviaría a Jenkins
 
-Se podría considerar guardar información del estado de una instalación en entidades de plataforma (entidad tipo "vertical", por ejemplo), y que la interacción entre Urbo y Jenkins sea a través de esas entidades (Urbo lee y escribe estado de las entidades, CEP convierte los cambios de estado en llamadas a Jenkins). Se debe evaluar la complejidad de la sinteracciones.
+Urbo se relacionaría con el proceso de actualilación a través de esta vertical. Esto simplifica la integración de la solución con Urbo, dando respuesta a dos necesidades:
+
+- API REST de la herramienta: se utilizaría la API de Jenkins para lanzar tareas programadas. Las tareas deberían contemplar un bucle de feedback para notificar a la plataforma del resultado de una ejecución. Es decir, no solo notificar a través del resultado de la tarea Jenkins, que es algo asíncrono que Uebo no puede ver, sino escribir un resultado en una entidad de plataforma.
 
 - Control del consumo de la funcionalidad: Si se regula el estado del instalador a través de un subservicio de plataforma, se podría controlar el acceso de los clientes a la funcionalidad simplemente controlando el acceso al subservicio.
 
-  - Clientes con contrato de soporte activo: tienen acceso al subservicio /verticales, donde están las entidades que controlan la interacción entr eUrbo y jenkins.
-  - Clientes sin contrato de soporte: se les restirnge el acceso al subservicio, o se borra. Se deberían borrar también los jobs de jenkins y credenciales asociadas.
+  - Clientes con contrato de soporte activo: tienen acceso al subservicio /verticales, donde están las entidades que controlan la interacción entre Urbo y jenkins.
+  - Clientes sin contrato de soporte: se les restringe el acceso al subservicio, o se borra. Se deberían borrar también los jobs de jenkins y credenciales asociadas.
 
 En función de lo anterior, habrá que definir:
 
-1. Modelo de gobernanza: cómo se relaciona Urbo con el deployer. Esta propuesta se orienta hacia una "vertical" que utilice el CEP para comandar a Jenkins, aunque hay que valorar otras alternativas.
+1. Modelo de datos: Qué entidades de plataforma se van a utilizar, y qué parte de los modelos definidos en los puntos 1, 2, 3 y 4 van a tener reflejo en esas entidades.
 2. Reglas de CEP y comandado: implementar una PoC de las reglas de CEP para generar los jobs en jenkins, y del feedback que el proceso de instalación tiene que proporcionar a la plataforma para que Urbo lo muestre.
-3. Widgets especializados? en función de las necesidades que se planteen durante la PoC.
-4. Paneles especializados.
+3. Diseño de paneles de la vertical.
 
 # Alcance estimado
 
 Acotando el proyecto a 4 meses, creemos que se puede esperar llegar hasta:
 
 - Fase 5: Punto 8 o 9.
-- Fase 6: Punto 2, con algunos paneles básicos del punto 4.
+- Fase 6: Punto 2 parcial. Posiblemente no de tiempo a cerrar todos los bucles de loopback que informen a la plataforma del resultado de cada despliegue.
