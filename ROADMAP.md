@@ -18,13 +18,13 @@ Por ejemplo, las suscripciones tienen un **id** que no forma parte del modelo de
 
 ## Modelado operativo
 
-Recursos que no pueden modelarse porque tienen demasiados grados de libertad:
+Recursos que no se puedan modelar porque tengan demasiados grados de libertad:
 
 - Base de datos.
 - Dashboards.
 - ETLs.
 
-En este caso lo que debe modelarse es el aspecto **operativo**: los parámetros que controlan cómo se despliegan en un entorno. Por ejemplo, los ficheros de configuración que necesita una ETL, su `requirements.txt`, la frecuencia con la que se debe lanzar, etc.
+En estos casos podría modelarse sólo el aspecto **operativo**: los parámetros que controlan cómo se despliegan en un entorno. Por ejemplo, las variables que se utilizan al instalar el schema de postgres dado en un fichero `ddls.sql`, la definición de qué paneles son primarios y qué paneles son secundarios en una vertical, los ficheros de configuración que necesita una ETL, su `requirements.txt`, la frecuencia con la que se debe lanzar, etc.
 
 # Fase 2. Modelo de entorno
 
@@ -55,7 +55,7 @@ Modelado de las URLs de acceso exterior a las APIs: keystone, orion, perseo, iot
 
 Definir cómo se van a hacer accesibles los distintos tipos de modelos a los clientes / consumidores.
 
-- Se espera que el resultado sea una estructura de carpetas en los repositorios git de las verticales y el proyecto. 
+- Se espera que el resultado sea una estructura de carpetas en los repositorios git de las verticales y el proyecto.
 - En esta fase se debe determinar cómo controlar el acceso desde las herramientas de operación a los repos privados de vertical y proyecto, y como unificar los modelos de vertical con los de funcionalidades opcionales y servicios.
 
 # Fase 4. Viabilidad automatización
@@ -67,20 +67,26 @@ En función de todo lo anterior se definirá lo que se considera viable incluir 
 - La instalación inicial de un schema de base de datos será automatizable.
 - La instalación inicial de una ETL puede ser automatizable, imponiendo restricciones en el tipo de ETL y sus parámetros (trabajo previo en  https://github.com/telefonicasc/tech-transfer/pull/13)
 - La actualización de un schema de base de datos requerirá intervención manual. La aplicación puede ayudar permitiendo importar un fichero SQL generado por un integrador.
-- La actualización de una ETL no se ha analizado.
+- La actualización de una ETL no será en general automatizable, aunque puede depender de cómo evolucione el framework de ETLs de tech-transfer.
 
 Estos puntos deberán acordarse con el resto de actores (equipos de desarrollo y operaciones)
 
-# Fase 5. Desarrollo
+# Fase 5. Vertical de despliegues
 
-El objetivo final es que las herramientas de instalación tengan:
+El objetivo final es que las herramientas de instalación se gestionen desde una **vertical de despliegues**, que sea como un servicio más de plataforma. Para esto el desarrollo se orientará a implementar un **bucle de operación** Urbo -> CEP -> Jenkins -> Orion -> Urbo:
 
-- Una línea de comandos que pueda ser invocada desde herramientas de operación (como jenkins)
-- Una API REST que pueda ser utilizada desde urbo
+- El estado de instalación de cada vertical será modelado por entidades del vertical de despliegue, que reflejarán al menos:
 
-Eventualmente la API REST pueden ser simplemente la API de Jenkins, al que Urbo llamaría para lanzar trabajos programados que invoquen a la línea de comandos. Así que la API REST se deja fuera de la fase 5. Sí que es necesario que todas las herramientas usen parámetros y formatos equivalentes para simplificar luego ponerle la API por encima.
+  - La versión de la vertical desplegada o a desplegar.
+  - La selección de recursos opcionales.
+  - La selección de recursos parametrizables.
 
-El desarrolo se plantea en modo PoC (sobre una vertical y entorno en particular), en la que implementará el modelado definido y desarrollarán las herramientas de despliegue de cada componente de la vertical:
+- Urbo operará los despliegues creando o editando esas entidades.
+- Los cambios en las entidades dispararán reglas de CEP que básicamente invocarán jobs en jenkins (trabajo previo en https://github.com/telefonicasc/tech-transfer/blob/master/topics/trigger_jenkins_jobs_by_api.md)
+- Los jobs reaccionarán a los cambios de estado en las entidades operando la plataforma, y actualizarán la información en el Context Broker.
+- Si el cliente no tiene contratada la funcionalidad de despliegue de verticales, se restringiría su acceso al subservicio.
+
+Este bucle de operación debe implementarse para todos los recursos involucrados en el despliegue de una vertical:
 
 1. Suscripciones: Trabajo previo en https://github.com/telefonicasc/streetlight-vertical/pulls
 2. Device groups (servicios) del IoTA manager.
@@ -88,48 +94,25 @@ El desarrolo se plantea en modo PoC (sobre una vertical y entorno en particular)
 4. Reglas de CEP.
 5. Name-mappings de cygnus.
 6. Dashboards.
-7. Personalización
+7. Base de datos.
+8. ETLs.
 
-    - Device o device groups opcionales on / off.
-    - Reglas de CEP opcionales on / off.
-    - Suscripciones opcionales on / off.
-    - ETLs opcionales on / off
+El bucle de operación es el producto mínimo viable de la vertical de despliegues. A partir de este desarrollo, existen diferentes vías alternativas de avance:
 
-8. Base de datos.
-9. ETLs.
-10. Parametrización: 
+1. Personalización: Añadir la capacidad de activar o desactivar componentes de la vertical en función de las características del proyecto.
+
+    - Device o device groups opcionales on / off (por ejemplo: desactivar si se usa el context adapter de inmótica)
+    - Reglas de CEP opcionales on / off (por ejemplo: desactivar reglas de parking onstreet si un cliente no tiene plazas sensorizadas individualmente).
+    - Suscripciones opcionales on / off (idem).
+    - Paneles opcionales on / off (Ejemplo: desactivar paneles de medioambiente - NoiseLevelObserved si las estaciones meteorológicas del cliente no reportan el nivel de ruido).
+    - ETLs opcionales on / off (Por ejemplo: desactivar ETL de instagram si el cliente no tiene cuenta en esa red social)
+
+2. Parametrización: Añadir la capacidad de parametrizar ciertos recursos de la vertical en función de las características del proyecto:
 
     - Device o device groups parametrizables (por ejemplo: URL del endpoint para comandado)
     - Reglas CEP parametrizables (ejemplo: dirección de correo a la que enviar alertas, franjas horarias en las que alertar de la ocupación de plazas de parking, etc)
     - ETLs parametrizables (ej: nombrer de usuario de twitter)
 
-La lista anterior está ordenada de menor a mayor complejidad a priori. Diferentes componentes se pueden avanzar en paralelo, por ejemplo no es necesario haber completado la personalziación de reglas CEP para trabajar en el despliegue de bases de datos.
+3. Actualizaciones: Permitir no sólo instalar o desinstalar una versión de la vertical, sino actualizar sus recursos.
 
-# Fase 6. Explotación desde URBO
-
-Para la explotación desde Urbo se plantean varias opciones. A priori, el enfoque que se ha evaluado es implementar la gestión de verticales como una vertical más:
-
-- La información de las verticales desplegadas se almacenaría como entidades en la plataforma
-- Las tareas de instalación se modelarían como comandos que el CEP enviaría a Jenkins. Trabajo previo en https://github.com/telefonicasc/tech-transfer/blob/master/topics/trigger_jenkins_jobs_by_api.md
-
-Urbo se relacionaría con el proceso de actualilación a través de esta vertical. Esto simplifica la integración de la solución con Urbo, dando respuesta a dos necesidades:
-
-- API REST de la herramienta: se utilizaría la API de Jenkins para lanzar tareas programadas. Las tareas deberían contemplar un bucle de feedback para notificar a la plataforma del resultado de una ejecución. Es decir, no solo notificar a través del resultado de la tarea Jenkins, que es algo asíncrono que Uebo no puede ver, sino escribir un resultado en una entidad de plataforma.
-
-- Control del consumo de la funcionalidad: Si se regula el estado del instalador a través de un subservicio de plataforma, se podría controlar el acceso de los clientes a la funcionalidad simplemente controlando el acceso al subservicio.
-
-  - Clientes con contrato de soporte activo: tienen acceso al subservicio /verticales, donde están las entidades que controlan la interacción entre Urbo y jenkins.
-  - Clientes sin contrato de soporte: se les restringe el acceso al subservicio, o se borra. Se deberían borrar también los jobs de jenkins y credenciales asociadas.
-
-En función de lo anterior, habrá que definir:
-
-1. Modelo de datos: Qué entidades de plataforma se van a utilizar, y qué parte de los modelos definidos en los puntos 1, 2, 3 y 4 van a tener reflejo en esas entidades.
-2. Reglas de CEP y comandado: implementar una PoC de las reglas de CEP para generar los jobs en jenkins, y del feedback que el proceso de instalación tiene que proporcionar a la plataforma para que Urbo lo muestre.
-3. Diseño de paneles de la vertical.
-
-# Alcance estimado
-
-Acotando el proyecto a 4 meses, creemos que se puede esperar llegar hasta:
-
-- Fase 5: Punto 8 o 9.
-- Fase 6: Punto 2 parcial. Posiblemente no de tiempo a cerrar todos los bucles de loopback que informen a la plataforma del resultado de cada despliegue.
+La lista anterior está ordenada de menor a mayor complejidad a priori, pero no tiene por qué ser el orden en que se acometan las automatizaciones. En cualquier caso en 4 meses no creemos que sea viable realizarlo todo, por lo que habrá que empezar por el bucle de operación e ir priorizando a partir de ahí.
