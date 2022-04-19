@@ -114,5 +114,3 @@ El bucle de operación es el producto mínimo viable de la vertical de despliegu
     - ETLs parametrizables (ej: nombrer de usuario de twitter)
 
 3. Actualizaciones: Permitir no sólo instalar o desinstalar una versión de la vertical, sino actualizar sus recursos.
-
-La lista anterior está ordenada de menor a mayor complejidad a priori, pero no tiene por qué ser el orden en que se acometan las automatizaciones. En cualquier caso en 4 meses no creemos que sea viable realizarlo todo, por lo que habrá que empezar por el bucle de operación e ir priorizando a partir de ahí.
