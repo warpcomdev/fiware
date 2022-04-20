@@ -101,9 +101,12 @@ import (
         columns: [...#column]
         indexes: [...#index]
 
-        columns: [for attr in entityType.attrs {{
-            _attr: attr
-        }}]
+        columns: [
+            for attr in entityType.attrs
+            if !strings.HasPrefix(attr.type, "command") {{
+                _attr: attr
+            }}
+        ]
     }}]
 
     #column: {
@@ -173,4 +176,22 @@ import (
             v & {_tablename: name}
         }]
     }]
+
+    services: [for entityType in entityTypes {{
+        resource: "/iot/json"
+        apikey: "CHANGEME!"
+        entity_type: entityType.entityType
+        description: "JSON_IoT_Agent_Node"
+        protocol: "IoTA-JSON"
+        transport: "http"
+        expressionLanguage: "jexl"
+        attributes: [
+            for attr in entityType.attrs
+            if attr.type != "command" {{
+                object_id: attr.name
+                name: attr.name
+                type: attr.type
+            }}
+        ]
+    }}]
 }

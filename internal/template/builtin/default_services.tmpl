@@ -1,0 +1,5 @@
+{{ define "default_services" -}}
+{
+  "services": {{ toPrettyJson .services | indent 2 }}
+}
+{{ end }}
