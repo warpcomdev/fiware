@@ -36,14 +36,16 @@ func from_line(line string) []fiware.Attribute {
 	// log.Printf("Parsing line %s", line)
 	// Warning: WiFi vertical uses field names like
 	// dlBandwidth{User\|Device} to summarize two lines in one
+	if strings.HasPrefix(line, "|") {
+		line = strings.TrimSpace(line[1:])
+	}
 	line = strings.ReplaceAll(line, "\\|", "__PLACEHOLDER_SEPARATOR__")
 	fields := strings.Split(line, "|")
 	for index, part := range fields {
 		fields[index] = strings.TrimSpace(strings.ReplaceAll(part, "__PLACEHOLDER_SEPARATOR__", "|"))
 	}
-	// fields[0] is empty since '|' is the first character
-	name := fields[1]
-	_typ := fields[2]
+	name := fields[0]
+	_typ := fields[1]
 	if strings.HasPrefix(name, "[") { // for commands
 		if index := strings.Index(name[1:], "]"); index > 0 {
 			name = name[1:index]
@@ -61,7 +63,7 @@ func from_line(line string) []fiware.Attribute {
 	seps := map[string]bool{":": true, "=": true}
 	quot := map[string]string{"\"": "\"", "`": "`", "'": "'", "[": "]"}
 	var text []string
-	for _, other := range fields[3:] {
+	for _, other := range fields[2:] {
 		for _, substr := range seek {
 			index := strings.Index(other, substr)
 			if index >= 0 {
@@ -204,6 +206,7 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	}
 	defer infile.Close()
 	scanner := bufio.NewScanner(infile)
+	mustPipe := true // true if table lines MUST start with "|"
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if inside {
@@ -215,15 +218,21 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 				inside = false
 				latest = latest[:0]
 			} else {
-				// Line starting with "|" is another attribute
-				if strings.HasPrefix(line, "|") {
+				switch {
+				case !mustPipe && strings.Contains(line, "|"):
+					// Many verticals use an alternate format for markdown table
+					// without the initial "|"... we have to rely on detecting a
+					// "|" as a signal of table line
+					fallthrough
+				case strings.HasPrefix(line, "|"):
+					// Line starting with "|" is another attribute
 					// unless it is just an underline
 					if !strings.HasPrefix(strings.TrimSpace(line[1:]), "-") {
 						latest = append(latest, line)
 					} else {
 						log.Printf("Skipping separator line")
 					}
-				} else {
+				default:
 					// Other lines are continuations from prev attrib
 					log.Printf("Detected continuation line")
 					index := len(latest) - 1
@@ -233,12 +242,16 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 				}
 			}
 		} else {
-			if strings.HasPrefix(line, "|") {
-				first := strings.ToLower(strings.TrimSpace(line[1:]))
-				if strings.HasPrefix(first, "atributo") || strings.HasPrefix(first, "attribute") {
-					log.Print("Detected model start")
-					inside = true
-				}
+			lower := strings.TrimSpace(strings.ToLower(line))
+			initialPipe := false
+			if strings.HasPrefix(lower, "|") {
+				lower = strings.TrimSpace(lower[1:])
+				initialPipe = true
+			}
+			if strings.HasPrefix(lower, "atributo|") || strings.HasPrefix(lower, "atributo ") || strings.HasPrefix(lower, "attribute") || strings.HasPrefix(lower, "atrribute ") {
+				log.Print("Detected model start")
+				inside = true
+				mustPipe = initialPipe
 			}
 		}
 	}
