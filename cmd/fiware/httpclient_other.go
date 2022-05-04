@@ -10,7 +10,7 @@ import (
 
 func httpClient() *http.Client {
 	return &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 15 * time.Second,
 		Transport: &http.Transport{
 			// TODO: Hacer esto configurable
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

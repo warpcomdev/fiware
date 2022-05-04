@@ -118,7 +118,7 @@ import (
         if name == "municipality" {
             default: "NA"
         }
-        let _type= _attr.type
+        let _type= strings.ToLower(_attr.type)
         type: [
         if name == "timeinstant" {
             "timestamp with time zone"

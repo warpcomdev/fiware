@@ -2,7 +2,7 @@
 {
   "originalEntityId": {{ .originalEntityId | quote }},
   "newEntityId": {{ .newEntityId | quote }},
-  "originalEntityType": {{ .originalEntityType | quote }}
+  "originalEntityType": {{ .originalEntityType | quote }},
   "newEntityType": {{ .newEntityType | quote }},
   "attributeMappings": []
 }
@@ -24,10 +24,10 @@
     {{- define "defaultServiceMapping" }}
     {
       {{- with .originalService }}
-      "originalService": {{ . | quote }}
+      "originalService": {{ . | quote }},
       {{- end }}
       {{- with .newService }}
-      "newService": {{ . | quote }}
+      "newService": {{ . | quote }},
       {{- end }}
       "servicePathMappings": [
         {{- range (initial .servicePathMappings) }}

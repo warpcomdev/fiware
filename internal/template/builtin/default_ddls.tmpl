@@ -1,10 +1,10 @@
 {{- define "default_ddls_sets" }}
 {{- range .tables }}
-\set {{ .name }}_table '{{ .name }}';
-\set {{ .name }}_pkey '{{ .name }}_pkey';
+\set {{ .name }}_table '{{ .name }}'
+\set {{ .name }}_pkey '{{ .name }}_pkey'
 {{- if .lastdata }}
-\set {{ .name }}_lastdata '{{ .name }}_lastdata';
-\set {{ .name }}_lastdata_pkey '{{ .name }}_ld_pkey';
+\set {{ .name }}_lastdata '{{ .name }}_lastdata'
+\set {{ .name }}_lastdata_pkey '{{ .name }}_ld_pkey'
 {{- end }}
 {{- range .indexes }}
 \set {{ .name }} '{{ .name }}'
