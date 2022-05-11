@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS :target_schema.:scope:{{ $table_name }}_lastdata (
   recvtime timestamp with time zone NOT NULL,
   fiwareservicepath text,
   -- PRIMARY KEYS
-  CONSTRAINT :scope:{{ $table_name }}_ld_pkey PRIMARY KEY (entityid)
+  CONSTRAINT :scope:{{ $table_name }}_lastdata_pkey PRIMARY KEY (entityid)
 );
 {{- end }}
 {{- end }}
