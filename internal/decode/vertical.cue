@@ -109,13 +109,15 @@ import (
         ]
     }}]
 
+    let _municipalityAttribs = ["zip", "zone", "district", "municipality", "region", "province", "community", "country"]
     #column: {
         _attr: #entityType.#attr
         name: strings.ToLower(_attr.name)
-        if name == "timeinstant" || name == "municipality" {
+        if name == "timeinstant" {
             notNull: true
         }
-        if name == "municipality" {
+        if list.Contains(_municipalityAttribs, name) {
+            notNull: true
             default: "NA"
         }
         let _type= strings.ToLower(_attr.type)
@@ -164,6 +166,34 @@ import (
         "municipality": {
             _suffix: "_mun_idx",
             columns: ["municipality", "timeinstant"],
+        },
+        "zip": {
+            _suffix: "_zip_idx",
+            columns: ["zip", "timeinstant"],
+        },
+        "zone": {
+            _suffix: "_zon_idx",
+            columns: ["zone", "timeinstant"],
+        },
+        "district": {
+            _suffix: "_dis_idx",
+            columns: ["district", "timeinstant"],
+        },
+        "region": {
+            _suffix: "_reg_idx",
+            columns: ["region", "timeinstant"],
+        },
+        "province": {
+            _suffix: "_pro_idx",
+            columns: ["province", "timeinstant"],
+        },
+        "community": {
+            _suffix: "_com_idx",
+            columns: ["community", "timeinstant"],
+        },
+        "country": {
+            _suffix: "_cou_idx",
+            columns: ["country", "timeinstant"],
         }
     }
 

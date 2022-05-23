@@ -53,7 +53,7 @@ func (o *Orion) PostSuscriptions(client *http.Client, headers http.Header, subs 
 		if err != nil {
 			return err
 		}
-		if _, err := keystone.Update(client, http.MethodPost, headers, path, sub); err != nil {
+		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, sub); err != nil {
 			errList = multierror.Append(errList, err)
 		}
 	}
@@ -148,7 +148,7 @@ func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []
 	if err != nil {
 		return err
 	}
-	if _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
+	if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
 		return err
 	}
 	return nil
@@ -180,7 +180,7 @@ func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []
 	if err != nil {
 		return err
 	}
-	if _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
+	if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
 		return err
 	}
 	return nil

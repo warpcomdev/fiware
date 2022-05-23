@@ -284,6 +284,9 @@ func (x Notification) Serialize(s serialize.Serializer) {
 	if x.OnlyChangedAttrs {
 		s.KeyBool("onlyChangedAttrs", x.OnlyChangedAttrs)
 	}
+	if x.Covered {
+		s.KeyBool("covered", x.Covered)
+	}
 	x.NotificationStatus.Serialize(s)
 }
 
@@ -307,6 +310,12 @@ func (x NotificationCustom) Serialize(s serialize.Serializer) {
 			s.KeyString(k, v)
 		}
 		s.EndBlock()
+	}
+	if len(x.Payload) > 0 {
+		s.KeyRaw("payload", x.Payload, false)
+	}
+	if x.Method != "" {
+		s.KeyString("method", x.Method)
 	}
 }
 
@@ -668,8 +677,8 @@ func (x Device) Serialize(s serialize.Serializer) {
 	if x.ExpressionLanguage != "" {
 		s.KeyString("expressionLanguage", x.ExpressionLanguage)
 	}
-	if x.ExplicitAttrs {
-		s.KeyBool("explicitAttrs", x.ExplicitAttrs)
+	if len(x.ExplicitAttrs) > 0 {
+		s.KeyRaw("explicitAttrs", x.ExplicitAttrs, false)
 	}
 	x.DeviceStatus.Serialize(s)
 }

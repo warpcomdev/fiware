@@ -124,6 +124,7 @@ type Notification struct {
 	HTTP             NotificationHTTP   `json:"http,omitempty"`
 	HTTPCustom       NotificationCustom `json:"httpCustom,omitempty"`
 	OnlyChangedAttrs bool               `json:"onlyChangedAttrs,omitempty"`
+	Covered          bool               `json:"covered,omitempty"`
 	NotificationStatus
 }
 
@@ -151,6 +152,8 @@ func (n NotificationHTTP) IsEmpty() bool {
 type NotificationCustom struct {
 	URL     string            `json:"url"`
 	Headers map[string]string `json:"headers,omitempty"`
+	Payload json.RawMessage   `json:"payload,omitempty"`
+	Method  string            `json:"method,omitempty"`
 }
 
 func (n NotificationCustom) IsEmpty() bool {
@@ -253,7 +256,7 @@ type Device struct {
 	StaticAttributes   []DeviceAttribute `json:"static_attributes,omitempty"`
 	Protocol           string            `json:"protocol"`
 	ExpressionLanguage string            `json:"expressionLanguage,omitempty"`
-	ExplicitAttrs      bool              `json:"explicitAttrs,omitempty"`
+	ExplicitAttrs      json.RawMessage   `json:"explicitAttrs,omitempty"`
 	DeviceStatus
 }
 

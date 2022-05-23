@@ -1,4 +1,4 @@
-{{- define "defaultEntityMapping" }}
+{{- define "defaultEntityMapping" -}}
 {
   "originalEntityId": {{ .originalEntityId | quote }},
   "newEntityId": {{ .newEntityId | quote }},
@@ -7,15 +7,15 @@
   "attributeMappings": []
 }
 {{- end -}}
-{{- define "defaultServicePathMapping" }}
+{{- define "defaultServicePathMapping" -}}
 {
   "originalServicePath": {{ .originalServicePath | quote }},
   "newServicePath": {{ .newServicePath | quote }},
   "entityMappings": [
     {{- range (initial .entityMappings) }}
-    {{- include "defaultEntityMapping" . | indent 4 }},
+    {{- include "defaultEntityMapping" . | nindent 4 }},
     {{- end }}
-    {{- include "defaultEntityMapping" (last .entityMappings) | indent 4}}
+    {{- include "defaultEntityMapping" (last .entityMappings) | nindent 4}}
   ]
 }
 {{- end -}}
@@ -31,9 +31,9 @@
       {{- end }}
       "servicePathMappings": [
         {{- range (initial .servicePathMappings) }}
-        {{- include "defaultServicePathMapping" . | indent 8 }},
+        {{- include "defaultServicePathMapping" . | nindent 8 }},
         {{- end }}
-        {{- include "defaultServicePathMapping" (last .servicePathMappings) | indent 8 }}
+        {{- include "defaultServicePathMapping" (last .servicePathMappings) | nindent 8 }}
       ]
     }
     {{- end }}
@@ -41,5 +41,5 @@
     {{- template "defaultServiceMapping" . }},
     {{- end }}
     {{- template "defaultServiceMapping" (last .serviceMappings) }}
-  }
+  ]
 }

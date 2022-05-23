@@ -68,30 +68,32 @@ func from_line(line string) []fiware.Attribute {
 			index := strings.Index(other, substr)
 			if index >= 0 {
 				remaining := strings.TrimSpace(other[(index + len(substr)):])
-				first := remaining[:1]
-				// Must match seek + sep
-				if len(remaining) <= 0 || !seps[first] {
-					continue
-				}
-				remaining = strings.TrimSpace(remaining[1:])
-				first = remaining[:1]
-				if closequot := quot[first]; closequot != "" {
-					if end := strings.Index(remaining[1:], closequot); end >= 0 {
-						remaining = strings.TrimSpace(remaining[1:(end + 1)])
+				if len(remaining) > 0 {
+					first := remaining[:1]
+					// Must match seek + sep
+					if len(remaining) <= 0 || !seps[first] {
+						continue
 					}
-				}
-				// If it is several examples or values, take the first
-				if strings.HasSuffix(substr, "s") {
-					sep := findsep(remaining)
-					text = strings.Split(remaining, sep)
-					for index, part := range text {
-						text[index] = strings.TrimSpace(part)
+					remaining = strings.TrimSpace(remaining[1:])
+					first = remaining[:1]
+					if closequot := quot[first]; closequot != "" {
+						if end := strings.Index(remaining[1:], closequot); end >= 0 {
+							remaining = strings.TrimSpace(remaining[1:(end + 1)])
+						}
 					}
-				} else {
-					text = []string{strings.TrimSpace(remaining)}
+					// If it is several examples or values, take the first
+					if strings.HasSuffix(substr, "s") {
+						sep := findsep(remaining)
+						text = strings.Split(remaining, sep)
+						for index, part := range text {
+							text[index] = strings.TrimSpace(part)
+						}
+					} else {
+						text = []string{strings.TrimSpace(remaining)}
+					}
+					// log.Printf("Found %s: %s", substr, text)
+					break
 				}
-				// log.Printf("Found %s: %s", substr, text)
-				break
 			}
 		}
 		// Do NOT break. Examples in later cols override

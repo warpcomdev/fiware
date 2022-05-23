@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/warpcomdev/fiware"
 )
@@ -103,7 +105,7 @@ func (o *Keystone) Login(client *http.Client, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	header, err := PostJSON(client, nil, loginURL, payload)
+	header, _, err := PostJSON(client, nil, loginURL, payload)
 	if err != nil {
 		return "", err
 	}
@@ -147,7 +149,7 @@ func GetJSON(client *http.Client, headers http.Header, path *url.URL, data inter
 }
 
 // PostJSON is a convenience wrapper for Update(client, http.MethodPost, ...)
-func PostJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}) (http.Header, error) {
+func PostJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 	return Update(client, http.MethodPost, headers, path, data)
 }
 
@@ -187,8 +189,35 @@ func Query(client *http.Client, method string, headers http.Header, path *url.UR
 	return nil
 }
 
+type pager interface {
+	Next() interface{} // Return a buffer for next page
+	Done() int         // Must return number of items received in interface{}
+}
+
+// Query performs an HTTP request without payload, loads the result into `data`
+func page(client *http.Client, method string, headers http.Header, path *url.URL, data pager, allowUnknownFields bool) error {
+	q := path.Query()
+	limit := 50
+	offset := 0
+	top := 1000 // this is our hard limit
+	for offset < top {
+		q.Set("limit", strconv.Itoa(limit))
+		q.Set("offset", strconv.Itoa(offset))
+		path.RawQuery = q.Encode()
+		if err := Query(client, method, headers, path, data.Next(), allowUnknownFields); err != nil {
+			return err
+		}
+		if recv := data.Done(); recv < limit {
+			return nil
+		}
+		<-time.After(time.Second) // add some delay to avoid overwhelming the CB
+		offset = offset + limit
+	}
+	return nil
+}
+
 // Update performs an HTTP request with JSON payload, returns headers.
-func Update(client *http.Client, method string, headers http.Header, path *url.URL, data interface{}) (http.Header, error) {
+func Update(client *http.Client, method string, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 
 	// Serialize request to bytes
 	var dataBytes []byte
@@ -200,7 +229,7 @@ func Update(client *http.Client, method string, headers http.Header, path *url.U
 	default:
 		var err error
 		if dataBytes, err = json.Marshal(data); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -226,12 +255,19 @@ func Update(client *http.Client, method string, headers http.Header, path *url.U
 
 	// Manage response
 	if err != nil {
-		return nil, newNetError(req, nil)
+		return nil, nil, newNetError(req, nil)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, newNetError(req, resp)
+		return nil, nil, newNetError(req, resp)
 	}
-	return resp.Header, nil
+	if resp.StatusCode != 204 {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, nil, newNetError(req, resp)
+		}
+		return resp.Header, bodyBytes, nil
+	}
+	return resp.Header, nil, nil
 }
 
 type keystoneProjects struct {

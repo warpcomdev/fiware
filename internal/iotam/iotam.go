@@ -80,7 +80,7 @@ func (i *Iotam) PostServices(client *http.Client, headers http.Header, services 
 		request := struct {
 			Services []fiware.Service `json:"services"`
 		}{Services: services}
-		if _, err := keystone.PostJSON(client, headers, path, request); err != nil {
+		if _, _, err := keystone.PostJSON(client, headers, path, request); err != nil {
 			return err
 		}
 	}
@@ -129,7 +129,7 @@ func (i *Iotam) PostDevices(client *http.Client, headers http.Header, devices []
 		request := struct {
 			Devices []fiware.Device `json:"devices"`
 		}{Devices: devices}
-		if _, err := keystone.PostJSON(client, headers, path, request); err != nil {
+		if _, _, err := keystone.PostJSON(client, headers, path, request); err != nil {
 			return err
 		}
 	}

@@ -140,7 +140,7 @@ func (o *Perseo) PostRules(client *http.Client, headers http.Header, rules []fiw
 		if err != nil {
 			return err
 		}
-		if _, err := keystone.Update(client, http.MethodPost, headers, path, rule); err != nil {
+		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, rule); err != nil {
 			errList = multierror.Append(errList, err)
 		}
 	}

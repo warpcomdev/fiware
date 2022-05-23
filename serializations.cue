@@ -74,6 +74,7 @@ projects?: [...#Project]
 	http?:              #NotificationHTTP
 	httpCustom?:        #NotificationCustom
 	onlyChangedAttrs?:  bool
+	covered?:           bool
 	lastFailure?:       string @anonymous(NotificationStatus)
 	lastFailureReason?: string @anonymous(NotificationStatus)
 	lastNotification?:  string @anonymous(NotificationStatus)
@@ -90,6 +91,8 @@ projects?: [...#Project]
 #NotificationCustom: {
 	url: string
 	headers?: [string]: string
+	payload?: #Json
+	method?:  string
 }
 
 #Subject: {
@@ -187,7 +190,7 @@ projects?: [...#Project]
 	static_attributes?: [...#DeviceAttribute]
 	protocol:            string
 	expressionLanguage?: string
-	explicitAttrs?:      bool
+	explicitAttrs?:      #Json
 	service?:            string @anonymous(DeviceStatus)
 	service_path?:       string @anonymous(DeviceStatus)
 }
