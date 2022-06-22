@@ -25,6 +25,14 @@ var (
 		EnvVars:     []string{"FIWARE_TOKEN", "X_AUTH_TOKEN"},
 	}
 
+	urboTokenFlag = &cli.StringFlag{
+		Name:        "urbotoken",
+		Aliases:     []string{"urboToken", "ut", "T"},
+		Usage:       "Urbo authentication token",
+		DefaultText: "<empty>",
+		EnvVars:     []string{"URBO_TOKEN", "AUTHORIZATION_TOKEN"},
+	}
+
 	dataFlag = &cli.StringFlag{
 		Name:     "data",
 		Aliases:  []string{"d"},

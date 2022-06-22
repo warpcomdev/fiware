@@ -28,7 +28,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canPost, ", "))
 	}
 
-	selected, _, header, err := getConfig(c, config)
+	selected, err := getConfig(c, config)
 	if err != nil {
 		return err
 	}
@@ -40,14 +40,21 @@ func postResource(c *cli.Context, config *config.Store) error {
 	}
 
 	for _, arg := range c.Args().Slice() {
+		var header http.Header
 		switch arg {
 		case "devices":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := postDevices(selected, header, vertical); err != nil {
 				return err
 			}
 		case "services":
 			fallthrough
 		case "groups":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := postServices(selected, header, vertical); err != nil {
 				return err
 			}
@@ -56,14 +63,23 @@ func postResource(c *cli.Context, config *config.Store) error {
 		case "subs":
 			fallthrough
 		case "suscriptions":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := postSuscriptions(selected, header, vertical); err != nil {
 				return err
 			}
 		case "rules":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := postRules(selected, header, vertical); err != nil {
 				return err
 			}
 		case "entities":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := postEntities(selected, header, vertical); err != nil {
 				return err
 			}

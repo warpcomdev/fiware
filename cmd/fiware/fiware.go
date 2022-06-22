@@ -187,6 +187,7 @@ func main() {
 				},
 				Flags: []cli.Flag{
 					tokenFlag,
+					urboTokenFlag,
 					subServiceFlag,
 					outputFlag,
 				},
@@ -204,6 +205,7 @@ func main() {
 				},
 				Flags: []cli.Flag{
 					tokenFlag,
+					urboTokenFlag,
 					subServiceFlag,
 					dataFlag,
 					libFlag,
@@ -222,6 +224,7 @@ func main() {
 				},
 				Flags: []cli.Flag{
 					tokenFlag,
+					urboTokenFlag,
 					subServiceFlag,
 					dataFlag,
 					libFlag,

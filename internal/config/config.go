@@ -34,7 +34,8 @@ type Config struct {
 	Service     string            `json:"service"`
 	Subservice  string            `json:"subservice"`
 	Username    string            `json:"username"`
-	Token       string            `json:"token"`
+	Token       string            `json:"token,omitempty"`
+	UrboToken   string            `json:"urbotoken,omitempty"`
 	Params      map[string]string `json:"params,omitempty"`
 }
 
@@ -54,6 +55,7 @@ func (c *Config) String() string {
 		{"orion", c.OrionURL},
 		{"iotam", c.IotamURL},
 		{"perseo", c.PerseoURL},
+		{"urbo", c.UrboURL},
 		{"service", c.Service},
 		{"subservice", c.Subservice},
 		{"username", c.Username},
@@ -64,6 +66,9 @@ func (c *Config) String() string {
 	)
 	if c.Token != "" {
 		detailed = append(detailed, [2]string{"token", HiddenToken})
+	}
+	if c.UrboToken != "" {
+		detailed = append(detailed, [2]string{"urboToken", HiddenToken})
 	}
 	w.WriteString("{")
 	sep := "\n  \""
@@ -100,6 +105,13 @@ func (c *Config) HasToken() string {
 		return ""
 	}
 	return c.Token
+}
+
+func (c *Config) HasUrboToken() string {
+	if c.UrboToken == HiddenToken {
+		return ""
+	}
+	return c.UrboToken
 }
 
 // Store can manage several configs
@@ -332,6 +344,8 @@ func (s *Store) Set(pairs []string) error {
 			fallthrough
 		case "perseo":
 			selected.PerseoURL = value
+		case "urbo":
+			selected.UrboURL = value
 		case "name":
 			for _, curr := range ctx {
 				if curr.Name == value {
@@ -344,6 +358,13 @@ func (s *Store) Set(pairs []string) error {
 				value = ""
 			}
 			selected.Token = value
+		case "urbotoken":
+			fallthrough
+		case "urboToken":
+			if value == HiddenToken {
+				value = ""
+			}
+			selected.UrboToken = value
 		default:
 			return fmt.Errorf("unknown config parameter %s", param)
 		}

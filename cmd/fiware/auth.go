@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 	"syscall"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/internal/urbo"
 	"golang.org/x/term"
 )
 
@@ -38,19 +40,43 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
-	token, err := k.Login(httpClient(), string(bytepw))
-	if err != nil {
-		return err
+	var fiwareToken, urboToken string
+	var fiwareError, urboError error
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fiwareToken, fiwareError = k.Login(httpClient(), string(bytepw))
+	}()
+	if selected.UrboURL != "" {
+		wg.Add(1)
+		u, err := urbo.New(selected.UrboURL, selected.Username, selected.Service)
+		if err != nil {
+			return err
+		}
+		go func() {
+			defer wg.Done()
+			urboToken, urboError = u.Login(httpClient(), string(bytepw))
+		}()
+	}
+	wg.Wait()
+	if fiwareError != nil {
+		return fiwareError
+	}
+	if urboError != nil {
+		return urboError
 	}
 	if c.Bool(saveFlag.Name) {
-		if err := store.Set([]string{"token", token}); err != nil {
+		if err := store.Set([]string{
+			"token", fiwareToken, "urbotoken", urboToken,
+		}); err != nil {
 			return err
 		}
 	}
 	if runtime.GOOS == "windows" {
-		fmt.Printf("SET FIWARE_TOKEN=%s\n", token)
+		fmt.Printf("SET FIWARE_TOKEN=%s\nSET URBO_TOKEN=%s\n", fiwareToken, urboToken)
 	} else {
-		fmt.Println(token)
+		fmt.Printf("export FIWARE_TOKEN=%s\nexport URBO_TOKEN=%s\n", fiwareToken, urboToken)
 	}
 	return nil
 }

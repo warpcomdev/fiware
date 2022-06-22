@@ -1,0 +1,1 @@
+# See https://canary.lab.urbo2.es/api-docs/#/Panels/post_panels_copy

@@ -15,6 +15,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
 	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
 var canGet []string = []string{
@@ -23,6 +24,7 @@ var canGet []string = []string{
 	"suscriptions",
 	"rules",
 	"projects",
+	"panels",
 }
 
 type serializerWithSetup interface {
@@ -32,21 +34,25 @@ type serializerWithSetup interface {
 	End()
 }
 
-func getConfig(c *cli.Context, store *config.Store) (zero config.Config, k *keystone.Keystone, h http.Header, err error) {
+func getConfig(c *cli.Context, store *config.Store) (zero config.Config, err error) {
 	if err := store.Read(); err != nil {
-		return zero, nil, nil, err
+		return zero, err
 	}
 	if store.Current.Name == "" {
-		return zero, nil, nil, errors.New("no contexts defined")
+		return zero, errors.New("no contexts defined")
 	}
 
 	selected := store.Current
 	if selected.KeystoneURL == "" || selected.Service == "" || selected.Username == "" {
-		return zero, nil, nil, errors.New("current context is not properly configured")
+		return zero, errors.New("current context is not properly configured")
 	}
+	return selected, nil
+}
+
+func getKeystoneHeaders(c *cli.Context, selected config.Config) (k *keystone.Keystone, h http.Header, err error) {
 	k, err = keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
 	if err != nil {
-		return zero, nil, nil, err
+		return nil, nil, err
 	}
 
 	subservice := c.String(subServiceFlag.Name)
@@ -54,28 +60,51 @@ func getConfig(c *cli.Context, store *config.Store) (zero config.Config, k *keys
 		selected.Subservice = subservice
 	}
 	if selected.Subservice == "" {
-		return zero, nil, nil, errors.New("no subservice selected")
+		return nil, nil, errors.New("no subservice selected")
 	}
 
 	token := c.String(tokenFlag.Name)
 	if token == "" {
 		if token = selected.HasToken(); token == "" {
-			return zero, nil, nil, errors.New("no token found, please login first")
+			return nil, nil, errors.New("no token found, please login first")
 		}
 	}
 	header := k.Headers(selected.Subservice, token)
-	return selected, k, header, nil
+	return k, header, nil
+}
+
+func getUrboHeaders(c *cli.Context, selected config.Config) (u *urbo.Urbo, h http.Header, err error) {
+	u, err = urbo.New(selected.UrboURL, selected.Username, selected.Service)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	subservice := c.String(subServiceFlag.Name)
+	if subservice != "" {
+		selected.Subservice = subservice
+	}
+	if selected.Subservice == "" {
+		return nil, nil, errors.New("no subservice selected")
+	}
+
+	token := c.String(tokenFlag.Name)
+	if token == "" {
+		if token = selected.HasToken(); token == "" {
+			return nil, nil, errors.New("no token found, please login first")
+		}
+	}
+	header, err := u.Headers(token)
+	return u, header, err
 }
 
 func getResource(c *cli.Context, store *config.Store) error {
 	if c.NArg() <= 0 {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canGet, ", "))
 	}
-	selected, k, header, err := getConfig(c, store)
+	selected, err := getConfig(c, store)
 	if err != nil {
 		return err
 	}
-
 	output := outputFile(c.String(outputFlag.Name))
 	outfile, err := output.Create()
 	if err != nil {
@@ -85,14 +114,23 @@ func getResource(c *cli.Context, store *config.Store) error {
 
 	vertical := &fiware.Vertical{Subservice: selected.Subservice}
 	for _, arg := range c.Args().Slice() {
+		var k *keystone.Keystone
+		var u *urbo.Urbo
+		var header http.Header
 		switch arg {
 		case "devices":
+			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := getDevices(selected, header, vertical); err != nil {
 				return err
 			}
 		case "services":
 			fallthrough
 		case "groups":
+			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := getServices(selected, header, vertical); err != nil {
 				return err
 			}
@@ -101,15 +139,31 @@ func getResource(c *cli.Context, store *config.Store) error {
 		case "subs":
 			fallthrough
 		case "suscriptions":
+			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := getSuscriptions(selected, header, vertical); err != nil {
 				return err
 			}
 		case "rules":
+			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := getRules(selected, header, vertical); err != nil {
 				return err
 			}
 		case "projects":
+			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := getProjects(selected, k, header, vertical); err != nil {
+				return err
+			}
+		case "panels":
+			if u, header, err = getUrboHeaders(c, selected); err != nil {
+				return err
+			}
+			if err := getPanels(selected, u, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -178,5 +232,14 @@ func getProjects(ctx config.Config, k *keystone.Keystone, header http.Header, ve
 		return err
 	}
 	vertical.Projects = projects
+	return nil
+}
+
+func getPanels(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
+	panels, err := u.Panels(httpClient(), header)
+	if err != nil {
+		return err
+	}
+	vertical.Panels = panels
 	return nil
 }

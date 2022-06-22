@@ -28,7 +28,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canPost, ", "))
 	}
 
-	selected, _, header, err := getConfig(c, store)
+	selected, err := getConfig(c, store)
 	if err != nil {
 		return err
 	}
@@ -40,14 +40,21 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	}
 
 	for _, arg := range c.Args().Slice() {
+		var header http.Header
 		switch arg {
 		case "devices":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := deleteDevices(selected, header, vertical); err != nil {
 				return err
 			}
 		case "services":
 			fallthrough
 		case "groups":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := deleteServices(selected, header, vertical); err != nil {
 				return err
 			}
@@ -56,14 +63,23 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		case "subs":
 			fallthrough
 		case "suscriptions":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := deleteSuscriptions(selected, header, vertical); err != nil {
 				return err
 			}
 		case "rules":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := deleteRules(selected, header, vertical); err != nil {
 				return err
 			}
 		case "entities":
+			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
 			if err := deleteEntities(selected, header, vertical); err != nil {
 				return err
 			}
