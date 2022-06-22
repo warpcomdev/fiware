@@ -11,6 +11,7 @@ services?: [...#Service]
 devices?: [...#Device]
 rules?: [...#Rule]
 projects?: [...#Project]
+panels?: #Json
 
 #EntityType: {
 	entityID:   string
@@ -62,6 +63,7 @@ projects?: [...#Project]
 #Suscription: {
 	description:  string
 	status?:      string
+	expires?:     string
 	notification: #Notification
 	subject:      #Subject
 	id?:          string @anonymous(SuscriptionStatus)

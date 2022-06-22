@@ -28,6 +28,7 @@ type Config struct {
 	Name        string            `json:"name"`
 	KeystoneURL string            `json:"keystone"`
 	OrionURL    string            `json:"orion"`
+	UrboURL     string            `json:"urbo"`
 	IotamURL    string            `json:"iotam"`
 	PerseoURL   string            `json:"perseo"`
 	Service     string            `json:"service"`

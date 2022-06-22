@@ -1,0 +1,66 @@
+package ckan
+
+// Este comando CUE genera las órdenes curl necesarias para crear un resource por cada
+// tipo de entidad definido en el modelo de vertical.
+//
+// Requiere que la organización esté ya creada.
+//
+// Parámetros:
+//
+// ckanURL
+// apiKey
+// organization
+
+import (
+    "encoding/json"
+    "strings"
+    "tool/exec"
+    "tool/cli"
+)
+
+ckanURL: *"https://demo.ckan.com"           | string @tag(ckanURL)
+apiKey:  *"abcd"                            | string @tag(apiKey)
+organization: *"ayuntamiento-de-alcobendas" | string @tag(organization)
+vertical: "{{ .subservice | lower }}"
+
+{{- $name := .name }}
+{{- range .entityTypes }}
+resourcesets: {{ $name }}_{{ .entityType | lower }}: package_id: string
+{{- end }}
+
+{{- $name := .name }}
+command: resources: {
+
+    // Paso 1: Obtener el id de package. Debe estar creado.
+    queryPackage: exec.Run & {
+        cmd: [
+            "curl",
+            "\(ckanURL)/api/3/action/package_show?id=\(organization)_\(vertical)",
+            "-H",
+            "Authorization: \(apiKey)"
+        ],
+        stdout: string
+    }
+    // logQueryPackage: cli.Print & { text: queryPackage.stdout }
+
+    // Paso 2: reemplazar la organization_id en todos los recursos
+    res: resourcesets
+    res: [name=string]: package_id: json.Unmarshal(queryPackage.stdout).result.id
+
+    // Paso 3: Volcar los comandos para crear los resources.
+    cmdResources: [for name, info in res {
+        "curl -X POST '\(ckanURL)/api/3/action/resource_create' -d '\(json.Marshal(info))' -H 'Authorization: \(apiKey)'"
+    }]
+    logCreateResources: cli.Print & {
+        text: strings.Join(cmdResources, "\n")
+    }
+}
+
+{{- $name := .name }}
+{{- range .entityTypes }}
+resourcesets: {{ $name }}_{{ .entityType | lower }}: {
+    name: "{{ $name }}_{{ .entityType | lower }}"
+    url: "none"
+    format: ""
+}
+{{- end }}

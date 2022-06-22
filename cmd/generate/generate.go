@@ -108,6 +108,8 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			case innerKind == reflect.Struct:
 				pending = append(pending, pendingData{Name: _typ.Elem().Name(), Type: _typ.Elem()})
 				w.WriteString("s.BeginBlock(\"\"); s.Serialize(y); s.EndBlock();\n")
+			case innerKind == reflect.Slice && _typ.Elem().Elem().Kind() == reflect.Uint8: // json.RawMessage
+				w.WriteString("s.String(string(y))\n")
 			default:
 				log.Fatalf("Unknown slice type: %s", innerKind)
 			}
@@ -253,6 +255,8 @@ func (g *generator) serializeCue(t reflect.Type, w io.StringWriter, anonymous, t
 				innerName := _typ.Elem().Name()
 				w.WriteString(jsonName + omitempty + ": [...#" + innerName + "]" + textTag)
 				pending = append(pending, pendingData{Name: innerName, Type: _typ.Elem()})
+			case innerKind == reflect.Slice && _typ.Elem().Elem().Kind() == reflect.Uint8: // json.RawMessage
+				w.WriteString(jsonName + omitempty + ": [..._]" + textTag)
 			default:
 				log.Fatalf("Unknown slice type: %s", innerKind)
 			}

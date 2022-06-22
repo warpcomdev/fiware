@@ -48,7 +48,8 @@ func from_line(line string) []fiware.Attribute {
 	_typ := fields[1]
 	if strings.HasPrefix(name, "[") { // for commands
 		if index := strings.Index(name[1:], "]"); index > 0 {
-			name = name[1:index]
+			// strings.Index was passed name[1:], so we have to add 1
+			name = name[1:(index + 1)]
 		}
 	}
 	/*if strings.HasPrefix(strings.ToLower(_typ), "command") {

@@ -94,6 +94,9 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.Panels) > 0 {
+		s.KeyRaw("panels", x.Panels, false)
+	}
 }
 
 func (x EntityType) MarshalJSON() ([]byte, error) {
@@ -241,6 +244,9 @@ func (x Suscription) Serialize(s serialize.Serializer) {
 	s.KeyString("description", x.Description)
 	if x.Status != "" {
 		s.KeyString("status", x.Status)
+	}
+	if x.Expires != "" {
+		s.KeyString("expires", x.Expires)
 	}
 	s.BeginBlock("notification")
 	x.Notification.Serialize(s)

@@ -37,7 +37,8 @@ type Vertical struct {
 	Rules []Rule `json:"rules,omitempty"`
 	// Lista de proyectos. Esto no pertenece a la vertical, sino al entorno,
 	// pero me facilita meterlo aqui...
-	Projects []Project `json:"projects,omitempty"`
+	Projects []Project       `json:"projects,omitempty"`
+	Panels   json.RawMessage `json:"panels,omitempty"`
 }
 
 // EntityType representa un tipo de entidad
@@ -106,6 +107,7 @@ type AttributeMapping struct {
 type Suscription struct {
 	Description  string       `json:"description"`
 	Status       string       `json:"status,omitempty"`
+	Expires      string       `json:"expires,omitempty"`
 	Notification Notification `json:"notification"`
 	Subject      Subject      `json:"subject"`
 	SuscriptionStatus

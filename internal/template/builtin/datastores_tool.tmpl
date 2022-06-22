@@ -1,0 +1,88 @@
+package ckan
+
+// Este comando CUE genera las órdenes curl necesarias para crear un datastore por cada
+// tipo de entidad definido en el modelo de vertical.
+//
+// Requiere que los resources ya estén creados. Los resources pueden crearse
+// utilizando la plantilla ckan_resources.tmpl.
+//
+// Parámetros:
+//
+// ckanURL
+// apiKey
+// organization
+
+import (
+    "encoding/json"
+    "strings"
+    "tool/exec"
+    "tool/cli"
+)
+
+ckanURL: *"https://demo.ckan.com"           | string @tag(ckanURL)
+apiKey:  *"abcd"                            | string @tag(apiKey)
+organization: *"ayuntamiento-de-alcobendas" | string @tag(organization)
+vertical: "{{ .subservice | lower }}"
+
+{{- $name := .name }}
+{{- range .entityTypes }}
+datasets: {{ $name }}_{{ .entityType | lower }}: resource_id: string
+{{- end }}
+
+command: datastores: {
+
+    // Paso 1: Obtener los IDs de recurso. Deben estar todos creados.
+    queryResources: exec.Run & {
+        cmd: [
+            "curl",
+            "\(ckanURL)/api/3/action/package_show?id=\(organization)_\(vertical)",
+            "-H",
+            "Authorization: \(apiKey)"
+        ],
+        stdout: string
+    }
+    // logQueryResources: cli.Print & { text: queryResources.stdout }
+
+    // Paso 2: insertar los IDs de recurso en el modelo
+    resourceIds: {for resource in json.Unmarshal(queryResources.stdout).result.resources {
+        (resource.name): resource.id
+    }}
+    sets: datasets
+    sets: [name=string]: resource_id: resourceIds[name]
+
+    // Paso 3: volcar los comandos que habría que ejecutar para crear los datasets
+    cmdDatasets: [for name, info in sets {
+        "curl -X POST '\(ckanURL)/api/3/action/datastore_create' -H 'Authorization: \(apiKey)' -d '\(json.Marshal(info))'"
+    }]
+    createDatasets: cli.Print & {
+        text: strings.Join(cmdDatasets, "\n")
+    }
+}
+
+{{- range .entityTypes }}
+datasets: {{ $name }}_{{ .entityType | lower }}: {
+    fields: [
+        {{- range .attrs }}
+        {{- $type := "text" }}
+        {{- if eq .type "Number" }}
+        {{- $type = "float" }}
+        {{- end }}
+        {{- if eq .type "DateTime" }}
+        {{- $type = "timestamp" }}
+        {{- end }}
+        {{- if eq .type "Boolean" }}
+        {{- $type = "bool" }}
+        {{- end }}
+        {{- if eq .type "Bool" }}
+        {{- $type = "bool" }}
+        {{- end }}
+        {{- if contains .type "json" }}
+        {{ $type = "json" }}
+        {{- end -}}
+        {"id": "{{ .name }}", "type": "{{ $type }}"}, {"id": "{{ .name }}_md", "type": "json"},
+        {{- end -}}
+        {"id":"recvTime","type":"text"}, {"id":"fiwareServicePath","type":"text"}, {"id":"entityId","type":"text"}, {"id":"entityType","type":"text"}
+    ],
+    force: true
+}
+{{- end }}
