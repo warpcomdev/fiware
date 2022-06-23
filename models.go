@@ -35,10 +35,12 @@ type Vertical struct {
 	Devices  []Device  `json:"devices,omitempty"`
 	// CEP rules
 	Rules []Rule `json:"rules,omitempty"`
-	// Lista de proyectos. Esto no pertenece a la vertical, sino al entorno,
+	// Lista de proyectos, paneles y verticals de urbo.
+	// Esto no pertenece a la vertical, sino al entorno,
 	// pero me facilita meterlo aqui...
-	Projects []Project       `json:"projects,omitempty"`
-	Panels   json.RawMessage `json:"panels,omitempty"`
+	Projects  []Project                  `json:"projects,omitempty"`
+	Panels    map[string]json.RawMessage `json:"panels,omitempty"`
+	Verticals map[string]json.RawMessage `json:"verticals,omitempty"`
 }
 
 // EntityType representa un tipo de entidad

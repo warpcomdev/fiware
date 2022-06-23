@@ -25,6 +25,7 @@ var canGet []string = []string{
 	"rules",
 	"projects",
 	"panels",
+	"verticals",
 }
 
 type serializerWithSetup interface {
@@ -74,7 +75,7 @@ func getKeystoneHeaders(c *cli.Context, selected config.Config) (k *keystone.Key
 }
 
 func getUrboHeaders(c *cli.Context, selected config.Config) (u *urbo.Urbo, h http.Header, err error) {
-	u, err = urbo.New(selected.UrboURL, selected.Username, selected.Service)
+	u, err = urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -87,10 +88,10 @@ func getUrboHeaders(c *cli.Context, selected config.Config) (u *urbo.Urbo, h htt
 		return nil, nil, errors.New("no subservice selected")
 	}
 
-	token := c.String(tokenFlag.Name)
+	token := c.String(urboTokenFlag.Name)
 	if token == "" {
-		if token = selected.HasToken(); token == "" {
-			return nil, nil, errors.New("no token found, please login first")
+		if token = selected.HasUrboToken(); token == "" {
+			return nil, nil, errors.New("no urbo token found, please set `urbo` context var and login first")
 		}
 	}
 	header, err := u.Headers(token)
@@ -164,6 +165,13 @@ func getResource(c *cli.Context, store *config.Store) error {
 				return err
 			}
 			if err := getPanels(selected, u, header, vertical); err != nil {
+				return err
+			}
+		case "verticals":
+			if u, header, err = getUrboHeaders(c, selected); err != nil {
+				return err
+			}
+			if err := getVerticals(selected, u, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -241,5 +249,14 @@ func getPanels(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fi
 		return err
 	}
 	vertical.Panels = panels
+	return nil
+}
+
+func getVerticals(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
+	verticals, err := u.Verticals(httpClient(), header)
+	if err != nil {
+		return err
+	}
+	vertical.Verticals = verticals
 	return nil
 }

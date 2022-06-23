@@ -50,7 +50,7 @@ func auth(c *cli.Context, store *config.Store) error {
 	}()
 	if selected.UrboURL != "" {
 		wg.Add(1)
-		u, err := urbo.New(selected.UrboURL, selected.Username, selected.Service)
+		u, err := urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
 		if err != nil {
 			return err
 		}

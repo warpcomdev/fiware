@@ -11,7 +11,8 @@ services?: [...#Service]
 devices?: [...#Device]
 rules?: [...#Rule]
 projects?: [...#Project]
-panels?: #Json
+panels?: [string]:    #Json
+verticals?: [string]: #Json
 
 #EntityType: {
 	entityID:   string

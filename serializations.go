@@ -95,7 +95,18 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		s.EndList()
 	}
 	if len(x.Panels) > 0 {
-		s.KeyRaw("panels", x.Panels, false)
+		s.BeginBlock("panels")
+		for k, v := range x.Panels {
+			s.KeyRaw(k, v, false)
+		}
+		s.EndBlock()
+	}
+	if len(x.Verticals) > 0 {
+		s.BeginBlock("verticals")
+		for k, v := range x.Verticals {
+			s.KeyRaw(k, v, false)
+		}
+		s.EndBlock()
 	}
 }
 
