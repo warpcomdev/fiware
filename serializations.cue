@@ -21,8 +21,9 @@ verticals?: [string]: #Json
 }
 
 #Attribute: {
-	name:       string
-	type:       string
+	name: string
+	type: string
+	description?: [...string]
 	value?:     #Json
 	metadatas?: #Json
 }

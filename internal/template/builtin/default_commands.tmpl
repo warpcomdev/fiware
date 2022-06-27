@@ -1,0 +1,60 @@
+# Comandado
+
+## Tipos de comandos
+En el ámbito del vertical de `{{.name}}` se definen dos tipos de comandos:
+
+- **Comandos Nativos** 
+- **Comandos CEP**
+
+
+### Comandos Nativos
+Son aquellos comandos que tienen integración nativa dentro de la Plataforma, entendiendo por integración nativa la provisión de un registro en Context Broker.
+Los atributos registrados como comandos siempre serán de tipo _Command_ y siempre existirán los correspondientes atributos de command_status 
+y command_info donde:
+- **command_status**: indica el estado en que se encuentra el comando atendiendo al protocolo de comunicación. Sus posibles valores son:
+>- **_UNKNOWN_**: estado incial de un comando cuando se crea el registro.
+>- **_PENDING_**: el comando ha sido entregado a IoTAgent o Context Adapter.
+>- **_DELIVERED_**: el comando ha sido entregado al dispositivo o actuador.
+>- **_OK_**: el dispositivo o actuador ha respondido al comando correctamente.
+>- **_ERROR_**: se ha producido un error de protocolo en alguna de las fases del comandado.
+- **command_info**: indica el resultado de la ejecución del comando en el dispositivo o actuador. (NB: un comando podría tener status OK y en info mostrar algun 
+tipo de error en la ejecución del comando.
+
+El envío de estos comandos se hará siempre empleando los verbos PUT o PATCH en las operaciones de actualización de entidades del Context Broker. 
+Los comandos nativos se envían a dispositivos o actuadores reales a través de IotAgent o Context Adapter.
+
+### Comandos CEP
+Son aquellos comandos que se ejecutan a través del CEP. Principalemente se emplean estos comandos cuando se quiere hacer comandado múltiple. En estos comandos
+la actualización del atributo desencadena una notificación al CEP. En la actualización del atributo se podrán emplear los verbos POST, PUT y PATCH en las operaciones de actualización de entidades del Context Broker. El tipo del atributo establecido como comando deber ser de tipo _CepCommand_. Los comandos CEP comandos tienen que ir asociados a una regla CEP que es la que se encargará, entre otras cosas, de la invocación de los comandos nativos si fuera oportuno.
+
+Los comandos CEP suelen hacer uso de los atributos definidos en el modelo para la trazabilidad y seguimiento de comandos, como pueden ser:
+- _dateLastCommanded_
+- _lastCommanderMessage_
+- _lastCommander_
+- _commandTimeinstant_
+
+La siguiente figura ilustra el funcionamiento de ambos tipos de comandos:
+
+![comandado](https://user-images.githubusercontent.com/7370473/140298124-26697b2c-ae88-4402-997a-85eadc03778b.jpg)
+
+## Listado de comandos
+{{- range .entityTypes }}
+
+{{- $hasCommands := false }}
+{{- range .attrs }}
+{{- if (hasPrefix .type "command") }}
+{{- $hasCommands = true }}
+{{- end }}
+{{- end }}
+
+{{- if $hasCommands }}
+### Comandos de _{{ .entityType }}_
+{{- range .attrs }}
+
+{{- if (hasPrefix .type "command") }}
+- **{{ .name }}** (nativo): {{ index .description 0 }}. {{ index .description 1 }}
+{{- end }}
+
+{{- end }}
+{{- end }}
+{{- end }}

@@ -46,6 +46,16 @@ func from_line(line string) []fiware.Attribute {
 	}
 	name := fields[0]
 	_typ := fields[1]
+	desc := make([]string, 0, len(fields))
+	for _, item := range fields[2:] {
+		item = strings.TrimSpace(item)
+		if item != "" && item != "-" {
+			desc = append(desc, item)
+		}
+	}
+	if len(desc) <= 0 {
+		desc = nil
+	}
 	if strings.HasPrefix(name, "[") { // for commands
 		if index := strings.Index(name[1:], "]"); index > 0 {
 			// strings.Index was passed name[1:], so we have to add 1
@@ -128,8 +138,9 @@ func from_line(line string) []fiware.Attribute {
 	matches := wifi_repeats.FindStringSubmatch(name)
 	if len(matches) <= 0 {
 		attrib := fiware.Attribute{
-			Name: name,
-			Type: _typ,
+			Name:        name,
+			Type:        _typ,
+			Description: desc,
 		}
 		if len(value) > 0 {
 			attrib.Value = value[0].Value
@@ -148,8 +159,9 @@ func from_line(line string) []fiware.Attribute {
 	result := make([]fiware.Attribute, 0, len(infixes))
 	for index, infix := range infixes {
 		attrib := fiware.Attribute{
-			Name: fmt.Sprintf("%s%s%s", prefix, infix, suffix),
-			Type: _typ,
+			Name:        fmt.Sprintf("%s%s%s", prefix, infix, suffix),
+			Type:        _typ,
+			Description: desc,
 		}
 		if vals > 0 {
 			attrib.Value = value[index%vals].Value

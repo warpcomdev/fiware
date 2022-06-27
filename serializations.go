@@ -133,6 +133,13 @@ func (x Attribute) MarshalJSON() ([]byte, error) {
 func (x Attribute) Serialize(s serialize.Serializer) {
 	s.KeyString("name", x.Name)
 	s.KeyString("type", x.Type)
+	if len(x.Description) > 0 {
+		s.BeginList("description")
+		for _, y := range x.Description {
+			s.String(y)
+		}
+		s.EndList()
+	}
 	if len(x.Value) > 0 {
 		s.KeyRaw("value", x.Value, true)
 	}

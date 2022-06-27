@@ -55,10 +55,11 @@ type EntityType struct {
 
 // Attribute representa un atributo de una entidad
 type Attribute struct {
-	Name      string          `json:"name"`
-	Type      string          `json:"type"`
-	Value     json.RawMessage `json:"value,omitempty" compact:"true"`
-	Metadatas json.RawMessage `json:"metadatas,omitempty" compact:"true"`
+	Name        string          `json:"name"`
+	Type        string          `json:"type"`
+	Description []string        `json:"description,omitempty"`
+	Value       json.RawMessage `json:"value,omitempty" compact:"true"`
+	Metadatas   json.RawMessage `json:"metadatas,omitempty" compact:"true"`
 }
 
 // Entity representa una instancia de EntityType

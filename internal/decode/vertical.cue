@@ -18,6 +18,7 @@ import (
         #attr: {
             name: string
             type: string
+            description?: [...string]
             value: #any | *""
             metadatas?: [...#any]
         }
