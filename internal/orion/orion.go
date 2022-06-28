@@ -30,17 +30,35 @@ func New(orionURL string) (*Orion, error) {
 	}, nil
 }
 
+type suscriptionPaginator struct {
+	response []fiware.Suscription
+	buffer   []fiware.Suscription
+}
+
+// GetBuffer implements Paginator
+func (p *suscriptionPaginator) GetBuffer() interface{} {
+	return &p.buffer
+}
+
+// PutBuffer implements Paginator
+func (p *suscriptionPaginator) PutBuffer(buf interface{}) int {
+	p.response = append(p.response, p.buffer...)
+	count := len(p.buffer)
+	p.buffer = p.buffer[:0] // Reset the buffer before next cycle
+	return count
+}
+
 // Suscriptions reads the list of suscriptions from the Context Broker
 func (o *Orion) Suscriptions(client *http.Client, headers http.Header) ([]fiware.Suscription, error) {
 	path, err := o.URL.Parse("v2/subscriptions")
 	if err != nil {
 		return nil, err
 	}
-	var response []fiware.Suscription
-	if err := keystone.GetJSON(client, headers, path, &response, o.AllowUnknownFields); err != nil {
+	var pages suscriptionPaginator
+	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
 		return nil, err
 	}
-	return response, nil
+	return pages.response, nil
 }
 
 // PostSuscriptions posts a list of suscriptions to orion

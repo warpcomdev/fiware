@@ -148,6 +148,31 @@ func GetJSON(client *http.Client, headers http.Header, path *url.URL, data inter
 	return Query(client, http.MethodGet, headers, path, data, allowUnknownFields)
 }
 
+type Paginator interface {
+	GetBuffer() interface{}
+	PutBuffer(interface{}) (count int)
+}
+
+// GetPaginatedJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
+func GetPaginatedJSON(client *http.Client, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool) error {
+	offset, limit := 0, 50
+	for {
+		limitedURL := *path // make a copy
+		values := limitedURL.Query()
+		values.Add("offset", strconv.Itoa(offset))
+		values.Add("limit", strconv.Itoa(limit))
+		limitedURL.RawQuery = values.Encode()
+		data := p.GetBuffer()
+		if err := Query(client, http.MethodGet, headers, &limitedURL, data, allowUnknownFields); err != nil {
+			return err
+		}
+		if count := p.PutBuffer(data); count < limit {
+			return nil
+		}
+		offset += limit
+	}
+}
+
 // PostJSON is a convenience wrapper for Update(client, http.MethodPost, ...)
 func PostJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 	return Update(client, http.MethodPost, headers, path, data)
