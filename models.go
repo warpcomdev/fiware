@@ -55,11 +55,13 @@ type EntityType struct {
 
 // Attribute representa un atributo de una entidad
 type Attribute struct {
-	Name        string          `json:"name"`
-	Type        string          `json:"type"`
-	Description []string        `json:"description,omitempty"`
-	Value       json.RawMessage `json:"value,omitempty" compact:"true"`
-	Metadatas   json.RawMessage `json:"metadatas,omitempty" compact:"true"`
+	Name         string          `json:"name"`
+	Type         string          `json:"type"`
+	Description  []string        `json:"description,omitempty"`
+	Value        json.RawMessage `json:"value,omitempty" compact:"true"`
+	Metadatas    json.RawMessage `json:"metadatas,omitempty" compact:"true"`
+	SingletonKey bool            `json:"singletonKey,omitempty"`
+	Simulated    bool            `json:"simulated,omitempty"`
 }
 
 // Entity representa una instancia de EntityType
@@ -198,7 +200,8 @@ type Table struct {
 	Columns    []TableColumn `json:"columns"`
 	PrimaryKey []string      `json:"primaryKey"`
 	Indexes    []TableIndex  `json:"indexes"`
-	LastData   bool          `json:"lastdata"` // True si queremos crear una vista lastdata adicional
+	LastData   bool          `json:"lastdata"`            // True si queremos crear una vista lastdata adicional
+	Singleton  []string      `json:"singleton,omitempty"` // Lista de campos únicos, si la entidad es un singleton.
 }
 
 // TableColumn describe una columna de una tabla

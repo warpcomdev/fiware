@@ -24,8 +24,10 @@ verticals?: [string]: #Json
 	name: string
 	type: string
 	description?: [...string]
-	value?:     #Json
-	metadatas?: #Json
+	value?:        #Json
+	metadatas?:    #Json
+	singletonKey?: bool
+	simulated?:    bool
 }
 
 #Entity: {
@@ -124,6 +126,7 @@ verticals?: [string]: #Json
 	primaryKey: [...string]
 	indexes: [...#TableIndex]
 	lastdata: bool
+	singleton?: [...string]
 }
 
 #TableColumn: {

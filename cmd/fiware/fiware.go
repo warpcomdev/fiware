@@ -73,7 +73,7 @@ func main() {
 						c.String(outputFlag.Name),
 						c.String(verticalFlag.Name),
 						c.String(subServiceFlag.Name),
-						c.Args().Get(0),
+						c.Args().Slice(),
 					)
 				},
 				Flags: []cli.Flag{

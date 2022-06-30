@@ -19,7 +19,7 @@ const (
 	toMarker   = "// END REPLACE"
 )
 
-func Decode(outfile, verticalName, subserviceName, path string) error {
+func Decode(outfile, verticalName, subserviceName string, paths []string) error {
 
 	fromIndex := strings.Index(verticalTemplate, fromMarker)
 	toIndex := strings.Index(verticalTemplate, toMarker)
@@ -40,10 +40,23 @@ func Decode(outfile, verticalName, subserviceName, path string) error {
 		models    []fiware.EntityType
 		instances []fiware.Entity
 	)
-	if strings.HasSuffix(strings.ToLower(path), ".csv") {
-		models, instances = CSV(path)
-	} else {
-		models, instances = NGSI(path)
+	// Allow reading both a NGSI and a CSV file. If both specified,
+	// entity types are read from NGSI file, but entity values are
+	// read from CSV.
+	for _, path := range paths {
+		if strings.HasSuffix(strings.ToLower(path), ".csv") {
+			localModels, localInstances := CSV(path)
+			instances = localInstances
+			if models == nil {
+				models = localModels
+			}
+		} else {
+			localModels, localInstances := NGSI(path)
+			models = localModels
+			if instances == nil {
+				instances = localInstances
+			}
+		}
 	}
 	indent := "    "
 	modelText, err := json.MarshalIndent(models, indent, indent)

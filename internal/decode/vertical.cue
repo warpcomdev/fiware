@@ -19,6 +19,8 @@ import (
             name: string
             type: string
             description?: [...string]
+            singletonKey: bool | *false
+            simulated: bool | *false
             value: #any | *""
             metadatas?: [...#any]
         }
@@ -101,6 +103,7 @@ import (
         lastdata: true // Añadir tabla de lastdata
         columns: [...#column]
         indexes: [...#index]
+        singleton: [for _attr in entityType.attrs if _attr.singletonKey { strings.ToLower(_attr.name) }]
 
         columns: [
             for attr in entityType.attrs

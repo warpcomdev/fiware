@@ -73,8 +73,16 @@ func from_line(line string) []fiware.Attribute {
 	}
 	seps := map[string]bool{":": true, "=": true}
 	quot := map[string]string{"\"": "\"", "`": "`", "'": "'", "[": "]"}
+	singletonKey, simulated := false, false
 	var text []string
 	for _, other := range fields[2:] {
+		otherLower := strings.ToLower(other)
+		if strings.Contains(otherLower, "singleton") {
+			singletonKey = true
+		}
+		if strings.Contains(otherLower, "simulación") || strings.Contains(otherLower, "simulacion") {
+			simulated = true
+		}
 		for _, substr := range seek {
 			index := strings.Index(other, substr)
 			if index >= 0 {
@@ -138,9 +146,11 @@ func from_line(line string) []fiware.Attribute {
 	matches := wifi_repeats.FindStringSubmatch(name)
 	if len(matches) <= 0 {
 		attrib := fiware.Attribute{
-			Name:        name,
-			Type:        _typ,
-			Description: desc,
+			Name:         name,
+			Type:         _typ,
+			Description:  desc,
+			SingletonKey: singletonKey,
+			Simulated:    simulated,
 		}
 		if len(value) > 0 {
 			attrib.Value = value[0].Value

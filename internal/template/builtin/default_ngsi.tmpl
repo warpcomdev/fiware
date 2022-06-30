@@ -28,7 +28,7 @@ Como complemento a este documento, el [documento de comandado](commands.md) expl
 | id | - | ID de la entidad. | Ejemplo: `{{.entityID}}` | - | - |
 | type | - | Tipo de entidad. | Valor: `{{.entityType}}` | - | - |
 {{- range .attrs }}
-| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | - | Ejemplo: `{{ .value }}` | - | - |
+| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | {{ if gt (len .description) 0 }}{{ index .description 0 }}{{ else }}-{{ end }} | {{ if gt (len .description) 1 }}{{ index .description 1 }}{{ else }}Ejemplo: `{{ .value }}`{{ end }} | {{ if gt (len .description) 2 }}{{ index .description 2 }}{{ else }}-{{ end }} | {{ if gt (len .description) 3 }}{{ index .description 3 }}{{ else }}-{{ end }} |
 {{- end }}
 
 Ejemplo de `{{.entityType}}` (en formato NGSIv2):
@@ -38,10 +38,12 @@ Ejemplo de `{{.entityType}}` (en formato NGSIv2):
     "id": "{{.entityID}}",
     "type": "{{.entityType}}",
     {{- range .attrs }}
+    {{- if .value }}
     "{{.name}}": {
         "type": "{{.type}}",
-        "value": {{.value | quote}}
+        "value": {{ if eq .type "Number" }}{{.value}}{{else}}{{.value | quote}}{{end}}
     },
+    {{- end }}
     {{- end }}
 }
 ```

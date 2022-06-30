@@ -1,0 +1,58 @@
+{
+    "domain": {
+        "service": "alcobendas",
+        "subservice": "/{{ .subservice }}"
+    },
+    "contextBroker": {
+        "protocol": "http",
+        "host": "lab.urbo2.es",
+        "port": 1026,
+        "ngsiVersion": "2.0"
+    },
+    "authentication": {
+        "provider": "keystone",
+        "protocol": "http",
+        "host": "lab.urbo2.es",
+        "port": "5001",
+        "user": "<SIMULATOR_USER>",
+        "password": "<CHANGEME>"
+    },
+    "entities": [
+{{- range .entityTypes }}
+{{- $currentType := .entityType }}
+{{- $hasSimulation := false }}
+{{- $attrs := .attrs }}
+{{- range .attrs }}
+{{- if .simulated }}
+{{- $hasSimulation = true }}
+{{- end }}
+{{- end }}
+{{- if $hasSimulation }}
+{{- $init := 0 }}
+{{- range $.entities }}
+{{- if eq .entityType $currentType }}
+        {
+            "entity_name": {{ .entityID | quote }},
+            "entity_type": {{ .entityType | quote }},
+            "schedule": "{{ $init }} */15 * * * *",
+            "active": [
+{{- range $attrs }}
+{{- if .simulated }}
+                { 
+                    "name": "{{ .name }}",
+                    "type": "{{ .type }}",
+                    "value": "<{{ $currentType | upper }}:{{ .name | upper }}>"
+                },
+{{- end }}
+{{- end }}
+                { "name": "TimeInstant", "type": "DateTime", "value": "import(now)" }
+            ]
+        },
+{{- end }}
+{{- $init = add $init 1 }}
+{{- $init = mod $init 60 }}
+{{- end }}
+{{- end }}
+{{- end }}
+    ]
+}

@@ -146,6 +146,12 @@ func (x Attribute) Serialize(s serialize.Serializer) {
 	if len(x.Metadatas) > 0 {
 		s.KeyRaw("metadatas", x.Metadatas, true)
 	}
+	if x.SingletonKey {
+		s.KeyBool("singletonKey", x.SingletonKey)
+	}
+	if x.Simulated {
+		s.KeyBool("simulated", x.Simulated)
+	}
 }
 
 func (x Entity) MarshalJSON() ([]byte, error) {
@@ -464,6 +470,13 @@ func (x Table) Serialize(s serialize.Serializer) {
 	}
 	s.EndList()
 	s.KeyBool("lastdata", x.LastData)
+	if len(x.Singleton) > 0 {
+		s.BeginList("singleton")
+		for _, y := range x.Singleton {
+			s.String(y)
+		}
+		s.EndList()
+	}
 }
 
 func (x TableColumn) MarshalJSON() ([]byte, error) {
