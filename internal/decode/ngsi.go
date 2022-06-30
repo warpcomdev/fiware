@@ -223,6 +223,7 @@ func from_lines(lines []string) fiware.EntityType {
 // - Any other column: "Ejemplo:", "Ejemplo=", "Valor:", "Valor=",...
 func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	models := make([]fiware.EntityType, 0, 16)
+	entities := make([]fiware.Entity, 0, 16)
 	latest := make([]string, 0, 256)
 	inside := false
 	infile, err := skipBOM(filename)
@@ -242,6 +243,22 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 				models = append(models, model)
 				inside = false
 				latest = latest[:0]
+				// Create entity too, to be able to populate CSV from NGSI
+				entity := fiware.Entity{
+					ID:        model.ID,
+					Type:      model.Type,
+					Attrs:     make(map[string]json.RawMessage),
+					MetaDatas: make(map[string]json.RawMessage),
+				}
+				for _, attr := range model.Attrs {
+					if attr.Value != nil && len(attr.Value) > 0 {
+						entity.Attrs[attr.Name] = attr.Value
+					}
+					if attr.Metadatas != nil && len(attr.Metadatas) > 0 {
+						entity.MetaDatas[attr.Name] = attr.Metadatas
+					}
+				}
+				entities = append(entities, entity)
 			} else {
 				switch {
 				case !mustPipe && strings.Contains(line, "|"):
@@ -280,5 +297,5 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 			}
 		}
 	}
-	return models, nil
+	return models, entities
 }
