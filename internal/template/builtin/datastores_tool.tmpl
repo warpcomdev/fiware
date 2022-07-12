@@ -19,10 +19,11 @@ import (
     "tool/cli"
 )
 
+// Invocar el comando con -t "ckanURL=http://..." -t apiKey=... -t organization=...
 ckanURL: *"https://demo.ckan.com"           | string @tag(ckanURL)
 apiKey:  *"abcd"                            | string @tag(apiKey)
 organization: *"ayuntamiento-de-alcobendas" | string @tag(organization)
-vertical: "{{ .subservice | lower }}"
+servicePath: "{{ .subservice | lower }}"
 
 {{- $name := .name }}
 {{- range .entityTypes }}
@@ -35,7 +36,7 @@ command: datastores: {
     queryResources: exec.Run & {
         cmd: [
             "curl",
-            "\(ckanURL)/api/3/action/package_show?id=\(organization)_\(vertical)",
+            "\(ckanURL)/api/3/action/package_show?id=\(organization)_\(servicePath)",
             "-H",
             "Authorization: \(apiKey)"
         ],
@@ -65,7 +66,8 @@ datasets: {{ $name }}_{{ .entityType | lower }}: {
         {{- range .attrs }}
         {{- $type := "text" }}
         {{- if eq .type "Number" }}
-        {{- $type = "float" }}
+        {{/* $type = "numeric" might fail if entity attrib is text */}}
+        {{/* $type = "numeric" */}}
         {{- end }}
         {{- if eq .type "DateTime" }}
         {{- $type = "timestamp" }}
@@ -76,7 +78,7 @@ datasets: {{ $name }}_{{ .entityType | lower }}: {
         {{- if eq .type "Bool" }}
         {{- $type = "bool" }}
         {{- end }}
-        {{- if contains .type "json" }}
+        {{- if (.type | contains "json") }}
         {{ $type = "json" }}
         {{- end -}}
         {"id": "{{ .name }}", "type": "{{ $type }}"}, {"id": "{{ .name }}_md", "type": "json"},

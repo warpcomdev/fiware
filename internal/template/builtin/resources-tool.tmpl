@@ -3,7 +3,11 @@ package ckan
 // Este comando CUE genera las órdenes curl necesarias para crear un resource por cada
 // tipo de entidad definido en el modelo de vertical.
 //
-// Requiere que la organización esté ya creada.
+// Requiere que la organización y el package estén ya creados.
+// El package puede crearse con:
+// curl -X POST -H 'Authorization: ${apiKey}' \
+//   '${ckanURL}/api/3/action/package_create' \
+//   -d '{"name":"${organization}_{$servicepath}","owner_org":"${organization}"}'
 //
 // Parámetros:
 //
@@ -18,10 +22,11 @@ import (
     "tool/cli"
 )
 
+// Invocar el comando con -t "ckanURL=http://..." -t apiKey=... -t organization=...
 ckanURL: *"https://demo.ckan.com"           | string @tag(ckanURL)
 apiKey:  *"abcd"                            | string @tag(apiKey)
 organization: *"ayuntamiento-de-alcobendas" | string @tag(organization)
-vertical: "{{ .subservice | lower }}"
+servicePath: "{{ .subservice | lower }}"
 
 {{- $name := .name }}
 {{- range .entityTypes }}
@@ -35,7 +40,7 @@ command: resources: {
     queryPackage: exec.Run & {
         cmd: [
             "curl",
-            "\(ckanURL)/api/3/action/package_show?id=\(organization)_\(vertical)",
+            "\(ckanURL)/api/3/action/package_show?id=\(organization)_\(servicePath)",
             "-H",
             "Authorization: \(apiKey)"
         ],
