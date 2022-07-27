@@ -1,0 +1,30 @@
+{{- define "default_pgcron_sets" }}
+{{ range .views }}
+{{- if .materialized }}
+\set {{ .name }} '{{ .name }}'
+{{- end }}
+{{- end }}
+
+\set separator '_'
+\set scope :scope
+\set scope_sep :scope:separator
+
+SELECT CASE
+  WHEN :'scope'= ':scope'
+  THEN ''
+  ELSE :'scope_sep'
+END AS "scope"  \gset
+{{ end }}
+{{- define "default_pgcron_sql" }}
+{{- range .views }}
+{{- $view_name := .name }}
+
+-----------------------------------
+-- View {{ $view_name }} refresh
+-----------------------------------
+SELECT cron.schedule(:'target_schema'||'.'||:'scope'||:'{{ .name }}', :'schedule', 'REFRESH MATERIALIZED VIEW '||:'target_schema'||'.'||:'scope'||:'{{ .name }}');
+UPDATE cron.job SET database = :'target_database', username = :'target_username' WHERE jobname = :'target_schema'||'.'||:'scope'||:'{{ .name }}';
+{{- end }}
+{{- end }}
+{{- template "default_pgcron_sets" . }}
+{{- template "default_pgcron_sql" .  }}

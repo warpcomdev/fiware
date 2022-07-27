@@ -25,9 +25,9 @@ END AS "scope"  \gset
 -----------------------------------
 -- View {{ $view_name }}
 -----------------------------------
-DROP VIEW IF EXISTS :target_schema.:scope:{{ $view_name }} CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS :target_schema.:scope:{{ $view_name }} CASCADE;
 
-CREATE OR REPLACE VIEW :target_schema.:scope:{{ $view_name }} AS
+CREATE OR REPLACE MATERIALIZED VIEW :target_schema.:scope:{{ $view_name }} AS
 SELECT
   DATE_TRUNC('day', timeinstant) AS fecha,
   DATE_PART('day', DATE_TRUNC('day', timeinstant)) AS dia,	
@@ -42,8 +42,8 @@ SELECT
   entitytype AS entitytype
 FROM :target_schema.:scope:{{ .from }}_table
 GROUP BY
-  entityid, entitytype, DATE_TRUNC('day', timeinstant)
-  {{ with .group }},{{ . | join ", " }}{{ end }}
+  entityid, entitytype, DATE_TRUNC('day', timeinstant){{ with .group }},
+  {{ . | join ", " }}{{ end }}
 {{- end }}
 {{- end }}
 {{- template "default_mvs_sets" . }}

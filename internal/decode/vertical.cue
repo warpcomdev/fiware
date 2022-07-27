@@ -115,8 +115,10 @@ import (
         ]
     }}]
 
-    // Añado el atributo "longterm" a las columnas que lo necesiten.
+    // Estos atributos son "municipality" y no pueden ser NULL
     let _municipalityAttribs = ["zip", "zone", "district", "municipality", "region", "province", "community", "country"]
+
+    // Añado el atributo "longterm" a las columnas que lo necesiten.
     entityTypes: [...{
         attrs: [...{
             simulated: true
@@ -129,7 +131,16 @@ import (
     }]
 
     // Materialized views
-    views: [for entityType in entityTypes {{
+    _hasLongterm: {
+        for entityType in entityTypes {
+            for attr in entityType.attrs if attr.longterm != _|_ {
+                if attr.longterm != "dimension" {
+                    "\(entityType.entityType)": entityType
+                }
+            }
+        }
+    }
+    views: [for _, entityType in _hasLongterm {{
         materialized: true,
         name: _verticalName + "_" + strings.ToLower(entityType.entityType) + "_mv"
         from: _verticalName + "_" + strings.ToLower(entityType.entityType)

@@ -46,3 +46,41 @@ El vertical se compone de las siguientes tablas en el datasource PostgreSQL:
 - {{ $vertical }}_{{ .entityType | lower }}: : Recopila la información recibida por las entidades de tipo `{{.entityType}}`.
 - {{ $vertical }}_{{ .entityType | lower }}_lastdata: Recopila **solo** los últimos datos recibidos por las entidades de tipo `{{.entityType}}`.
 {{- end }}
+{{ $materialized := 0 }}
+{{- range .views }}
+{{- if .materialized }}
+{{- $materialized = 1 }}
+{{- end }}
+{{- end }}
+{{- if $materialized }}
+
+## Ejecución del script mv.sql
+
+El script sirve para crear una vista materializada con los agregados de todos los campos que interesa almacenar de la entidad. Este script es necesario para la funcionalidad de long-term.
+Para ello es necesario ejecutar el script de la siguiente manera:
+
+`psql -h <host> -p <port> -d <database> -U <user> -f {{.name}}-vertical/model/db/mv.sql -v target_schema=<schema>`
+
+donde:
+  - host: host donde se encuentra el servidor de base de datos
+  - port: puerto donde esta levantado el servicio de base de datos
+  - user: usuario que ejecuta el script
+  - database: base de datos donde se crearán las vistas materializadas
+  - target_schema: esquema sobre el que se crearán las vistas materializadas
+
+## Ejecución del script pgcron.sql
+
+El script sirve para incluir el refresco de las vistas materializadas en la programación de postgres, siempre que esté habilitada la extensión pg_cron.
+Para ello es necesario ejecutar el script de la siguiente manera:
+
+`psql -h <host> -p <port> -d pg_cron -U <user> -f pg_cron.sql -v target_database=<target_database> -v target_schema=<target_schema> -v target_username=<target_username> -v schedule=<schedule>`
+
+donde:
+  - host: host donde se encuentra el servidor de base de datos
+  - port: puerto donde esta levantado el servicio de base de datos
+  - user: usuario que ejecuta el script pg_cron.sql
+  - target_database: base de datos sobre la que se ejecutará la programación
+  - target_schema: esquema sobre el que se ejecutará la programación
+  - target_username: usuario que ejecutará la programación
+  - schedule: programación del trabajo. Tendrá un formato estilo cron (e.g. '0 1 * * *') 
+{{- end }}
