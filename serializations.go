@@ -11,8 +11,8 @@ func (x Vertical) MarshalJSON() ([]byte, error) {
 }
 
 func (x Vertical) Serialize(s serialize.Serializer) {
-	s.KeyString("name", x.Name)
-	s.KeyString("subservice", x.Subservice)
+	s.KeyString("name", string(x.Name))
+	s.KeyString("subservice", string(x.Subservice))
 	if len(x.EntityTypes) > 0 {
 		s.BeginList("entityTypes")
 		for _, y := range x.EntityTypes {
@@ -52,6 +52,15 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 	if len(x.Tables) > 0 {
 		s.BeginList("tables")
 		for _, y := range x.Tables {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
+	if len(x.Views) > 0 {
+		s.BeginList("views")
+		for _, y := range x.Views {
 			s.BeginBlock("")
 			s.Serialize(y)
 			s.EndBlock()
@@ -115,8 +124,8 @@ func (x EntityType) MarshalJSON() ([]byte, error) {
 }
 
 func (x EntityType) Serialize(s serialize.Serializer) {
-	s.KeyString("entityID", x.ID)
-	s.KeyString("entityType", x.Type)
+	s.KeyString("entityID", string(x.ID))
+	s.KeyString("entityType", string(x.Type))
 	s.BeginList("attrs")
 	for _, y := range x.Attrs {
 		s.BeginBlock("")
@@ -131,8 +140,8 @@ func (x Attribute) MarshalJSON() ([]byte, error) {
 }
 
 func (x Attribute) Serialize(s serialize.Serializer) {
-	s.KeyString("name", x.Name)
-	s.KeyString("type", x.Type)
+	s.KeyString("name", string(x.Name))
+	s.KeyString("type", string(x.Type))
 	if len(x.Description) > 0 {
 		s.BeginList("description")
 		for _, y := range x.Description {
@@ -152,6 +161,16 @@ func (x Attribute) Serialize(s serialize.Serializer) {
 	if x.Simulated {
 		s.KeyBool("simulated", x.Simulated)
 	}
+	if x.Longterm != "" {
+		s.KeyString("longterm", string(x.Longterm))
+	}
+	if len(x.LongtermOptions) > 0 {
+		s.BeginList("longtermOptions")
+		for _, y := range x.LongtermOptions {
+			s.String(y)
+		}
+		s.EndList()
+	}
 }
 
 func (x Entity) MarshalJSON() ([]byte, error) {
@@ -159,8 +178,8 @@ func (x Entity) MarshalJSON() ([]byte, error) {
 }
 
 func (x Entity) Serialize(s serialize.Serializer) {
-	s.KeyString("entityID", x.ID)
-	s.KeyString("entityType", x.Type)
+	s.KeyString("entityID", string(x.ID))
+	s.KeyString("entityType", string(x.Type))
 	s.BeginBlock("attrs")
 	for k, v := range x.Attrs {
 		s.KeyRaw(k, v, true)
@@ -181,10 +200,10 @@ func (x ServiceMapping) MarshalJSON() ([]byte, error) {
 
 func (x ServiceMapping) Serialize(s serialize.Serializer) {
 	if x.OriginalService != "" {
-		s.KeyString("originalService", x.OriginalService)
+		s.KeyString("originalService", string(x.OriginalService))
 	}
 	if x.NewService != "" {
-		s.KeyString("newService", x.NewService)
+		s.KeyString("newService", string(x.NewService))
 	}
 	s.BeginList("servicePathMappings")
 	for _, y := range x.ServicePathMappings {
@@ -201,10 +220,10 @@ func (x ServicePathMapping) MarshalJSON() ([]byte, error) {
 
 func (x ServicePathMapping) Serialize(s serialize.Serializer) {
 	if x.OriginalServicePath != "" {
-		s.KeyString("originalServicePath", x.OriginalServicePath)
+		s.KeyString("originalServicePath", string(x.OriginalServicePath))
 	}
 	if x.NewServicePath != "" {
-		s.KeyString("newServicePath", x.NewServicePath)
+		s.KeyString("newServicePath", string(x.NewServicePath))
 	}
 	s.BeginList("entityMappings")
 	for _, y := range x.EntityMappings {
@@ -221,16 +240,16 @@ func (x EntityMapping) MarshalJSON() ([]byte, error) {
 
 func (x EntityMapping) Serialize(s serialize.Serializer) {
 	if x.OriginalEntityId != "" {
-		s.KeyString("originalEntityId", x.OriginalEntityId)
+		s.KeyString("originalEntityId", string(x.OriginalEntityId))
 	}
 	if x.NewEntityId != "" {
-		s.KeyString("newEntityId", x.NewEntityId)
+		s.KeyString("newEntityId", string(x.NewEntityId))
 	}
 	if x.OriginalEntityType != "" {
-		s.KeyString("originalEntityType", x.OriginalEntityType)
+		s.KeyString("originalEntityType", string(x.OriginalEntityType))
 	}
 	if x.NewEntityType != "" {
-		s.KeyString("newEntityType", x.NewEntityType)
+		s.KeyString("newEntityType", string(x.NewEntityType))
 	}
 	s.BeginList("attributeMappings")
 	for _, y := range x.AttributeMappings {
@@ -247,16 +266,16 @@ func (x AttributeMapping) MarshalJSON() ([]byte, error) {
 
 func (x AttributeMapping) Serialize(s serialize.Serializer) {
 	if x.OriginalAttributeName != "" {
-		s.KeyString("originalAttributeName", x.OriginalAttributeName)
+		s.KeyString("originalAttributeName", string(x.OriginalAttributeName))
 	}
 	if x.OriginalAttributeType != "" {
-		s.KeyString("originalAttributeType", x.OriginalAttributeType)
+		s.KeyString("originalAttributeType", string(x.OriginalAttributeType))
 	}
 	if x.NewAttributeName != "" {
-		s.KeyString("newAttributeName", x.NewAttributeName)
+		s.KeyString("newAttributeName", string(x.NewAttributeName))
 	}
 	if x.NewAttributeType != "" {
-		s.KeyString("newAttributeType", x.NewAttributeType)
+		s.KeyString("newAttributeType", string(x.NewAttributeType))
 	}
 }
 
@@ -265,12 +284,12 @@ func (x Suscription) MarshalJSON() ([]byte, error) {
 }
 
 func (x Suscription) Serialize(s serialize.Serializer) {
-	s.KeyString("description", x.Description)
+	s.KeyString("description", string(x.Description))
 	if x.Status != "" {
-		s.KeyString("status", x.Status)
+		s.KeyString("status", string(x.Status))
 	}
 	if x.Expires != "" {
-		s.KeyString("expires", x.Expires)
+		s.KeyString("expires", string(x.Expires))
 	}
 	s.BeginBlock("notification")
 	x.Notification.Serialize(s)
@@ -300,7 +319,7 @@ func (x Notification) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	s.KeyString("attrsFormat", x.AttrsFormat)
+	s.KeyString("attrsFormat", string(x.AttrsFormat))
 	if !x.HTTP.IsEmpty() {
 		s.BeginBlock("http")
 		x.HTTP.Serialize(s)
@@ -325,7 +344,7 @@ func (x NotificationHTTP) MarshalJSON() ([]byte, error) {
 }
 
 func (x NotificationHTTP) Serialize(s serialize.Serializer) {
-	s.KeyString("url", x.URL)
+	s.KeyString("url", string(x.URL))
 }
 
 func (x NotificationCustom) MarshalJSON() ([]byte, error) {
@@ -333,11 +352,11 @@ func (x NotificationCustom) MarshalJSON() ([]byte, error) {
 }
 
 func (x NotificationCustom) Serialize(s serialize.Serializer) {
-	s.KeyString("url", x.URL)
+	s.KeyString("url", string(x.URL))
 	if len(x.Headers) > 0 {
 		s.BeginBlock("headers")
 		for k, v := range x.Headers {
-			s.KeyString(k, v)
+			s.KeyString(k, string(v))
 		}
 		s.EndBlock()
 	}
@@ -345,7 +364,7 @@ func (x NotificationCustom) Serialize(s serialize.Serializer) {
 		s.KeyRaw("payload", x.Payload, false)
 	}
 	if x.Method != "" {
-		s.KeyString("method", x.Method)
+		s.KeyString("method", string(x.Method))
 	}
 }
 
@@ -355,16 +374,16 @@ func (x NotificationStatus) MarshalJSON() ([]byte, error) {
 
 func (x NotificationStatus) Serialize(s serialize.Serializer) {
 	if x.LastFailure != "" {
-		s.KeyString("lastFailure", x.LastFailure)
+		s.KeyString("lastFailure", string(x.LastFailure))
 	}
 	if x.LastFailureReason != "" {
-		s.KeyString("lastFailureReason", x.LastFailureReason)
+		s.KeyString("lastFailureReason", string(x.LastFailureReason))
 	}
 	if x.LastNotification != "" {
-		s.KeyString("lastNotification", x.LastNotification)
+		s.KeyString("lastNotification", string(x.LastNotification))
 	}
 	if x.LastSuccess != "" {
-		s.KeyString("lastSuccess", x.LastSuccess)
+		s.KeyString("lastSuccess", string(x.LastSuccess))
 	}
 	if x.LastSuccessCode != 0 {
 		s.KeyInt("lastSuccessCode", x.LastSuccessCode)
@@ -419,7 +438,7 @@ func (x SubjectExpression) MarshalJSON() ([]byte, error) {
 
 func (x SubjectExpression) Serialize(s serialize.Serializer) {
 	if x.Q != "" {
-		s.KeyString("q", x.Q)
+		s.KeyString("q", string(x.Q))
 	}
 }
 
@@ -429,9 +448,9 @@ func (x SubjectEntity) MarshalJSON() ([]byte, error) {
 
 func (x SubjectEntity) Serialize(s serialize.Serializer) {
 	if x.IdPattern != "" {
-		s.KeyString("idPattern", x.IdPattern)
+		s.KeyString("idPattern", string(x.IdPattern))
 	}
-	s.KeyString("type", x.Type)
+	s.KeyString("type", string(x.Type))
 }
 
 func (x SuscriptionStatus) MarshalJSON() ([]byte, error) {
@@ -440,7 +459,7 @@ func (x SuscriptionStatus) MarshalJSON() ([]byte, error) {
 
 func (x SuscriptionStatus) Serialize(s serialize.Serializer) {
 	if x.ID != "" {
-		s.KeyString("id", x.ID)
+		s.KeyString("id", string(x.ID))
 	}
 }
 
@@ -449,7 +468,7 @@ func (x Table) MarshalJSON() ([]byte, error) {
 }
 
 func (x Table) Serialize(s serialize.Serializer) {
-	s.KeyString("name", x.Name)
+	s.KeyString("name", string(x.Name))
 	s.BeginList("columns")
 	for _, y := range x.Columns {
 		s.BeginBlock("")
@@ -484,13 +503,13 @@ func (x TableColumn) MarshalJSON() ([]byte, error) {
 }
 
 func (x TableColumn) Serialize(s serialize.Serializer) {
-	s.KeyString("name", x.Name)
-	s.KeyString("type", x.Type)
+	s.KeyString("name", string(x.Name))
+	s.KeyString("type", string(x.Type))
 	if x.NotNull {
 		s.KeyBool("notNull", x.NotNull)
 	}
 	if x.Default != "" {
-		s.KeyString("default", x.Default)
+		s.KeyString("default", string(x.Default))
 	}
 }
 
@@ -499,7 +518,7 @@ func (x TableIndex) MarshalJSON() ([]byte, error) {
 }
 
 func (x TableIndex) Serialize(s serialize.Serializer) {
-	s.KeyString("name", x.Name)
+	s.KeyString("name", string(x.Name))
 	s.BeginList("columns")
 	for _, y := range x.Columns {
 		s.String(y)
@@ -510,20 +529,53 @@ func (x TableIndex) Serialize(s serialize.Serializer) {
 	}
 }
 
+func (x View) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x View) Serialize(s serialize.Serializer) {
+	if x.Materialized {
+		s.KeyBool("materialized", x.Materialized)
+	}
+	s.KeyString("name", string(x.Name))
+	s.KeyString("from", string(x.From))
+	s.BeginList("group")
+	for _, y := range x.Group {
+		s.String(y)
+	}
+	s.EndList()
+	s.BeginList("columns")
+	for _, y := range x.Columns {
+		s.BeginBlock("")
+		s.Serialize(y)
+		s.EndBlock()
+	}
+	s.EndList()
+}
+
+func (x ViewColumn) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x ViewColumn) Serialize(s serialize.Serializer) {
+	s.KeyString("name", string(x.Name))
+	s.KeyString("expression", string(x.Expression))
+}
+
 func (x Service) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
 
 func (x Service) Serialize(s serialize.Serializer) {
-	s.KeyString("resource", x.Resource)
-	s.KeyString("apikey", x.APIKey)
-	s.KeyString("entity_type", x.EntityType)
+	s.KeyString("resource", string(x.Resource))
+	s.KeyString("apikey", string(x.APIKey))
+	s.KeyString("entity_type", string(x.EntityType))
 	if x.Description != "" {
-		s.KeyString("description", x.Description)
+		s.KeyString("description", string(x.Description))
 	}
-	s.KeyString("protocol", x.Protocol)
+	s.KeyString("protocol", string(x.Protocol))
 	if x.Transport != "" {
-		s.KeyString("transport", x.Transport)
+		s.KeyString("transport", string(x.Transport))
 	}
 	if x.Timestamp {
 		s.KeyBool("timestamp", x.Timestamp)
@@ -575,7 +627,7 @@ func (x Service) Serialize(s serialize.Serializer) {
 		s.EndList()
 	}
 	if x.ExpressionLanguage != "" {
-		s.KeyString("expressionLanguage", x.ExpressionLanguage)
+		s.KeyString("expressionLanguage", string(x.ExpressionLanguage))
 	}
 	x.GroupStatus.Serialize(s)
 }
@@ -585,22 +637,22 @@ func (x DeviceAttribute) MarshalJSON() ([]byte, error) {
 }
 
 func (x DeviceAttribute) Serialize(s serialize.Serializer) {
-	s.KeyString("object_id", x.ObjectId)
-	s.KeyString("name", x.Name)
+	s.KeyString("object_id", string(x.ObjectId))
+	s.KeyString("name", string(x.Name))
 	if x.Type != "" {
-		s.KeyString("type", x.Type)
+		s.KeyString("type", string(x.Type))
 	}
 	if len(x.Value) > 0 {
 		s.KeyRaw("value", x.Value, false)
 	}
 	if x.Expression != "" {
-		s.KeyString("expression", x.Expression)
+		s.KeyString("expression", string(x.Expression))
 	}
 	if x.EntityName != "" {
-		s.KeyString("entity_name", x.EntityName)
+		s.KeyString("entity_name", string(x.EntityName))
 	}
 	if x.EntityType != "" {
-		s.KeyString("entity_type", x.EntityType)
+		s.KeyString("entity_type", string(x.EntityType))
 	}
 }
 
@@ -610,16 +662,16 @@ func (x DeviceCommand) MarshalJSON() ([]byte, error) {
 
 func (x DeviceCommand) Serialize(s serialize.Serializer) {
 	if x.ObjectId != "" {
-		s.KeyString("object_id", x.ObjectId)
+		s.KeyString("object_id", string(x.ObjectId))
 	}
 	if x.Name != "" {
-		s.KeyString("name", x.Name)
+		s.KeyString("name", string(x.Name))
 	}
 	if x.Type != "" {
-		s.KeyString("type", x.Type)
+		s.KeyString("type", string(x.Type))
 	}
 	if x.Value != "" {
-		s.KeyString("value", x.Value)
+		s.KeyString("value", string(x.Value))
 	}
 	if len(x.MQTT) > 0 {
 		s.KeyRaw("mqtt", x.MQTT, false)
@@ -632,22 +684,22 @@ func (x GroupStatus) MarshalJSON() ([]byte, error) {
 
 func (x GroupStatus) Serialize(s serialize.Serializer) {
 	if x.ID != "" {
-		s.KeyString("_id", x.ID)
+		s.KeyString("_id", string(x.ID))
 	}
 	if x.V != 0 {
 		s.KeyInt("__v", x.V)
 	}
 	if x.IOTAgent != "" {
-		s.KeyString("iotagent", x.IOTAgent)
+		s.KeyString("iotagent", string(x.IOTAgent))
 	}
 	if x.ServicePath != "" {
-		s.KeyString("service_path", x.ServicePath)
+		s.KeyString("service_path", string(x.ServicePath))
 	}
 	if x.Service != "" {
-		s.KeyString("service", x.Service)
+		s.KeyString("service", string(x.Service))
 	}
 	if x.CBHost != "" {
-		s.KeyString("cbHost", x.CBHost)
+		s.KeyString("cbHost", string(x.CBHost))
 	}
 }
 
@@ -656,23 +708,23 @@ func (x Device) MarshalJSON() ([]byte, error) {
 }
 
 func (x Device) Serialize(s serialize.Serializer) {
-	s.KeyString("device_id", x.DeviceId)
+	s.KeyString("device_id", string(x.DeviceId))
 	if x.APIKey != "" {
-		s.KeyString("apikey", x.APIKey)
+		s.KeyString("apikey", string(x.APIKey))
 	}
 	if x.EntityName != "" {
-		s.KeyString("entity_name", x.EntityName)
+		s.KeyString("entity_name", string(x.EntityName))
 	}
-	s.KeyString("entity_type", x.EntityType)
+	s.KeyString("entity_type", string(x.EntityType))
 	if x.Polling {
 		s.KeyBool("polling", x.Polling)
 	}
-	s.KeyString("transport", x.Transport)
+	s.KeyString("transport", string(x.Transport))
 	if x.Timestamp {
 		s.KeyBool("timestamp", x.Timestamp)
 	}
 	if x.Endpoint != "" {
-		s.KeyString("endpoint", x.Endpoint)
+		s.KeyString("endpoint", string(x.Endpoint))
 	}
 	if len(x.Attributes) > 0 {
 		s.BeginList("attributes")
@@ -710,9 +762,9 @@ func (x Device) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	s.KeyString("protocol", x.Protocol)
+	s.KeyString("protocol", string(x.Protocol))
 	if x.ExpressionLanguage != "" {
-		s.KeyString("expressionLanguage", x.ExpressionLanguage)
+		s.KeyString("expressionLanguage", string(x.ExpressionLanguage))
 	}
 	if len(x.ExplicitAttrs) > 0 {
 		s.KeyRaw("explicitAttrs", x.ExplicitAttrs, false)
@@ -726,10 +778,10 @@ func (x DeviceStatus) MarshalJSON() ([]byte, error) {
 
 func (x DeviceStatus) Serialize(s serialize.Serializer) {
 	if x.Service != "" {
-		s.KeyString("service", x.Service)
+		s.KeyString("service", string(x.Service))
 	}
 	if x.ServicePath != "" {
-		s.KeyString("service_path", x.ServicePath)
+		s.KeyString("service_path", string(x.ServicePath))
 	}
 }
 
@@ -738,18 +790,18 @@ func (x Rule) MarshalJSON() ([]byte, error) {
 }
 
 func (x Rule) Serialize(s serialize.Serializer) {
-	s.KeyString("name", x.Name)
+	s.KeyString("name", string(x.Name))
 	if x.Description != "" {
-		s.KeyString("description", x.Description)
+		s.KeyString("description", string(x.Description))
 	}
 	if x.Misc != "" {
-		s.KeyString("misc", x.Misc)
+		s.KeyString("misc", string(x.Misc))
 	}
 	if x.Text != "" {
-		s.KeyString("text", x.Text)
+		s.KeyString("text", string(x.Text))
 	}
 	if x.VR != "" {
-		s.KeyString("VR", x.VR)
+		s.KeyString("VR", string(x.VR))
 	}
 	if len(x.Action) > 0 {
 		s.KeyRaw("action", x.Action, false)
@@ -766,13 +818,13 @@ func (x RuleStatus) MarshalJSON() ([]byte, error) {
 
 func (x RuleStatus) Serialize(s serialize.Serializer) {
 	if x.Subservice != "" {
-		s.KeyString("subservice", x.Subservice)
+		s.KeyString("subservice", string(x.Subservice))
 	}
 	if x.Service != "" {
-		s.KeyString("service", x.Service)
+		s.KeyString("service", string(x.Service))
 	}
 	if x.ID != "" {
-		s.KeyString("_id", x.ID)
+		s.KeyString("_id", string(x.ID))
 	}
 }
 
@@ -783,20 +835,20 @@ func (x Project) MarshalJSON() ([]byte, error) {
 func (x Project) Serialize(s serialize.Serializer) {
 	s.KeyBool("is_domain", x.IsDomain)
 	if x.Description != "" {
-		s.KeyString("description", x.Description)
+		s.KeyString("description", string(x.Description))
 	}
 	if len(x.Tags) > 0 {
 		s.KeyRaw("tags", x.Tags, false)
 	}
 	s.KeyBool("enabled", x.Enabled)
-	s.KeyString("id", x.ID)
+	s.KeyString("id", string(x.ID))
 	if x.ParentId != "" {
-		s.KeyString("parent_id", x.ParentId)
+		s.KeyString("parent_id", string(x.ParentId))
 	}
 	if x.DomainId != "" {
-		s.KeyString("domain_id", x.DomainId)
+		s.KeyString("domain_id", string(x.DomainId))
 	}
-	s.KeyString("name", x.Name)
+	s.KeyString("name", string(x.Name))
 	x.ProjectStatus.Serialize(s)
 }
 

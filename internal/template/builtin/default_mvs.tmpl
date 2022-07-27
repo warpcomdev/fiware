@@ -1,0 +1,50 @@
+{{- define "default_mvs_sets" }}
+{{- range .tables }}
+\set {{ .name }}_table '{{ .name }}'
+{{- end }}
+{{ range .views }}
+{{- if .materialized }}
+\set {{ .name }} '{{ .name }}'
+{{- end }}
+{{- end }}
+
+\set separator '_'
+\set scope :scope
+\set scope_sep :scope:separator
+
+SELECT CASE
+  WHEN :'scope'= ':scope'
+  THEN ''
+  ELSE :'scope_sep'
+END AS "scope"  \gset
+{{ end }}
+{{- define "default_mvs_views" }}
+{{- range .views }}
+{{- $view_name := .name }}
+
+-----------------------------------
+-- View {{ $view_name }}
+-----------------------------------
+DROP VIEW IF EXISTS :target_schema.:scope:{{ $view_name }} CASCADE;
+
+CREATE OR REPLACE VIEW :target_schema.:scope:{{ $view_name }} AS
+SELECT
+  DATE_TRUNC('day', timeinstant) AS fecha,
+  DATE_PART('day', DATE_TRUNC('day', timeinstant)) AS dia,	
+  DATE_PART('week',DATE_TRUNC('day', timeinstant)) AS semana,
+  DATE_PART('month',DATE_TRUNC('day', timeinstant)) AS mes,
+  DATE_PART('quarter',DATE_TRUNC('day', timeinstant)) AS trimestre,	
+  DATE_PART('year',DATE_TRUNC('day', timeinstant)) AS anyo,
+  {{- range .columns }}
+  {{ .expression }} AS {{ .name }},
+  {{- end }}
+  entityid AS entityid,
+  entitytype AS entitytype
+FROM :target_schema.:scope:{{ .from }}_table
+GROUP BY
+  entityid, entitytype, DATE_TRUNC('day', timeinstant)
+  {{ with .group }},{{ . | join ", " }}{{ end }}
+{{- end }}
+{{- end }}
+{{- template "default_mvs_sets" . }}
+{{- template "default_mvs_views" . }}

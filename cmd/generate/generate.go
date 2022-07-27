@@ -59,7 +59,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			if omitempty {
 				w.WriteString("if x." + name + " != \"\" {\n")
 			}
-			w.WriteString("s.KeyString(\"" + jsonName + "\", x." + name + ")\n")
+			w.WriteString("s.KeyString(\"" + jsonName + "\", string(x." + name + "))\n")
 			if omitempty {
 				w.WriteString("}\n")
 			}
@@ -127,7 +127,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			innerKind := _typ.Elem().Kind()
 			switch {
 			case innerKind == reflect.String:
-				w.WriteString("s.KeyString(k, v)\n")
+				w.WriteString("s.KeyString(k, string(v))\n")
 			case innerKind == reflect.Slice: // json.RawMessage
 				w.WriteString("s.KeyRaw(k, v, " + compact + ")\n")
 			case innerKind == reflect.Struct:

@@ -44,22 +44,26 @@ func Exhaust(resp *http.Response) {
 
 // NetError describes an error performing a request
 type NetError struct {
-	Req        http.Request
-	StatusCode int
-	Resp       []byte
-	Err        error
+	Req         http.Request
+	StatusCode  int
+	RespHeaders http.Header
+	Resp        []byte
+	Err         error
 }
 
 // Error implements error
 func (n NetError) Error() string {
-	base := fmt.Sprintf("%s request to %s failed with code %d", n.Req.Method, n.Req.URL.String(), n.StatusCode)
-	if n.Err != nil {
-		return fmt.Sprintf("%s, and body could not be read: %v", base, n.Err)
+	base := strings.Builder{}
+	fmt.Fprintf(&base, "%s request to %s failed with code %d\n", n.Req.Method, n.Req.URL.String(), n.StatusCode)
+	switch {
+	case n.Err != nil:
+		fmt.Fprintf(&base, "body could not be read: %v", n.Err)
+	case n.Resp != nil:
+		n.RespHeaders.Write(&base)
+		base.WriteString("\n")
+		base.WriteString(string(n.Resp))
 	}
-	if n.Resp != nil {
-		return fmt.Sprintf("%s: %s", base, string(n.Resp))
-	}
-	return base
+	return base.String()
 }
 
 // Unwrap implements errors.Unwrap
@@ -80,18 +84,21 @@ func newNetError(req *http.Request, resp *http.Response) error {
 		payload    []byte
 		err        error
 		statusCode int
+		headers    http.Header
 	)
 	if resp != nil {
 		statusCode = resp.StatusCode
+		headers = resp.Header
 		if resp.Body != nil {
 			payload, err = ioutil.ReadAll(resp.Body)
 		}
 	}
 	return NetError{
-		Req:        anonymousReq,
-		StatusCode: statusCode,
-		Resp:       payload,
-		Err:        err,
+		Req:         anonymousReq,
+		StatusCode:  statusCode,
+		RespHeaders: headers,
+		Resp:        payload,
+		Err:         err,
 	}
 }
 

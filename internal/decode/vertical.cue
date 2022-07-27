@@ -21,6 +21,8 @@ import (
             description?: [...string]
             singletonKey: bool | *false
             simulated: bool | *false
+            longterm?: "gauge" | "counter" | "enum" | "modal" | "dimension"
+            longtermOptions?: [...string]
             value: #any | *""
             metadatas?: [...#any]
         }
@@ -113,7 +115,92 @@ import (
         ]
     }}]
 
+    // Añado el atributo "longterm" a las columnas que lo necesiten.
     let _municipalityAttribs = ["zip", "zone", "district", "municipality", "region", "province", "community", "country"]
+    entityTypes: [...{
+        attrs: [...{
+            simulated: true
+            name: string
+            type: string
+            if list.Contains(_municipalityAttribs, name) {
+                longterm: "dimension"
+            }
+        }]
+    }]
+
+    // Materialized views
+    views: [for entityType in entityTypes {{
+        materialized: true,
+        name: _verticalName + "_" + strings.ToLower(entityType.entityType) + "_mv"
+        from: _verticalName + "_" + strings.ToLower(entityType.entityType)
+	    _longterms: [
+            for _attr in entityType.attrs
+            if _attr.longterm != _|_ {{
+                attr: _attr
+                kind: _attr.longterm
+            }}
+        ]
+	    group: [
+            for col in _longterms
+            if col.kind == "dimension" {
+                col.attr.name
+            }
+        ]
+        columns: list.FlattenN([
+            for col in _longterms {
+                let _lowerName = strings.ToLower(col.attr.name)
+                if col.kind == "dimension" {
+                    [{
+                        name: _lowerName,
+                        expression: _lowerName
+                    }]
+                }
+                if col.kind == "gauge" || col.kind == "counter" {
+                    [{
+                        name: "min\(_lowerName)",
+                        expression: "MIN(\(_lowerName))"
+                    },{
+                        name: "max\(_lowerName)",
+                        expression: "MAX(\(_lowerName))"
+                    },{
+                        name: "avg\(_lowerName)",
+                        expression: "AVG(\(_lowerName))"
+                    },{
+                        name: "sum\(_lowerName)",
+                        expression: "SUM(\(_lowerName))"
+                    },{
+                        name: "cont\(_lowerName)",
+                        expression: "COUNT(\(_lowerName))"
+                    },{
+                        name: "dev\(_lowerName)",
+                        expression: "STDDEV(\(_lowerName))"
+                    },{
+                        name: "var\(_lowerName)",
+                        expression: "VARIANCE(\(_lowerName))"
+                    },{
+                        name: "med\(_lowerName)",
+                        expression: "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY \(_lowerName))"
+                    }]
+                }
+                if col.kind == "modal" {
+                    [{
+                        name: "mode\(_lowerName)",
+                        expression: "MODE() WITHIN GROUP (ORDER BY \(_lowerName))"
+                    }]
+                }
+                if col.kind == "enum" && col.attr.longtermOptions != _|_ {
+                    [{
+                        name: "mode\(_lowerName)",
+                        expression: "MODE() WITHIN GROUP (ORDER BY \(_lowerName))"
+                    }] + [for option in col.attr.longtermOptions {
+                        name: "\(option)\(_lowerName)",
+                        expression: "COUNT(\(_lowerName)) FILTER (WHERE \(_lowerName) = '\(option)')"
+                    }]
+                }
+            }
+        ], 1)
+    }}]
+
     #column: {
         _attr: #entityType.#attr
         name: strings.ToLower(_attr.name)

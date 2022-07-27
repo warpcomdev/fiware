@@ -32,7 +32,7 @@ func findsep(multistr string) string {
 var wifi_repeats = regexp.MustCompile(`^(?P<pre>[^{]+){(?P<mid>[^}]+)}(?P<post>.*)$`)
 
 // Generate attribute from README line
-func from_line(line string) []fiware.Attribute {
+func from_line(longtermIndex int, line string) []fiware.Attribute {
 	// log.Printf("Parsing line %s", line)
 	// Warning: WiFi vertical uses field names like
 	// dlBandwidth{User\|Device} to summarize two lines in one
@@ -75,6 +75,37 @@ func from_line(line string) []fiware.Attribute {
 	quot := map[string]string{"\"": "\"", "`": "`", "'": "'", "[": "]"}
 	singletonKey, simulated := false, false
 	var text []string
+	// Check if we have a longterm column
+	longterm := fiware.LongtermNone
+	var longtermOptions []string
+	if longtermIndex >= 2 {
+		after := strings.TrimSpace(fields[longtermIndex])
+		afterLower := strings.ToLower(after)
+		if strings.HasPrefix(afterLower, "modal") {
+			longterm = fiware.LongtermModal
+		}
+		if strings.HasPrefix(afterLower, "gauge") {
+			longterm = fiware.LongtermGauge
+		}
+		if strings.HasPrefix(afterLower, "counter") {
+			longterm = fiware.LongtermCounter
+		}
+		if strings.HasPrefix(afterLower, "dimension") {
+			longterm = fiware.LongtermDimension
+		}
+		if strings.HasPrefix(afterLower, "enum") {
+			longterm = fiware.LongtermEnum
+			options := strings.Split(strings.TrimSpace(strings.SplitN(after, " ", 2)[1]), ",")
+			longtermOptions = make([]string, 0, len(options))
+			for _, option := range options {
+				if strings.HasPrefix(option, "'") || strings.HasPrefix(option, "\"") {
+					option = option[1 : len(option)-1]
+				}
+				longtermOptions = append(longtermOptions, strings.TrimSpace(option))
+			}
+		}
+	}
+	// Check other columns for samples
 	for _, other := range fields[2:] {
 		otherLower := strings.ToLower(other)
 		if strings.Contains(otherLower, "singleton") {
@@ -146,11 +177,13 @@ func from_line(line string) []fiware.Attribute {
 	matches := wifi_repeats.FindStringSubmatch(name)
 	if len(matches) <= 0 {
 		attrib := fiware.Attribute{
-			Name:         name,
-			Type:         _typ,
-			Description:  desc,
-			SingletonKey: singletonKey,
-			Simulated:    simulated,
+			Name:            name,
+			Type:            _typ,
+			Description:     desc,
+			SingletonKey:    singletonKey,
+			Simulated:       simulated,
+			Longterm:        longterm,
+			LongtermOptions: longtermOptions,
 		}
 		if len(value) > 0 {
 			attrib.Value = value[0].Value
@@ -169,9 +202,13 @@ func from_line(line string) []fiware.Attribute {
 	result := make([]fiware.Attribute, 0, len(infixes))
 	for index, infix := range infixes {
 		attrib := fiware.Attribute{
-			Name:        fmt.Sprintf("%s%s%s", prefix, infix, suffix),
-			Type:        _typ,
-			Description: desc,
+			Name:            fmt.Sprintf("%s%s%s", prefix, infix, suffix),
+			Type:            _typ,
+			Description:     desc,
+			SingletonKey:    singletonKey,
+			Simulated:       simulated,
+			Longterm:        longterm,
+			LongtermOptions: longtermOptions,
 		}
 		if vals > 0 {
 			attrib.Value = value[index%vals].Value
@@ -183,11 +220,11 @@ func from_line(line string) []fiware.Attribute {
 }
 
 // Builds model from list of lines
-func from_lines(lines []string) fiware.EntityType {
+func from_lines(longtermIndex int, lines []string) fiware.EntityType {
 	model := fiware.EntityType{ID: "", Type: "", Attrs: make([]fiware.Attribute, 0, 16)}
 	visited := make(map[string]struct{})
 	for _, line := range lines {
-		for _, attrib := range from_line(line) {
+		for _, attrib := range from_line(longtermIndex, line) {
 			name := strings.ToLower(attrib.Name)
 			switch {
 			case name == "id":
@@ -232,16 +269,18 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	}
 	defer infile.Close()
 	scanner := bufio.NewScanner(infile)
-	mustPipe := true // true if table lines MUST start with "|"
+	mustPipe := true    // true if table lines MUST start with "|"
+	longtermIndex := -1 // columna que contiene el tipo de longterm
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if inside {
 			// Empty line is the end of a block
 			if line == "" {
-				model := from_lines(latest)
+				model := from_lines(longtermIndex, latest)
 				log.Printf("Finished processing model %s", model.Type)
 				models = append(models, model)
 				inside = false
+				longtermIndex = -1
 				latest = latest[:0]
 				// Create entity too, to be able to populate CSV from NGSI
 				entity := fiware.Entity{
@@ -294,6 +333,16 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 				log.Print("Detected model start")
 				inside = true
 				mustPipe = initialPipe
+				// Find out which is the longterm column, if any
+				longtermIndex = -1
+				if strings.HasPrefix(lower, "|") {
+					lower = strings.TrimSpace(lower[1:])
+				}
+				for idx, head := range strings.Split(lower, "|") {
+					if strings.TrimSpace(head) == "longterm" {
+						longtermIndex = idx
+					}
+				}
 			}
 		}
 	}

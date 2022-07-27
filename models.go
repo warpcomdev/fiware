@@ -30,6 +30,7 @@ type Vertical struct {
 	Suscriptions []Suscription `json:"suscriptions,omitempty"`
 	// Tablas *sencillas* relacionadas con entidades
 	Tables []Table `json:"tables,omitempty"`
+	Views  []View  `json:"views,omitempty"`
 	// Grupos de dispositivos
 	Services []Service `json:"services,omitempty"`
 	Devices  []Device  `json:"devices,omitempty"`
@@ -53,15 +54,34 @@ type EntityType struct {
 	Attrs []Attribute `json:"attrs"`
 }
 
+type LongtermKind string
+
+const (
+	LongtermNone      LongtermKind = ""
+	LongtermCounter                = "counter"
+	LongtermGauge                  = "gauge"
+	LongtermEnum                   = "enum"
+	LongtermModal                  = "modal"
+	LongtermDimension              = "dimension"
+)
+
 // Attribute representa un atributo de una entidad
 type Attribute struct {
-	Name         string          `json:"name"`
-	Type         string          `json:"type"`
-	Description  []string        `json:"description,omitempty"`
-	Value        json.RawMessage `json:"value,omitempty" compact:"true"`
-	Metadatas    json.RawMessage `json:"metadatas,omitempty" compact:"true"`
-	SingletonKey bool            `json:"singletonKey,omitempty"`
-	Simulated    bool            `json:"simulated,omitempty"`
+	Name        string          `json:"name"`
+	Type        string          `json:"type"`
+	Description []string        `json:"description,omitempty"`
+	Value       json.RawMessage `json:"value,omitempty" compact:"true"`
+	Metadatas   json.RawMessage `json:"metadatas,omitempty" compact:"true"`
+	// Si la entidad es Singleton, este atributo se puede marcar
+	// como parte de la identidad del singleton, y se añadirá a la
+	// primary key de la tabla.
+	SingletonKey bool `json:"singletonKey,omitempty"`
+	// Indica si este atributo forma parte d ela simulación
+	Simulated bool `json:"simulated,omitempty"`
+	// Indica si este atributo debe conservarse de alguna forma en longterm
+	Longterm LongtermKind `json:"longterm,omitempty"`
+	// Si longterm == LongtermEnum, estas serían las opciones
+	LongtermOptions []string `json:"longtermOptions,omitempty"`
 }
 
 // Entity representa una instancia de EntityType
@@ -202,6 +222,21 @@ type Table struct {
 	Indexes    []TableIndex  `json:"indexes"`
 	LastData   bool          `json:"lastdata"`            // True si queremos crear una vista lastdata adicional
 	Singleton  []string      `json:"singleton,omitempty"` // Lista de campos únicos, si la entidad es un singleton.
+}
+
+// MaterializedView define los parámetros de las vistas materializadas
+type View struct {
+	Materialized bool         `json:"materialized,omitempty"`
+	Name         string       `json:"name"`
+	From         string       `json:"from"`
+	Group        []string     `json:"group"`
+	Columns      []ViewColumn `json:"columns"`
+}
+
+// ViewColumn define las columnas de la vista
+type ViewColumn struct {
+	Name       string `json:"name"`
+	Expression string `json:"expression"`
 }
 
 // TableColumn describe una columna de una tabla

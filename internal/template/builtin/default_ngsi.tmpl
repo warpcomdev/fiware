@@ -27,8 +27,9 @@ Como complemento a este documento, el [documento de comandado](commands.md) expl
 |--------|----|-----------|---------------------|--|-----|
 | id | - | ID de la entidad. | Ejemplo: `{{.entityID}}` | - | - |
 | type | - | Tipo de entidad. | Valor: `{{.entityType}}` | - | - |
+{{- $empty := list }}
 {{- range .attrs }}
-| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | {{ if gt (len .description) 0 }}{{ index .description 0 }}{{ else }}-{{ end }} | {{ if gt (len .description) 1 }}{{ index .description 1 }}{{ else }}Ejemplo: `{{ .value }}`{{ end }} | {{ if gt (len .description) 2 }}{{ index .description 2 }}{{ else }}-{{ end }} | {{ if gt (len .description) 3 }}{{ index .description 3 }}{{ else }}-{{ end }} |
+| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | {{ if gt (.description | default $empty | len) 0 }}{{ index .description 0 }}{{ else }}-{{ end }} | {{ if gt (.description | default $empty | len) 1 }}{{ index .description 1 }}{{ else }}Ejemplo: `{{ .value }}`{{ end }} | {{ if gt (.description | default $empty | len) 2 }}{{ index .description 2 }}{{ else }}-{{ end }} | {{ if gt (.description | default $empty | len) 3 }}{{ index .description 3 }}{{ else }}-{{ end }} |
 {{- end }}
 
 Ejemplo de `{{.entityType}}` (en formato NGSIv2):

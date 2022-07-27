@@ -7,6 +7,7 @@ entities?: [...#Entity]
 serviceMappings?: [...#ServiceMapping]
 suscriptions?: [...#Suscription]
 tables?: [...#Table]
+views?: [...#View]
 services?: [...#Service]
 devices?: [...#Device]
 rules?: [...#Rule]
@@ -28,6 +29,8 @@ verticals?: [string]: #Json
 	metadatas?:    #Json
 	singletonKey?: bool
 	simulated?:    bool
+	longterm?:     string
+	longtermOptions?: [...string]
 }
 
 #Entity: {
@@ -140,6 +143,19 @@ verticals?: [string]: #Json
 	name: string
 	columns: [...string]
 	geometry?: bool
+}
+
+#View: {
+	materialized?: bool
+	name:          string
+	from:          string
+	group: [...string]
+	columns: [...#ViewColumn]
+}
+
+#ViewColumn: {
+	name:       string
+	expression: string
 }
 
 #Service: {
