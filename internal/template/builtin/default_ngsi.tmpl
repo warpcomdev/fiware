@@ -23,13 +23,20 @@ Como complemento a este documento, el [documento de comandado](commands.md) expl
 
 ## Referencia de campos ({{.entityType}})
 
-|Atributo|Tipo|Descripción|Información adicional|Ud|Rango|
+NOTA: La columna `longterm` indica si el atributo es susceptible de ser acumulado en vistas longterm, y permite los siguientes valores:
+
+- `modal`: Se añade a la vista longterm el *mode()* del atributo.
+- `enum`: Se añade a la vista longterm el *mode()* del atributo, y un contador de cada posible valor.
+- `gauge`: Se añade a la vista longterm el *min, max, avg, percentil 50%, stddev y varianza* del atributo.
+- `dimension`: Se añade a la vista longterm el atributo, como una columna a agregar.
+
+|Atributo|Tipo|Descripción|Información adicional|Ud|Rango|Longterm|
 |--------|----|-----------|---------------------|--|-----|
-| id | - | ID de la entidad. | Ejemplo: `{{.entityID}}` | - | - |
-| type | - | Tipo de entidad. | Valor: `{{.entityType}}` | - | - |
+| id | - | ID de la entidad. | Ejemplo: `{{.entityID}}` | - | - | - |
+| type | - | Tipo de entidad. | Valor: `{{.entityType}}` | - | - | - |
 {{- $empty := list }}
 {{- range .attrs }}
-| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | {{ if gt (.description | default $empty | len) 0 }}{{ index .description 0 }}{{ else }}-{{ end }} | {{ if gt (.description | default $empty | len) 1 }}{{ index .description 1 }}{{ else }}Ejemplo: `{{ .value }}`{{ end }} | {{ if gt (.description | default $empty | len) 2 }}{{ index .description 2 }}{{ else }}-{{ end }} | {{ if gt (.description | default $empty | len) 3 }}{{ index .description 3 }}{{ else }}-{{ end }} |
+| {{if eq .type "command"}}[{{.name}}](commands.md#comandos-de-{{$entityType|lower}}){{else}}{{ .name }}{{end}} | {{ .type }} | {{ if gt (.description | default $empty | len) 0 }}{{ index .description 0 }}{{ else }}-{{ end }} | {{ if gt (.description | default $empty | len) 1 }}{{ index .description 1 }}{{ else }}Ejemplo: `{{ .value }}`{{ end }} | {{ if gt (.description | default $empty | len) 2 }}{{ index .description 2 }}{{ else }}-{{ end }} | {{ if gt (.description | default $empty | len) 3 }}{{ index .description 3 }}{{ else }}-{{ end }} | {{ with .longterm }}{{.}}{{ end }} {{ with .longtermOptions }}{{ . | join ", " }}{{ end }} |
 {{- end }}
 
 Ejemplo de `{{.entityType}}` (en formato NGSIv2):
