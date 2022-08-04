@@ -101,11 +101,11 @@ import (
 
     tables: [for entityType in entityTypes {{
         name: _verticalName + "_" + strings.ToLower(entityType.entityType)
-        primaryKey: [ "timeinstant", "entityid" ]
         lastdata: true // Añadir tabla de lastdata
         columns: [...#column]
         indexes: [...#index]
         singleton: [for _attr in entityType.attrs if _attr.singletonKey { strings.ToLower(_attr.name) }]
+        primaryKey: [ "timeinstant", "entityid" ] + singleton
 
         columns: [
             for attr in entityType.attrs
