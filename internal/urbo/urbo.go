@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
 )
 
@@ -62,8 +63,50 @@ func (u *Urbo) Headers(token string) (http.Header, error) {
 }
 
 // Rules reads the list of rules from Perseo
-func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath string) (map[string]json.RawMessage, error) {
+func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath string, buffer interface{}) error {
 	path, err := u.URL.Parse(apiPath)
+	if err != nil {
+		return err
+	}
+	query := url.Values{}
+	query.Add("service", u.Service)
+	query.Add("scopeService", u.ScopeService)
+	path.RawQuery = query.Encode()
+	if err := keystone.GetJSON(client, headers, path, buffer, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Rules reads the list of rules from Perseo
+func (u *Urbo) Panels(client *http.Client, headers http.Header) (map[string]fiware.UrboPanel, error) {
+	var response []fiware.UrboPanel
+	if err := u.slugResource(client, headers, "/api/panels", &response); err != nil {
+		return nil, err
+	}
+	panels := make(map[string]fiware.UrboPanel)
+	for _, p := range response {
+		panels[p.Slug] = p
+	}
+	return panels, nil
+}
+
+// Rules reads the list of rules from Perseo
+func (u *Urbo) Verticals(client *http.Client, headers http.Header) (map[string]fiware.UrboVertical, error) {
+	var response []fiware.UrboVertical
+	if err := u.slugResource(client, headers, "/api/verticals", &response); err != nil {
+		return nil, err
+	}
+	verticals := make(map[string]fiware.UrboVertical)
+	for _, p := range response {
+		verticals[p.Slug] = p
+	}
+	return verticals, nil
+}
+
+// Panel reads a single panel
+func (u *Urbo) Panel(client *http.Client, headers http.Header, slug string) (json.RawMessage, error) {
+	path, err := u.URL.Parse(fmt.Sprintf("/api/panels/%s", slug))
 	if err != nil {
 		return nil, err
 	}
@@ -71,27 +114,9 @@ func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath st
 	query.Add("service", u.Service)
 	query.Add("scopeService", u.ScopeService)
 	path.RawQuery = query.Encode()
-	var response []struct {
-		Name        string `json:"name,omitempty"`
-		Description string `json:"description,omitempty"`
-		Slug        string `json:"slug,omitempty"`
-	}
-	if err := keystone.GetJSON(client, headers, path, &response, true); err != nil {
+	var buffer json.RawMessage
+	if err := keystone.GetJSON(client, headers, path, &buffer, true); err != nil {
 		return nil, err
 	}
-	panels := make(map[string]json.RawMessage)
-	for _, p := range response {
-		panels[p.Slug] = []byte(fmt.Sprintf("%q", p.Name))
-	}
-	return panels, nil
-}
-
-// Rules reads the list of rules from Perseo
-func (u *Urbo) Panels(client *http.Client, headers http.Header) (map[string]json.RawMessage, error) {
-	return u.slugResource(client, headers, "/api/panels")
-}
-
-// Rules reads the list of rules from Perseo
-func (u *Urbo) Verticals(client *http.Client, headers http.Header) (map[string]json.RawMessage, error) {
-	return u.slugResource(client, headers, "/api/verticals")
+	return buffer, nil
 }

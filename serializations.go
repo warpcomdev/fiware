@@ -106,14 +106,18 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 	if len(x.Panels) > 0 {
 		s.BeginBlock("panels")
 		for k, v := range x.Panels {
-			s.KeyRaw(k, v, false)
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
 		}
 		s.EndBlock()
 	}
 	if len(x.Verticals) > 0 {
 		s.BeginBlock("verticals")
 		for k, v := range x.Verticals {
-			s.KeyRaw(k, v, false)
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
 		}
 		s.EndBlock()
 	}
@@ -860,4 +864,58 @@ func (x ProjectStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
+}
+
+func (x UrboPanel) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x UrboPanel) Serialize(s serialize.Serializer) {
+	s.KeyString("name", string(x.Name))
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
+	s.KeyString("slug", string(x.Slug))
+	if x.LowercaseSlug != "" {
+		s.KeyString("lowercaseSlug", string(x.LowercaseSlug))
+	}
+	if x.WidgetCount != 0 {
+		s.KeyInt("widgetCount", x.WidgetCount)
+	}
+	if x.IsShadow {
+		s.KeyBool("isShadow", x.IsShadow)
+	}
+	if x.Section != "" {
+		s.KeyString("section", string(x.Section))
+	}
+}
+
+func (x UrboVertical) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x UrboVertical) Serialize(s serialize.Serializer) {
+	if len(x.Panels) > 0 {
+		s.BeginList("panels")
+		for _, y := range x.Panels {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
+	if len(x.ShadowPanels) > 0 {
+		s.BeginList("shadowPanels")
+		for _, y := range x.ShadowPanels {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
+	if len(x.I18n) > 0 {
+		s.KeyRaw("i18n", x.I18n, false)
+	}
+	s.KeyString("name", string(x.Name))
+	s.KeyString("slug", string(x.Slug))
 }

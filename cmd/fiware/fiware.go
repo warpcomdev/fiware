@@ -194,6 +194,30 @@ func main() {
 			},
 
 			{
+				Name:     "download",
+				Aliases:  []string{"down", "dld"},
+				Category: "platform",
+				Usage:    fmt.Sprintf("Download panels from a vertical"),
+				BashComplete: func(c *cli.Context) {
+					v, err := listVerticals(c, currentStore)
+					if err != nil {
+						fmt.Println("<log in first>")
+					} else {
+						fmt.Println(strings.Join(v, "\n"))
+					}
+				},
+				Action: func(c *cli.Context) error {
+					return downloadResource(c, currentStore)
+				},
+				Flags: []cli.Flag{
+					outdirFlag,
+					tokenFlag,
+					urboTokenFlag,
+					subServiceFlag,
+				},
+			},
+
+			{
 				Name:     "post",
 				Category: "platform",
 				Usage:    fmt.Sprintf("Post some resource (%s)", strings.Join(canPost, ", ")),

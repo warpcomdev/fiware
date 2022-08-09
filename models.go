@@ -39,9 +39,29 @@ type Vertical struct {
 	// Lista de proyectos, paneles y verticals de urbo.
 	// Esto no pertenece a la vertical, sino al entorno,
 	// pero me facilita meterlo aqui...
-	Projects  []Project                  `json:"projects,omitempty"`
-	Panels    map[string]json.RawMessage `json:"panels,omitempty"`
-	Verticals map[string]json.RawMessage `json:"verticals,omitempty"`
+	Projects  []Project               `json:"projects,omitempty"`
+	Panels    map[string]UrboPanel    `json:"panels,omitempty"`
+	Verticals map[string]UrboVertical `json:"verticals,omitempty"`
+}
+
+// UrboPanel representa un panel de Urbo
+type UrboPanel struct {
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	Slug          string `json:"slug"`
+	LowercaseSlug string `json:"lowercaseSlug,omitempty"`
+	WidgetCount   int    `json:"widgetCount,omitempty"`
+	IsShadow      bool   `json:"isShadow,omitempty"`
+	Section       string `json:"section,omitempty"`
+}
+
+// URboVertical representauna vertical de Urbo
+type UrboVertical struct {
+	Panels       []UrboPanel     `json:"panels,omitempty"`
+	ShadowPanels []UrboPanel     `json:"shadowPanels,omitempty"`
+	I18n         json.RawMessage `json:"i18n,omitempty"`
+	Name         string          `json:"name"`
+	Slug         string          `json:"slug"`
 }
 
 // EntityType representa un tipo de entidad

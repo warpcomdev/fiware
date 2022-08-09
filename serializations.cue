@@ -12,8 +12,8 @@ services?: [...#Service]
 devices?: [...#Device]
 rules?: [...#Rule]
 projects?: [...#Project]
-panels?: [string]:    #Json
-verticals?: [string]: #Json
+panels?: [string]:    #UrboPanel
+verticals?: [string]: #UrboVertical
 
 #EntityType: {
 	entityID:   string
@@ -241,6 +241,24 @@ verticals?: [string]: #Json
 	domain_id?:   string
 	name:         string
 	links?:       #Json @anonymous(ProjectStatus)
+}
+
+#UrboPanel: {
+	name:           string
+	description?:   string
+	slug:           string
+	lowercaseSlug?: string
+	widgetCount?:   int
+	isShadow?:      bool
+	section?:       string
+}
+
+#UrboVertical: {
+	panels?: [...#UrboPanel]
+	shadowPanels?: [...#UrboPanel]
+	i18n?: #Json
+	name:  string
+	slug:  string
 }
 
 #Json: _ // cuaquier cosa...

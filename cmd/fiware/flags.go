@@ -52,6 +52,13 @@ var (
 		Usage:   "write output to `FILE`",
 	}
 
+	outdirFlag = &cli.StringFlag{
+		Name:     "outdir",
+		Aliases:  []string{"o", "O"},
+		Usage:    "write output to `DIR`",
+		Required: true,
+	}
+
 	saveFlag = &cli.BoolFlag{
 		Name:    "save",
 		Aliases: []string{"s"},
