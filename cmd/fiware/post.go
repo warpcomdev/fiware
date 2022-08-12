@@ -141,7 +141,7 @@ func postEntities(ctx config.Config, header http.Header, vertical fiware.Vertica
 	}
 	merged := orion.Merge(vertical.EntityTypes, vertical.Entities)
 	listMessage("POSTing entities with names", merged,
-		func(g orion.Entity) string { return fmt.Sprintf("%s/%s", g.Type, g.ID) },
+		func(g orion.Entity) string { return fmt.Sprintf("%s/%s", g.Type(), g.ID()) },
 	)
 	return api.UpdateEntities(httpClient(), header, merged)
 }

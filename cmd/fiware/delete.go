@@ -134,13 +134,28 @@ func deleteRules(ctx config.Config, header http.Header, vertical fiware.Vertical
 	return api.DeleteRules(httpClient(), header, vertical.Rules)
 }
 
+func knownEntities(vertical fiware.Vertical) []fiware.Entity {
+	knownTypes := make(map[string]struct{})
+	for _, entType := range vertical.EntityTypes {
+		knownTypes[entType.Type] = struct{}{}
+	}
+	knownEntities := make([]fiware.Entity, 0, len(vertical.Entities))
+	for _, current := range vertical.Entities {
+		if _, match := knownTypes[current.Type]; match {
+			knownEntities = append(knownEntities, current)
+		}
+	}
+	return knownEntities
+}
+
 func deleteEntities(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	listMessage("DELETing entities ", vertical.Entities,
+	toDelete := knownEntities(vertical)
+	listMessage("DELETing entities ", toDelete,
 		func(g fiware.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
 	)
-	return api.DeleteEntities(httpClient(), header, vertical.Entities)
+	return api.DeleteEntities(httpClient(), header, toDelete)
 }

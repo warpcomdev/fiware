@@ -97,10 +97,30 @@ func (o *Orion) DeleteSuscriptions(client *http.Client, headers http.Header, sub
 }
 
 // Entity representa una entidad tal como la ve la API
-type Entity struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-	EntityAttrs
+type Entity map[string]json.RawMessage
+
+func (e Entity) ID() string {
+	var id string
+	json.Unmarshal(e["id"], &id)
+	return id
+}
+
+func (e Entity) Type() string {
+	var t string
+	json.Unmarshal(e["type"], &t)
+	return t
+}
+
+func (e Entity) Attrs() map[string]EntityAttr {
+	attrs := make(map[string]EntityAttr)
+	for k, v := range e {
+		if k != "id" && k != "type" {
+			var attr EntityAttr
+			json.Unmarshal(v, &attr)
+			attrs[k] = attr
+		}
+	}
+	return attrs
 }
 
 type EntityAttr struct {
@@ -108,8 +128,6 @@ type EntityAttr struct {
 	Value     json.RawMessage `json:"value"`
 	Metadatas json.RawMessage `json:"metadatas,omitempty"`
 }
-
-type EntityAttrs map[string]EntityAttr
 
 // Merge fiware EntityType with Entity to build full Entity
 func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
@@ -123,12 +141,10 @@ func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
 	}
 	result := make([]Entity, 0, len(values))
 	for _, v := range values {
-		current := Entity{
-			ID:   v.ID,
-			Type: v.Type,
-		}
+		current := make(Entity)
+		current["id"] = json.RawMessage(fmt.Sprintf("%q", v.ID))
+		current["type"] = json.RawMessage(fmt.Sprintf("%q", v.Type))
 		if tm, ok := typeMap[v.Type]; ok {
-			current.EntityAttrs = make(EntityAttrs)
 			for name, value := range v.Attrs {
 				if am, ok := tm[name]; ok {
 					currentAttr := EntityAttr{
@@ -142,6 +158,8 @@ func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
 							currentAttr.Metadatas = am.Metadatas
 						}
 					}
+					value, _ = json.Marshal(currentAttr)
+					current[name] = value
 				}
 			}
 			result = append(result, current)
@@ -150,7 +168,90 @@ func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
 	return result
 }
 
-// AppendEntities updates a list of entities
+// Split a merged Entity into fiware.entityType and fiware.Entity
+func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
+	types := make(map[string]fiware.EntityType)
+	values := make([]fiware.Entity, 0, len(entities))
+	for _, current := range entities {
+		currID := current.ID()
+		currType := current.Type()
+		currAttrs := current.Attrs()
+		// Add a type (if not seen already)
+		newType, ok := types[currType]
+		if !ok {
+			newType = fiware.EntityType{
+				ID:    currID,
+				Type:  currType,
+				Attrs: make([]fiware.Attribute, 0, len(currAttrs)),
+			}
+		}
+		// Add an entity
+		newEntity := fiware.Entity{
+			ID:    currID,
+			Type:  currType,
+			Attrs: make(map[string]json.RawMessage),
+		}
+		for attr, val := range currAttrs {
+			newEntity.Attrs[attr] = val.Value
+			// Check all attributes are defined for the EntityType
+			found := false
+			for _, detail := range newType.Attrs {
+				if detail.Name == attr {
+					found = true
+					break
+				}
+			}
+			if !found {
+				newType.Attrs = append(newType.Attrs, fiware.Attribute{
+					Name:      attr,
+					Value:     val.Value,
+					Metadatas: val.Metadatas,
+				})
+			}
+		}
+		types[currType] = newType
+		values = append(values, newEntity)
+	}
+	typesSlice := make([]fiware.EntityType, 0, len(types))
+	for _, t := range types {
+		typesSlice = append(typesSlice, t)
+	}
+	return typesSlice, values
+}
+
+type entityPaginator struct {
+	response []Entity
+	buffer   []Entity
+}
+
+// GetBuffer implements Paginator
+func (p *entityPaginator) GetBuffer() interface{} {
+	return &p.buffer
+}
+
+// PutBuffer implements Paginator
+func (p *entityPaginator) PutBuffer(buf interface{}) int {
+	p.response = append(p.response, p.buffer...)
+	count := len(p.buffer)
+	p.buffer = p.buffer[:0] // Reset the buffer before next cycle
+	return count
+}
+
+// Entities reads the list of entities from the Context Broker
+func (o *Orion) Entities(client *http.Client, headers http.Header) ([]fiware.EntityType, []fiware.Entity, error) {
+	path, err := o.URL.Parse("v2/entities")
+	if err != nil {
+		return nil, nil, err
+	}
+	var pages entityPaginator
+	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
+		return nil, nil, err
+	}
+	t, e := Split(pages.response)
+	return t, e, nil
+}
+
+// UpdateEntities updates a list of entities
 func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []Entity) error {
 	req := struct {
 		ActionType string   `json:"actionType"`
@@ -172,7 +273,7 @@ func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []
 	return nil
 }
 
-// DeleteEntities deletes a list of suscriptions from Orion
+// DeleteEntities deletes a list of entities from Orion
 func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []fiware.Entity) error {
 	type deleteEntity struct {
 		ID   string `json:"id"`
