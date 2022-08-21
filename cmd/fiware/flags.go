@@ -46,6 +46,18 @@ var (
 		Usage:   "load data modules / libs from `DIR`",
 	}
 
+	filterIdFlag = &cli.StringFlag{
+		Name:    "filterId",
+		Aliases: []string{"fi"},
+		Usage:   "Filter by entity ID",
+	}
+
+	filterTypeFlag = &cli.StringFlag{
+		Name:    "filterType",
+		Aliases: []string{"ft"},
+		Usage:   "Filter by entity Type",
+	}
+
 	outputFlag = &cli.StringFlag{
 		Name:    "output",
 		Aliases: []string{"o"},

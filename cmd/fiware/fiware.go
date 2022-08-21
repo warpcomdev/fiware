@@ -190,6 +190,8 @@ func main() {
 					urboTokenFlag,
 					subServiceFlag,
 					outputFlag,
+					filterIdFlag,
+					filterTypeFlag,
 				},
 			},
 

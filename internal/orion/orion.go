@@ -223,27 +223,38 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 
 type entityPaginator struct {
 	response []Entity
-	buffer   []Entity
 }
 
 // GetBuffer implements Paginator
 func (p *entityPaginator) GetBuffer() interface{} {
-	return &p.buffer
+	buffer := make([]Entity, 0, batchSize)
+	return &buffer
 }
 
 // PutBuffer implements Paginator
 func (p *entityPaginator) PutBuffer(buf interface{}) int {
-	p.response = append(p.response, p.buffer...)
-	count := len(p.buffer)
-	p.buffer = p.buffer[:0] // Reset the buffer before next cycle
+	buffer := buf.(*[]Entity)
+	p.response = append(p.response, *buffer...)
+	count := len(*buffer)
 	return count
 }
 
 // Entities reads the list of entities from the Context Broker
-func (o *Orion) Entities(client *http.Client, headers http.Header) ([]fiware.EntityType, []fiware.Entity, error) {
+func (o *Orion) Entities(client *http.Client, headers http.Header, idPattern string, entityType string) ([]fiware.EntityType, []fiware.Entity, error) {
 	path, err := o.URL.Parse("v2/entities")
 	if err != nil {
 		return nil, nil, err
+	}
+	// If filtered, add parameters
+	if idPattern != "" || entityType != "" {
+		values := path.Query()
+		if idPattern != "" {
+			values.Add("idPattern", idPattern)
+		}
+		if entityType != "" {
+			values.Add("type", entityType)
+		}
+		path.RawQuery = values.Encode()
 	}
 	var pages entityPaginator
 	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
@@ -285,6 +296,7 @@ func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []
 		ID   string `json:"id"`
 		Type string `json:"type"`
 	}
+	var lastError error
 	for base := 0; base < len(ents); base += batchSize {
 		req := struct {
 			ActionType string         `json:"actionType"`
@@ -308,8 +320,8 @@ func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []
 			return err
 		}
 		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
-			return err
+			lastError = err // keep trying!
 		}
 	}
-	return nil
+	return lastError
 }

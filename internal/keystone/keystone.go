@@ -72,7 +72,7 @@ func (n NetError) Unwrap() error {
 }
 
 // newNetError builds an error from a Request and unexpected Response
-func newNetError(req *http.Request, resp *http.Response) error {
+func newNetError(req *http.Request, resp *http.Response, err error) error {
 	// Do not propagate body or headers of the request, might contain
 	// creedentials or other sensitive data
 	anonymousReq := http.Request{
@@ -82,7 +82,6 @@ func newNetError(req *http.Request, resp *http.Response) error {
 	}
 	var (
 		payload    []byte
-		err        error
 		statusCode int
 		headers    http.Header
 	)
@@ -90,7 +89,12 @@ func newNetError(req *http.Request, resp *http.Response) error {
 		statusCode = resp.StatusCode
 		headers = resp.Header
 		if resp.Body != nil {
-			payload, err = ioutil.ReadAll(resp.Body)
+			// Only override err if nil
+			var newErr error
+			payload, newErr = ioutil.ReadAll(resp.Body)
+			if newErr != nil {
+				err = newErr
+			}
 		}
 	}
 	return NetError{
@@ -196,17 +200,17 @@ func Query(client *http.Client, method string, headers http.Header, path *url.UR
 	resp, err := client.Do(req)
 	defer Exhaust(resp)
 	if err != nil {
-		return newNetError(req, nil)
+		return newNetError(req, nil, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return newNetError(req, resp)
+		return newNetError(req, resp, nil)
 	}
 	if data == nil { // payload not required
 		return nil
 	}
 	raw, err := ioutil.ReadAll(io.LimitReader(resp.Body, maximumPayload))
 	if err != nil {
-		return newNetError(req, resp)
+		return newNetError(req, resp, err)
 	}
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	if !allowUnknownFields {
@@ -287,15 +291,15 @@ func Update(client *http.Client, method string, headers http.Header, path *url.U
 
 	// Manage response
 	if err != nil {
-		return nil, nil, newNetError(req, nil)
+		return nil, nil, newNetError(req, nil, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, nil, newNetError(req, resp)
+		return nil, nil, newNetError(req, resp, nil)
 	}
 	if resp.StatusCode != 204 {
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, nil, newNetError(req, resp)
+			return nil, nil, newNetError(req, resp, err)
 		}
 		return resp.Header, bodyBytes, nil
 	}

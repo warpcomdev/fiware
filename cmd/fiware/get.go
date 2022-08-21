@@ -151,7 +151,9 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getEntities(selected, header, vertical); err != nil {
+			filterId := c.String(filterIdFlag.Name)
+			filterType := c.String(filterTypeFlag.Name)
+			if err := getEntities(selected, header, filterId, filterType, vertical); err != nil {
 				return err
 			}
 		case "rules":
@@ -229,12 +231,12 @@ func getSuscriptions(ctx config.Config, header http.Header, vertical *fiware.Ver
 	return nil
 }
 
-func getEntities(ctx config.Config, header http.Header, vertical *fiware.Vertical) error {
+func getEntities(ctx config.Config, header http.Header, filterId, filterType string, vertical *fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	types, values, err := api.Entities(httpClient(), header)
+	types, values, err := api.Entities(httpClient(), header, filterId, filterType)
 	if err != nil {
 		return err
 	}
