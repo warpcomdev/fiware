@@ -19,6 +19,8 @@ type Orion struct {
 	AllowUnknownFields bool
 }
 
+const batchSize = 50
+
 // New Orion instance
 func New(orionURL string) (*Orion, error) {
 	apiURL, err := url.Parse(orionURL)
@@ -253,22 +255,26 @@ func (o *Orion) Entities(client *http.Client, headers http.Header) ([]fiware.Ent
 
 // UpdateEntities updates a list of entities
 func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []Entity) error {
-	req := struct {
-		ActionType string   `json:"actionType"`
-		Entities   []Entity `json:"entities"`
-	}{
-		ActionType: "append",
-		Entities:   make([]Entity, 0, len(ents)),
-	}
-	if len(req.Entities) <= 0 {
-		return nil
-	}
-	path, err := o.URL.Parse("v2/op/update")
-	if err != nil {
-		return err
-	}
-	if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
-		return err
+	for base := 0; base < len(ents); base += batchSize {
+		req := struct {
+			ActionType string   `json:"actionType"`
+			Entities   []Entity `json:"entities"`
+		}{
+			ActionType: "append",
+			Entities:   make([]Entity, 0, len(ents)),
+		}
+		top := len(ents)
+		if top >= base+batchSize {
+			top = base + batchSize
+		}
+		req.Entities = append(req.Entities, ents[base:top]...)
+		path, err := o.URL.Parse("v2/op/update")
+		if err != nil {
+			return err
+		}
+		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -279,28 +285,31 @@ func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []
 		ID   string `json:"id"`
 		Type string `json:"type"`
 	}
-	req := struct {
-		ActionType string         `json:"actionType"`
-		Entities   []deleteEntity `json:"entities"`
-	}{
-		ActionType: "delete",
-		Entities:   make([]deleteEntity, 0, len(ents)),
-	}
-	for _, e := range ents {
-		req.Entities = append(req.Entities, deleteEntity{
-			ID:   e.ID,
-			Type: e.Type,
-		})
-	}
-	if len(req.Entities) <= 0 {
-		return nil
-	}
-	path, err := o.URL.Parse("v2/op/update")
-	if err != nil {
-		return err
-	}
-	if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
-		return err
+	for base := 0; base < len(ents); base += batchSize {
+		req := struct {
+			ActionType string         `json:"actionType"`
+			Entities   []deleteEntity `json:"entities"`
+		}{
+			ActionType: "delete",
+			Entities:   make([]deleteEntity, 0, len(ents)),
+		}
+		top := len(ents)
+		if top >= base+batchSize {
+			top = base + batchSize
+		}
+		for _, e := range ents[base:top] {
+			req.Entities = append(req.Entities, deleteEntity{
+				ID:   e.ID,
+				Type: e.Type,
+			})
+		}
+		path, err := o.URL.Parse("v2/op/update")
+		if err != nil {
+			return err
+		}
+		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
+			return err
+		}
 	}
 	return nil
 }
