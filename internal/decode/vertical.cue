@@ -11,7 +11,7 @@ import (
 
     // Tipos de entidad
     #entityType: {
-        entityID: string
+        entityID?: string
         entityType: string
         attrs: [...#attr]
 
