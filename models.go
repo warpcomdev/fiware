@@ -66,7 +66,7 @@ type UrboVertical struct {
 
 // EntityType representa un tipo de entidad
 type EntityType struct {
-	ID   string `json:"entityID"`
+	ID   string `json:"entityID,omitempty"`
 	Type string `json:"entityType"`
 	// Usamos una lista en vez de un map para poder
 	// establecer un orden específico, por si nos interesa

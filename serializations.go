@@ -128,7 +128,9 @@ func (x EntityType) MarshalJSON() ([]byte, error) {
 }
 
 func (x EntityType) Serialize(s serialize.Serializer) {
-	s.KeyString("entityID", string(x.ID))
+	if x.ID != "" {
+		s.KeyString("entityID", string(x.ID))
+	}
 	s.KeyString("entityType", string(x.Type))
 	s.BeginList("attrs")
 	for _, y := range x.Attrs {

@@ -16,7 +16,7 @@ panels?: [string]:    #UrboPanel
 verticals?: [string]: #UrboVertical
 
 #EntityType: {
-	entityID:   string
+	entityID?:  string
 	entityType: string
 	attrs: [...#Attribute]
 }
