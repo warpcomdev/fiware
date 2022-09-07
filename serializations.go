@@ -372,6 +372,9 @@ func (x NotificationCustom) Serialize(s serialize.Serializer) {
 	if x.Method != "" {
 		s.KeyString("method", string(x.Method))
 	}
+	if len(x.Json) > 0 {
+		s.KeyRaw("json", x.Json, false)
+	}
 }
 
 func (x NotificationStatus) MarshalJSON() ([]byte, error) {

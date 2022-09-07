@@ -102,6 +102,7 @@ verticals?: [string]: #UrboVertical
 	headers?: [string]: string
 	payload?: #Json
 	method?:  string
+	json?:    #Json
 }
 
 #Subject: {

@@ -201,6 +201,7 @@ type NotificationCustom struct {
 	Headers map[string]string `json:"headers,omitempty"`
 	Payload json.RawMessage   `json:"payload,omitempty"`
 	Method  string            `json:"method,omitempty"`
+	Json    json.RawMessage   `json:"json,omitempty"`
 }
 
 func (n NotificationCustom) IsEmpty() bool {
