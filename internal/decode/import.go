@@ -23,16 +23,16 @@ func mustEncode(v interface{}) json.RawMessage {
 // algun registro en formato ngsiv2, con metadatas.
 func importJson(v string) fiware.Attribute {
 	var structured interface{}
-	if !strings.HasPrefix(v, "{") {
-		log.Printf("supposed json type %s does not start with '{', decoding as string", v)
+	if !strings.HasPrefix(v, "{") || !strings.HasPrefix(v, "[") {
+		log.Printf("supposed json type %s does not start with '{' or '[', decoding as string", v)
 		return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 	}
 	if err := json.Unmarshal([]byte(v), &structured); err != nil {
 		log.Printf("failed to decode %s because of %v, assuming it's a text placeholder", v, err)
 		return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 	}
-	d, ok := structured.(map[string]interface{})
-	if ok {
+	// Check if the attribute is actually a value and metadata pair from orion dump
+	if d, ok := structured.(map[string]interface{}); ok {
 		if v, ok := d["value"]; ok {
 			if m, ok := d["metadatas"]; ok {
 				return fiware.Attribute{Value: mustEncode(v), Metadatas: mustEncode(m)}

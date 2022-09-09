@@ -242,6 +242,12 @@ import (
         if strings.HasPrefix(_type, "bool") {
             "bool"
         },
+        if _type == "json" {
+            "json"
+        },
+        if strings.HasPrefix(_type, "list ") {
+            "json"
+        },
         "text"][0]
     }
 

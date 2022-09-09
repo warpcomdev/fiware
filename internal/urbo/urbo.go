@@ -1,6 +1,7 @@
 package urbo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -63,7 +64,7 @@ func (u *Urbo) Headers(token string) (http.Header, error) {
 }
 
 // Rules reads the list of rules from Perseo
-func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath string, buffer interface{}) error {
+func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath string, params map[string]string, buffer interface{}) error {
 	path, err := u.URL.Parse(apiPath)
 	if err != nil {
 		return err
@@ -71,6 +72,11 @@ func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath st
 	query := url.Values{}
 	query.Add("service", u.Service)
 	query.Add("scopeService", u.ScopeService)
+	if params != nil {
+		for k, v := range params {
+			query.Add(k, v)
+		}
+	}
 	path.RawQuery = query.Encode()
 	if err := keystone.GetJSON(client, headers, path, buffer, true); err != nil {
 		return err
@@ -81,7 +87,7 @@ func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath st
 // Rules reads the list of rules from Perseo
 func (u *Urbo) Panels(client *http.Client, headers http.Header) (map[string]fiware.UrboPanel, error) {
 	var response []fiware.UrboPanel
-	if err := u.slugResource(client, headers, "/api/panels", &response); err != nil {
+	if err := u.slugResource(client, headers, "/api/panels", nil, &response); err != nil {
 		return nil, err
 	}
 	panels := make(map[string]fiware.UrboPanel)
@@ -94,7 +100,7 @@ func (u *Urbo) Panels(client *http.Client, headers http.Header) (map[string]fiwa
 // Rules reads the list of rules from Perseo
 func (u *Urbo) Verticals(client *http.Client, headers http.Header) (map[string]fiware.UrboVertical, error) {
 	var response []fiware.UrboVertical
-	if err := u.slugResource(client, headers, "/api/verticals", &response); err != nil {
+	if err := u.slugResource(client, headers, "/api/verticals", map[string]string{"shadowPanels": "true"}, &response); err != nil {
 		return nil, err
 	}
 	verticals := make(map[string]fiware.UrboVertical)
@@ -113,10 +119,41 @@ func (u *Urbo) Panel(client *http.Client, headers http.Header, slug string) (jso
 	query := url.Values{}
 	query.Add("service", u.Service)
 	query.Add("scopeService", u.ScopeService)
+	// parameters learnt by watching urbo, not actually documented...
+	// make sure the panels as returned in a form we can copy and paste them in urbo.
+	query.Add("unfiltered", "true")
+	query.Add("edit", "true")
 	path.RawQuery = query.Encode()
-	var buffer json.RawMessage
-	if err := keystone.GetJSON(client, headers, path, &buffer, true); err != nil {
+	var data map[string]interface{}
+	if err := keystone.GetJSON(client, headers, path, &data, true); err != nil {
 		return nil, err
 	}
-	return buffer, nil
+	remove_id(data)
+	buffer := bytes.Buffer{}
+	encoder := json.NewEncoder(&buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(data); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+// remove_id cleans a json object from "_id", and "__v" fields which are not useful
+func remove_id(m interface{}) {
+	if submap, ok := m.(map[string]interface{}); ok {
+		for k, v := range submap {
+			if k == "_id" || k == "__v" {
+				delete(submap, k)
+			} else {
+				remove_id(v)
+			}
+		}
+		return
+	}
+	if sublist, ok := m.([]interface{}); ok {
+		for _, v := range sublist {
+			remove_id(v)
+		}
+	}
 }

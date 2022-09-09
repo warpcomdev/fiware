@@ -157,12 +157,14 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 	for _, v := range text {
 		v = strings.TrimSpace(v)
 		switch {
-		case _typ == "number":
+		case lower == "number":
 			if v == "" {
 				value = append(value, fiware.Attribute{Value: []byte("null")})
 			} else {
 				value = append(value, importNumber(v))
 			}
+		case strings.HasPrefix(lower, "list "):
+			fallthrough
 		case strings.Contains(lower, "json"):
 			if v == "" {
 				value = append(value, fiware.Attribute{Value: []byte("null")})
