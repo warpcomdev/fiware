@@ -23,7 +23,7 @@ func mustEncode(v interface{}) json.RawMessage {
 // algun registro en formato ngsiv2, con metadatas.
 func importJson(v string) fiware.Attribute {
 	var structured interface{}
-	if !strings.HasPrefix(v, "{") || !strings.HasPrefix(v, "[") {
+	if !strings.HasPrefix(v, "{") && !strings.HasPrefix(v, "[") {
 		log.Printf("supposed json type %s does not start with '{' or '[', decoding as string", v)
 		return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 	}
