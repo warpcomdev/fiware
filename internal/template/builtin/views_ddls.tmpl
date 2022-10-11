@@ -1,19 +1,16 @@
-{{- define "default_ddls_sets" }}
+{{- define "views_ddls_sets" }}
 {{- range .tables }}
+
 \set {{ .name }}_table '{{ .name }}'
 \set {{ .name }}_pkey '{{ .name }}_pkey'
 {{- if .lastdata }}
 \set {{ .name }}_lastdata '{{ .name }}_lastdata'
-\set {{ .name }}_lastdata_pkey '{{ .name }}_ld_pkey'
-{{- end }}
-{{- if .singleton }}
-\set {{ .name }}_laststatus '{{ .name }}_laststatus'
-\set {{ .name }}_laststatus_idx '{{ .name }}_laststatus_idx'
 {{- end }}
 {{- range .indexes }}
 \set {{ .name }} '{{ .name }}'
 {{- end }}
-{{ end }}
+{{- end }}
+
 \set separator '_'
 \set scope :scope
 \set scope_sep :scope:separator
@@ -23,9 +20,9 @@ SELECT CASE
   THEN ''
   ELSE :'scope_sep'
 END AS "scope"  \gset
-{{ end }}
+{{- end }}
 
-{{- define "default_ddls_tables" }}
+{{- define "views_ddls_tables" }}
 {{- range .tables }}
 {{- $table_name := .name }}
 
@@ -38,10 +35,14 @@ CREATE TABLE IF NOT EXISTS :target_schema.:scope:{{ $table_name }}_table (
   {{- range .columns }}
   {{ .name }} {{ .type }}{{ if .notNull }} NOT NULL{{ end }}{{ if .default }} DEFAULT '{{ .default }}'{{ end }},
   {{- end }}
+  -- Metadata
+  {{- range .columns }}
+  {{ .name }}_md text,
+  {{- end }}
   -- Common entity attributes
-  entityid text NOT NULL,
+  entityid character varying(64) NOT NULL,
   entitytype text,
-  recvtime timestamp with time zone,
+  recvtime timestamp with time zone NOT NULL,
   fiwareservicepath text,
   -- PRIMARY KEYS
   CONSTRAINT :scope:{{ $table_name }}_pkey PRIMARY KEY ({{ .primaryKey | join ", "}})
@@ -58,35 +59,11 @@ CREATE INDEX :scope:{{ .name }} ON :target_schema.:scope:{{ $table_name }}_table
 {{- if .lastdata }}
 
 -----------------------------------
--- Table {{ $table_name }}_lastdata
+-- View {{ $table_name }}_lastdata
 -----------------------------------
-DROP TABLE IF EXISTS :target_schema.:scope:{{ $table_name }}_lastdata CASCADE;
 
-CREATE TABLE IF NOT EXISTS :target_schema.:scope:{{ $table_name }}_lastdata (
-  {{- range .columns }}
-  {{ .name }} {{ .type }}{{ if .notNull }} NOT NULL{{ end }}{{ if .default }} DEFAULT '{{ .default }}'{{ end }},
-  {{- end }}
-  -- Common entity attributes
-  entityid text NOT NULL,
-  entitytype text,
-  recvtime timestamp with time zone,
-  fiwareservicepath text,
-  -- PRIMARY KEYS
-  CONSTRAINT :scope:{{ $table_name }}_lastdata_pkey PRIMARY KEY (entityid)
-);
-{{- end }}
-
-{{- if .singleton }}
-
-------------------------------------
--- View {{ $table_name }}_laststatus
-------------------------------------
-DROP VIEW IF EXISTS :target_schema.:scope:{{ $table_name }}_laststatus CASCADE;
-
-CREATE INDEX :scope:{{ $table_name }}_laststatus_idx
-  ON :target_schema.:scope:{{ $table_name }}_table ({{ .singleton | join ", " }}, timeinstant DESC);
-
-CREATE VIEW :target_schema.:scope:{{ $table_name }}_laststatus AS
+DROP VIEW IF EXISTS {{ $table_name }}_lastdata CASCADE;
+CREATE VIEW {{ $table_name }}_lastdata AS
 SELECT
   {{- range .columns }}
   t.{{ .name }},
@@ -100,7 +77,7 @@ FROM (
     {{- end }}
     entityid,
     entitytype,
-    ROW_NUMBER() OVER (PARTITION BY {{ .singleton | join ", " }} ORDER BY timeinstant DESC) AS rn
+    ROW_NUMBER() OVER (PARTITION BY entityid ORDER BY timeinstant DESC) AS rn
   FROM :target_schema.:scope:{{ $table_name }}_table
   WHERE timeinstant > NOW() - :'duration'::interval
 ) t
@@ -108,5 +85,6 @@ WHERE t.rn = 1;
 {{- end }}
 {{- end }}
 {{- end }}
-{{- template "default_ddls_sets" . }}
-{{- template "default_ddls_tables" . }}
+
+{{ template "views_ddls_sets" . }}
+{{ template "views_ddls_tables" . }}

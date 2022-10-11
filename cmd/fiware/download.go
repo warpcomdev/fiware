@@ -100,7 +100,7 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 }
 
 func downloadPanel(u *urbo.Urbo, header http.Header, panel fiware.UrboPanel, outdir string) error {
-	data, err := u.Panel(httpClient(), header, panel.Slug)
+	data, err := u.DownloadPanel(httpClient(), header, panel.Slug)
 	if err != nil {
 		return err
 	}

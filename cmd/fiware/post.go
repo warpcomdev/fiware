@@ -13,6 +13,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/iotam"
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
+	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
 var canPost []string = []string{
@@ -21,6 +22,7 @@ var canPost []string = []string{
 	"suscriptions",
 	"rules",
 	"entities",
+	"verticals",
 }
 
 func postResource(c *cli.Context, config *config.Store) error {
@@ -40,6 +42,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 	}
 
 	for _, arg := range c.Args().Slice() {
+		var u *urbo.Urbo
 		var header http.Header
 		switch arg {
 		case "devices":
@@ -81,6 +84,13 @@ func postResource(c *cli.Context, config *config.Store) error {
 				return err
 			}
 			if err := postEntities(selected, header, vertical); err != nil {
+				return err
+			}
+		case "verticals":
+			if u, header, err = getUrboHeaders(c, selected); err != nil {
+				return err
+			}
+			if err := postVerticals(selected, u, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -144,6 +154,17 @@ func postEntities(ctx config.Config, header http.Header, vertical fiware.Vertica
 		func(g orion.Entity) string { return fmt.Sprintf("%s/%s", g.Type(), g.ID()) },
 	)
 	return api.UpdateEntities(httpClient(), header, merged)
+}
+
+func postVerticals(ctx config.Config, u *urbo.Urbo, header http.Header, vertical fiware.Vertical) error {
+	verticalList := make([]fiware.UrboVertical, 0, len(vertical.Verticals))
+	for _, v := range vertical.Verticals {
+		verticalList = append(verticalList, v)
+	}
+	listMessage("POSTing verticals with slugs", verticalList,
+		func(g fiware.UrboVertical) string { return g.Slug },
+	)
+	return u.PostVerticals(httpClient(), header, vertical.Verticals)
 }
 
 func listMessage[T any](msg string, items []T, label func(T) string) {

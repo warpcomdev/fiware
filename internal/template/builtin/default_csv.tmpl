@@ -21,7 +21,7 @@ entityID,entityType{{- range $ordered }},{{ .name }}<{{ .type }}>{{ end }}
     {{- $name  := .name -}}
     {{- $value := get $namedAtribs $name -}}
     {{- if eq .type "Number" -}}
-      {{ $value -}}
+      {{ $value | default "" -}}
     {{- else -}}
       {{- with $currentEntity.metadatas -}}
         {{- if hasKey . $name -}}

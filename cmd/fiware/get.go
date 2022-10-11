@@ -277,7 +277,7 @@ func getPanels(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fi
 }
 
 func getVerticals(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
-	verticals, err := u.Verticals(httpClient(), header)
+	verticals, err := u.GetVerticals(httpClient(), header)
 	if err != nil {
 		return err
 	}

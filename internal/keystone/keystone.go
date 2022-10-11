@@ -189,6 +189,11 @@ func PostJSON(client *http.Client, headers http.Header, path *url.URL, data inte
 	return Update(client, http.MethodPost, headers, path, data)
 }
 
+// PutJSON is a convenience wrapper for Update(client, http.MethodPut, ...)
+func PutJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
+	return Update(client, http.MethodPut, headers, path, data)
+}
+
 // Query performs an HTTP request without payload, loads the result into `data`
 func Query(client *http.Client, method string, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -197,18 +198,25 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 			newEntity.Attrs[attr] = val.Value
 			// Check all attributes are defined for the EntityType
 			found := false
-			for _, detail := range newType.Attrs {
+			index := -1
+			for idx, detail := range newType.Attrs {
 				if detail.Name == attr {
 					found = true
+					index = idx
 					break
 				}
 			}
 			if !found {
 				newType.Attrs = append(newType.Attrs, fiware.Attribute{
 					Name:      attr,
+					Type:      val.Type,
 					Value:     val.Value,
 					Metadatas: val.Metadatas,
 				})
+				index = len(newType.Attrs) - 1
+			}
+			if val.Type == "TextUnrestricted" {
+				newType.Attrs[index].Type = "TextUnrestricted"
 			}
 		}
 		types[currType] = newType
@@ -267,6 +275,10 @@ func (o *Orion) Entities(client *http.Client, headers http.Header, idPattern str
 // UpdateEntities updates a list of entities
 func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []Entity) error {
 	for base := 0; base < len(ents); base += batchSize {
+		if base > 0 {
+			// Wait for a timeout, the CB is this slow.
+			<-time.After(3 * time.Second)
+		}
 		req := struct {
 			ActionType string   `json:"actionType"`
 			Entities   []Entity `json:"entities"`

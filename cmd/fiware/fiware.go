@@ -220,6 +220,20 @@ func main() {
 			},
 
 			{
+				Name:    "upload",
+				Aliases: []string{"up"},
+				Usage:   fmt.Sprintf("Upload panels to urbo"),
+				Action: func(c *cli.Context) error {
+					return uploadResource(c, currentStore)
+				},
+				Flags: []cli.Flag{
+					tokenFlag,
+					urboTokenFlag,
+					subServiceFlag,
+				},
+			},
+
+			{
 				Name:     "post",
 				Category: "platform",
 				Usage:    fmt.Sprintf("Post some resource (%s)", strings.Join(canPost, ", ")),
