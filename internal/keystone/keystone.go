@@ -294,6 +294,7 @@ func Update(client HTTPClient, method string, headers http.Header, path *url.URL
 		URL:    path,
 		Method: method,
 		Body:   io.NopCloser(bytes.NewReader(dataBytes)),
+		ContentLength: int64(len(dataBytes)),
 	}
 	resp, err := client.Do(req)
 	defer Exhaust(resp)
