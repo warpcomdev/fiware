@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/warpcomdev/fiware/internal/config"
+	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
@@ -30,20 +31,21 @@ func uploadResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
+	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, target := range c.Args().Slice() {
 		fullpath, err := filepath.Abs(target)
 		if err != nil {
 			return err
 		}
 		dirname, filename := filepath.Split(fullpath)
-		if err := uploadPanel(u, header, os.DirFS(dirname), filename); err != nil {
+		if err := uploadPanel(u, client, header, os.DirFS(dirname), filename); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func uploadPanel(u *urbo.Urbo, header http.Header, fsys fs.FS, path string) error {
+func uploadPanel(u *urbo.Urbo, client keystone.HTTPClient, header http.Header, fsys fs.FS, path string) error {
 	file, err := fsys.Open(path)
 	if err != nil {
 		return err
@@ -53,5 +55,5 @@ func uploadPanel(u *urbo.Urbo, header http.Header, fsys fs.FS, path string) erro
 	if err != nil {
 		return err
 	}
-	return u.UploadPanel(httpClient(), header, bytes)
+	return u.UploadPanel(client, header, bytes)
 }

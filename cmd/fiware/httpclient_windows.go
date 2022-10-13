@@ -10,7 +10,7 @@ import (
 	ieproxy "github.com/mattn/go-ieproxy"
 )
 
-func httpClient() *http.Client {
+func _httpClient() *http.Client {
 	return &http.Client{
 		Timeout: 15 * time.Second,
 		Transport: &http.Transport{

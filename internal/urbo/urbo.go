@@ -33,7 +33,7 @@ func New(urboURL string, username, service, scopeService string) (*Urbo, error) 
 	}, nil
 }
 
-func (u *Urbo) Login(client *http.Client, password string) (string, error) {
+func (u *Urbo) Login(client keystone.HTTPClient, password string) (string, error) {
 	loginURL, err := u.URL.Parse("/auth/sso/login")
 	if err != nil {
 		return "", err
@@ -65,7 +65,7 @@ func (u *Urbo) Headers(token string) (http.Header, error) {
 }
 
 // Rules reads the list of rules from Perseo
-func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath string, params map[string]string, buffer interface{}) error {
+func (u *Urbo) slugResource(client keystone.HTTPClient, headers http.Header, apiPath string, params map[string]string, buffer interface{}) error {
 	path, err := u.URL.Parse(apiPath)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (u *Urbo) slugResource(client *http.Client, headers http.Header, apiPath st
 }
 
 // Rules reads the list of rules from Perseo
-func (u *Urbo) Panels(client *http.Client, headers http.Header) (map[string]fiware.UrboPanel, error) {
+func (u *Urbo) Panels(client keystone.HTTPClient, headers http.Header) (map[string]fiware.UrboPanel, error) {
 	var response []fiware.UrboPanel
 	if err := u.slugResource(client, headers, "/api/panels", map[string]string{"unassigned": "true"}, &response); err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ type detailedVertical struct {
 }
 
 // GetVerticals reads the list of verticals from Urbo
-func (u *Urbo) GetVerticals(client *http.Client, headers http.Header) (map[string]fiware.UrboVertical, error) {
+func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (map[string]fiware.UrboVertical, error) {
 	var response []fiware.UrboVertical
 	if err := u.slugResource(client, headers, "/api/verticals", map[string]string{"shadowPanels": "true"}, &response); err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (u *Urbo) GetVerticals(client *http.Client, headers http.Header) (map[strin
 }
 
 // PostVerticals reads the list of verticals from Urbo
-func (u *Urbo) PostVerticals(client *http.Client, headers http.Header, verticals map[string]fiware.UrboVertical) error {
+func (u *Urbo) PostVerticals(client keystone.HTTPClient, headers http.Header, verticals map[string]fiware.UrboVertical) error {
 	path, err := u.URL.Parse(fmt.Sprintf("/api/verticals"))
 	if err != nil {
 		return err
@@ -186,7 +186,7 @@ func (u *Urbo) PostVerticals(client *http.Client, headers http.Header, verticals
 }
 
 // DownloadPanel reads a single panel
-func (u *Urbo) DownloadPanel(client *http.Client, headers http.Header, slug string) (json.RawMessage, error) {
+func (u *Urbo) DownloadPanel(client keystone.HTTPClient, headers http.Header, slug string) (json.RawMessage, error) {
 	path, err := u.URL.Parse(fmt.Sprintf("/api/panels/%s", slug))
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (u *Urbo) DownloadPanel(client *http.Client, headers http.Header, slug stri
 }
 
 // DownloadPanel reads a single panel
-func (u *Urbo) UploadPanel(client *http.Client, headers http.Header, panel json.RawMessage) error {
+func (u *Urbo) UploadPanel(client keystone.HTTPClient, headers http.Header, panel json.RawMessage) error {
 	var buffer map[string]interface{}
 	if err := json.Unmarshal(panel, &buffer); err != nil {
 		return err

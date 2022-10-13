@@ -11,6 +11,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/iotam"
+	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
 )
@@ -39,6 +40,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
+	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, arg := range c.Args().Slice() {
 		var header http.Header
 		switch arg {
@@ -46,7 +48,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteDevices(selected, header, vertical); err != nil {
+			if err := deleteDevices(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "services":
@@ -55,7 +57,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteServices(selected, header, vertical); err != nil {
+			if err := deleteServices(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "subscriptions":
@@ -66,21 +68,21 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteSuscriptions(selected, header, vertical); err != nil {
+			if err := deleteSuscriptions(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "rules":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteRules(selected, header, vertical); err != nil {
+			if err := deleteRules(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "entities":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteEntities(selected, header, vertical); err != nil {
+			if err := deleteEntities(selected, client, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -90,7 +92,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	return nil
 }
 
-func deleteDevices(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func deleteDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -98,10 +100,10 @@ func deleteDevices(ctx config.Config, header http.Header, vertical fiware.Vertic
 	listMessage("DELETing devices with IDs", vertical.Devices,
 		func(g fiware.Device) string { return g.DeviceId },
 	)
-	return api.DeleteDevices(httpClient(), header, vertical.Devices)
+	return api.DeleteDevices(client, header, vertical.Devices)
 }
 
-func deleteServices(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -109,10 +111,10 @@ func deleteServices(ctx config.Config, header http.Header, vertical fiware.Verti
 	listMessage("DELETing groups with API Keys", vertical.Services,
 		func(g fiware.Service) string { return g.APIKey },
 	)
-	return api.DeleteServices(httpClient(), header, vertical.Services)
+	return api.DeleteServices(client, header, vertical.Services)
 }
 
-func deleteSuscriptions(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -120,10 +122,10 @@ func deleteSuscriptions(ctx config.Config, header http.Header, vertical fiware.V
 	listMessage("DELETing suscriptions with descriptions", vertical.Suscriptions,
 		func(g fiware.Suscription) string { return g.Description },
 	)
-	return api.DeleteSuscriptions(httpClient(), header, vertical.Suscriptions)
+	return api.DeleteSuscriptions(client, header, vertical.Suscriptions)
 }
 
-func deleteRules(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
@@ -131,7 +133,7 @@ func deleteRules(ctx config.Config, header http.Header, vertical fiware.Vertical
 	listMessage("DELETing rules with names", vertical.Rules,
 		func(g fiware.Rule) string { return g.Name },
 	)
-	return api.DeleteRules(httpClient(), header, vertical.Rules)
+	return api.DeleteRules(client, header, vertical.Rules)
 }
 
 func knownEntities(vertical fiware.Vertical) []fiware.Entity {
@@ -148,7 +150,7 @@ func knownEntities(vertical fiware.Vertical) []fiware.Entity {
 	return knownEntities
 }
 
-func deleteEntities(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -157,5 +159,5 @@ func deleteEntities(ctx config.Config, header http.Header, vertical fiware.Verti
 	listMessage("DELETing entities ", toDelete,
 		func(g fiware.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
 	)
-	return api.DeleteEntities(httpClient(), header, toDelete)
+	return api.DeleteEntities(client, header, toDelete)
 }

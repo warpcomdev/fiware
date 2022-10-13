@@ -32,7 +32,7 @@ func New(perseoURL string) (*Perseo, error) {
 }
 
 // Rules reads the list of rules from Perseo
-func (o *Perseo) Rules(client *http.Client, headers http.Header) ([]fiware.Rule, error) {
+func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiware.Rule, error) {
 	path, err := o.URL.Parse("rules")
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (o *Perseo) Rules(client *http.Client, headers http.Header) ([]fiware.Rule,
 }
 
 // PostRules posts a list of rules to Perseo
-func (o *Perseo) PostRules(client *http.Client, headers http.Header, rules []fiware.Rule) error {
+func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rules []fiware.Rule) error {
 	var errList error
 	for _, rule := range rules {
 		// HACK: No quiero que se añada a las acciones el servicio y el subservicio,
@@ -148,7 +148,7 @@ func (o *Perseo) PostRules(client *http.Client, headers http.Header, rules []fiw
 }
 
 // DeleteRules deletes a list of rules from Perseo
-func (o *Perseo) DeleteRules(client *http.Client, headers http.Header, rules []fiware.Rule) error {
+func (o *Perseo) DeleteRules(client keystone.HTTPClient, headers http.Header, rules []fiware.Rule) error {
 	var errList error
 	for _, rule := range rules {
 		rule.RuleStatus = fiware.RuleStatus{}

@@ -15,6 +15,11 @@ import (
 	"github.com/warpcomdev/fiware"
 )
 
+// HTTPClient encapsulates the funcionality required from *http.Client.
+type HTTPClient interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 // Keystone manages Requests to the Identity Manager
 type Keystone struct {
 	URL               *url.URL
@@ -107,7 +112,7 @@ func newNetError(req *http.Request, resp *http.Response, err error) error {
 }
 
 // Login into the Context Broker, get a session token
-func (o *Keystone) Login(client *http.Client, password string) (string, error) {
+func (o *Keystone) Login(client HTTPClient, password string) (string, error) {
 	payload := fmt.Sprintf(
 		`{"auth": {"identity": {"methods": ["password"], "password": {"user": {"domain": {"name": %q}, "name": %q, "password": %q}}}, "scope": {"domain": {"name": %q}}}}`,
 		o.Service, o.Username, password, o.Service,
@@ -155,7 +160,7 @@ const maximumPayload = 16 * 1024 * 1024 // 16MB should be large enough
 
 // GetJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
 // TODO: Add a variant with pagination support
-func GetJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
+func GetJSON(client HTTPClient, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
 	return Query(client, http.MethodGet, headers, path, data, allowUnknownFields)
 }
 
@@ -165,7 +170,7 @@ type Paginator interface {
 }
 
 // GetPaginatedJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
-func GetPaginatedJSON(client *http.Client, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool) error {
+func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool) error {
 	offset, limit := 0, 50
 	for {
 		limitedURL := *path // make a copy
@@ -185,17 +190,17 @@ func GetPaginatedJSON(client *http.Client, headers http.Header, path *url.URL, p
 }
 
 // PostJSON is a convenience wrapper for Update(client, http.MethodPost, ...)
-func PostJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
+func PostJSON(client HTTPClient, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 	return Update(client, http.MethodPost, headers, path, data)
 }
 
 // PutJSON is a convenience wrapper for Update(client, http.MethodPut, ...)
-func PutJSON(client *http.Client, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
+func PutJSON(client HTTPClient, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 	return Update(client, http.MethodPut, headers, path, data)
 }
 
 // Query performs an HTTP request without payload, loads the result into `data`
-func Query(client *http.Client, method string, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
+func Query(client HTTPClient, method string, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
 
 	req := &http.Request{
 		Header: headers,
@@ -236,7 +241,7 @@ type pager interface {
 }
 
 // Query performs an HTTP request without payload, loads the result into `data`
-func page(client *http.Client, method string, headers http.Header, path *url.URL, data pager, allowUnknownFields bool) error {
+func page(client HTTPClient, method string, headers http.Header, path *url.URL, data pager, allowUnknownFields bool) error {
 	q := path.Query()
 	limit := 50
 	offset := 0
@@ -258,7 +263,7 @@ func page(client *http.Client, method string, headers http.Header, path *url.URL
 }
 
 // Update performs an HTTP request with JSON payload, returns headers.
-func Update(client *http.Client, method string, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
+func Update(client HTTPClient, method string, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 
 	// Serialize request to bytes
 	var dataBytes []byte
@@ -285,11 +290,10 @@ func Update(client *http.Client, method string, headers http.Header, path *url.U
 
 	// Perform Request
 	req := &http.Request{
-		Header:        newHeaders,
-		URL:           path,
-		Method:        method,
-		Body:          io.NopCloser(bytes.NewReader(dataBytes)),
-		ContentLength: int64(len(dataBytes)),
+		Header: newHeaders,
+		URL:    path,
+		Method: method,
+		Body:   io.NopCloser(bytes.NewReader(dataBytes)),
 	}
 	resp, err := client.Do(req)
 	defer Exhaust(resp)
@@ -316,7 +320,7 @@ type keystoneProjects struct {
 	Projects []fiware.Project `json:"projects"`
 }
 
-func (k *Keystone) Projects(client *http.Client, headers http.Header) ([]fiware.Project, error) {
+func (k *Keystone) Projects(client HTTPClient, headers http.Header) ([]fiware.Project, error) {
 	urlProjects, err := k.URL.Parse("/v3/auth/projects")
 	if err != nil {
 		return nil, err

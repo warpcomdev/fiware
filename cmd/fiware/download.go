@@ -12,6 +12,7 @@ import (
 
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
+	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
@@ -21,11 +22,12 @@ func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
 		return nil, err
 	}
 	vertical := &fiware.Vertical{Subservice: selected.Subservice}
+	client := httpClient(c.Bool(verboseFlag.Name))
 	u, header, err := getUrboHeaders(c, selected)
 	if err != nil {
 		return nil, err
 	}
-	if err := getVerticals(selected, u, header, vertical); err != nil {
+	if err := getVerticals(selected, client, u, header, vertical); err != nil {
 		return nil, err
 	}
 	v := make([]string, 0, len(vertical.Verticals))
@@ -66,11 +68,12 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 	}
 
 	vertical := &fiware.Vertical{Subservice: selected.Subservice}
+	client := httpClient(c.Bool(verboseFlag.Name))
 	u, header, err := getUrboHeaders(c, selected)
 	if err != nil {
 		return err
 	}
-	if err := getVerticals(selected, u, header, vertical); err != nil {
+	if err := getVerticals(selected, client, u, header, vertical); err != nil {
 		return err
 	}
 
@@ -79,12 +82,12 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 		for _, v := range vertical.Verticals {
 			if v.Slug == target {
 				for _, panel := range v.Panels {
-					if err := downloadPanel(u, header, panel, outdir); err != nil {
+					if err := downloadPanel(u, client, header, panel, outdir); err != nil {
 						return err
 					}
 				}
 				for _, panel := range v.ShadowPanels {
-					if err := downloadPanel(u, header, panel, outdir); err != nil {
+					if err := downloadPanel(u, client, header, panel, outdir); err != nil {
 						return err
 					}
 				}
@@ -99,8 +102,8 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 	return nil
 }
 
-func downloadPanel(u *urbo.Urbo, header http.Header, panel fiware.UrboPanel, outdir string) error {
-	data, err := u.DownloadPanel(httpClient(), header, panel.Slug)
+func downloadPanel(u *urbo.Urbo, client keystone.HTTPClient, header http.Header, panel fiware.UrboPanel, outdir string) error {
+	data, err := u.DownloadPanel(client, header, panel.Slug)
 	if err != nil {
 		return err
 	}

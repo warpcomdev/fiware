@@ -52,7 +52,7 @@ func (p *suscriptionPaginator) PutBuffer(buf interface{}) int {
 }
 
 // Suscriptions reads the list of suscriptions from the Context Broker
-func (o *Orion) Suscriptions(client *http.Client, headers http.Header) ([]fiware.Suscription, error) {
+func (o *Orion) Suscriptions(client keystone.HTTPClient, headers http.Header) ([]fiware.Suscription, error) {
 	path, err := o.URL.Parse("v2/subscriptions")
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (o *Orion) Suscriptions(client *http.Client, headers http.Header) ([]fiware
 }
 
 // PostSuscriptions posts a list of suscriptions to orion
-func (o *Orion) PostSuscriptions(client *http.Client, headers http.Header, subs []fiware.Suscription) error {
+func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription) error {
 	var errList error
 	for _, sub := range subs {
 		sub.SuscriptionStatus = fiware.SuscriptionStatus{}
@@ -82,7 +82,7 @@ func (o *Orion) PostSuscriptions(client *http.Client, headers http.Header, subs 
 }
 
 // DeleteSuscriptions deletes a list of suscriptions from Orion
-func (o *Orion) DeleteSuscriptions(client *http.Client, headers http.Header, subs []fiware.Suscription) error {
+func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription) error {
 	var errList error
 	for _, sub := range subs {
 		if sub.ID == "" {
@@ -248,7 +248,7 @@ func (p *entityPaginator) PutBuffer(buf interface{}) int {
 }
 
 // Entities reads the list of entities from the Context Broker
-func (o *Orion) Entities(client *http.Client, headers http.Header, idPattern string, entityType string) ([]fiware.EntityType, []fiware.Entity, error) {
+func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string) ([]fiware.EntityType, []fiware.Entity, error) {
 	path, err := o.URL.Parse("v2/entities")
 	if err != nil {
 		return nil, nil, err
@@ -273,7 +273,7 @@ func (o *Orion) Entities(client *http.Client, headers http.Header, idPattern str
 }
 
 // UpdateEntities updates a list of entities
-func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []Entity) error {
+func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, ents []Entity) error {
 	for base := 0; base < len(ents); base += batchSize {
 		if base > 0 {
 			// Wait for a timeout, the CB is this slow.
@@ -303,7 +303,7 @@ func (o *Orion) UpdateEntities(client *http.Client, headers http.Header, ents []
 }
 
 // DeleteEntities deletes a list of entities from Orion
-func (o *Orion) DeleteEntities(client *http.Client, headers http.Header, ents []fiware.Entity) error {
+func (o *Orion) DeleteEntities(client keystone.HTTPClient, headers http.Header, ents []fiware.Entity) error {
 	type deleteEntity struct {
 		ID   string `json:"id"`
 		Type string `json:"type"`

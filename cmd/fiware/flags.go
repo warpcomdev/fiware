@@ -64,6 +64,13 @@ var (
 		Usage:   "write output to `FILE`",
 	}
 
+	verboseFlag = &cli.BoolFlag{
+		Name:    "verbose",
+		Aliases: []string{"V"},
+		Usage:   "write verbose logging",
+		Value:   false,
+	}
+
 	outdirFlag = &cli.StringFlag{
 		Name:     "outdir",
 		Aliases:  []string{"o", "O"},

@@ -29,7 +29,7 @@ func New(iotaURL string) (*Iotam, error) {
 }
 
 // Services reads the list of groups from the IoTA Manager
-func (i *Iotam) Services(client *http.Client, headers http.Header) ([]fiware.Service, error) {
+func (i *Iotam) Services(client keystone.HTTPClient, headers http.Header) ([]fiware.Service, error) {
 	path, err := i.URL.Parse("iot/services")
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (i *Iotam) Services(client *http.Client, headers http.Header) ([]fiware.Ser
 }
 
 // Devices reads the list of devices from the IoTA Manager
-func (i *Iotam) Devices(client *http.Client, headers http.Header) ([]fiware.Device, error) {
+func (i *Iotam) Devices(client keystone.HTTPClient, headers http.Header) ([]fiware.Device, error) {
 	path, err := i.URL.Parse("iot/devices")
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (i *Iotam) Devices(client *http.Client, headers http.Header) ([]fiware.Devi
 }
 
 // PostServices sends a POST request for a set of Services
-func (i *Iotam) PostServices(client *http.Client, headers http.Header, services []fiware.Service) error {
+func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, services []fiware.Service) error {
 	clean := make([]fiware.Service, 0, len(services))
 	for _, service := range services {
 		service.GroupStatus = fiware.GroupStatus{}
@@ -88,7 +88,7 @@ func (i *Iotam) PostServices(client *http.Client, headers http.Header, services 
 }
 
 // DeleteServices sends a DELETE request for a set of Services
-func (i *Iotam) DeleteServices(client *http.Client, headers http.Header, services []fiware.Service) error {
+func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, services []fiware.Service) error {
 	var errList error
 	for _, service := range services {
 		if service.Resource == "" || service.APIKey == "" || service.Protocol == "" {
@@ -111,7 +111,7 @@ func (i *Iotam) DeleteServices(client *http.Client, headers http.Header, service
 }
 
 // PostDevices sends a POST request for a set of Devices
-func (i *Iotam) PostDevices(client *http.Client, headers http.Header, devices []fiware.Device) error {
+func (i *Iotam) PostDevices(client keystone.HTTPClient, headers http.Header, devices []fiware.Device) error {
 	clean := make([]fiware.Device, 0, len(devices))
 	for _, service := range devices {
 		service.DeviceStatus = fiware.DeviceStatus{}
@@ -137,7 +137,7 @@ func (i *Iotam) PostDevices(client *http.Client, headers http.Header, devices []
 }
 
 // DeleteDevices sends a DELETE request for a set of Devices
-func (i *Iotam) DeleteDevices(client *http.Client, headers http.Header, devices []fiware.Device) error {
+func (i *Iotam) DeleteDevices(client keystone.HTTPClient, headers http.Header, devices []fiware.Device) error {
 	var errList error
 	for _, device := range devices {
 		if device.DeviceId == "" {

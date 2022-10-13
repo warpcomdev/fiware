@@ -11,6 +11,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/iotam"
+	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
 	"github.com/warpcomdev/fiware/internal/urbo"
@@ -41,6 +42,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		return err
 	}
 
+	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, arg := range c.Args().Slice() {
 		var u *urbo.Urbo
 		var header http.Header
@@ -49,7 +51,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postDevices(selected, header, vertical); err != nil {
+			if err := postDevices(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "services":
@@ -58,7 +60,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postServices(selected, header, vertical); err != nil {
+			if err := postServices(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "subscriptions":
@@ -69,28 +71,28 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postSuscriptions(selected, header, vertical); err != nil {
+			if err := postSuscriptions(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "rules":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postRules(selected, header, vertical); err != nil {
+			if err := postRules(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "entities":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postEntities(selected, header, vertical); err != nil {
+			if err := postEntities(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "verticals":
 			if u, header, err = getUrboHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postVerticals(selected, u, header, vertical); err != nil {
+			if err := postVerticals(selected, client, u, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -100,7 +102,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 	return nil
 }
 
-func postDevices(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func postDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -108,10 +110,10 @@ func postDevices(ctx config.Config, header http.Header, vertical fiware.Vertical
 	listMessage("POSTing devices with IDs", vertical.Devices,
 		func(g fiware.Device) string { return g.DeviceId },
 	)
-	return api.PostDevices(httpClient(), header, vertical.Devices)
+	return api.PostDevices(client, header, vertical.Devices)
 }
 
-func postServices(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func postServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -119,10 +121,10 @@ func postServices(ctx config.Config, header http.Header, vertical fiware.Vertica
 	listMessage("POSTing groups with API Keys", vertical.Services,
 		func(g fiware.Service) string { return g.APIKey },
 	)
-	return api.PostServices(httpClient(), header, vertical.Services)
+	return api.PostServices(client, header, vertical.Services)
 }
 
-func postSuscriptions(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -130,10 +132,10 @@ func postSuscriptions(ctx config.Config, header http.Header, vertical fiware.Ver
 	listMessage("POSTing suscriptions with descriptions", vertical.Suscriptions,
 		func(g fiware.Suscription) string { return g.Description },
 	)
-	return api.PostSuscriptions(httpClient(), header, vertical.Suscriptions)
+	return api.PostSuscriptions(client, header, vertical.Suscriptions)
 }
 
-func postRules(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
@@ -141,10 +143,10 @@ func postRules(ctx config.Config, header http.Header, vertical fiware.Vertical) 
 	listMessage("POSTing rules with names", vertical.Rules,
 		func(g fiware.Rule) string { return g.Name },
 	)
-	return api.PostRules(httpClient(), header, vertical.Rules)
+	return api.PostRules(client, header, vertical.Rules)
 }
 
-func postEntities(ctx config.Config, header http.Header, vertical fiware.Vertical) error {
+func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -153,10 +155,10 @@ func postEntities(ctx config.Config, header http.Header, vertical fiware.Vertica
 	listMessage("POSTing entities with names", merged,
 		func(g orion.Entity) string { return fmt.Sprintf("%s/%s", g.Type(), g.ID()) },
 	)
-	return api.UpdateEntities(httpClient(), header, merged)
+	return api.UpdateEntities(client, header, merged)
 }
 
-func postVerticals(ctx config.Config, u *urbo.Urbo, header http.Header, vertical fiware.Vertical) error {
+func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Vertical) error {
 	verticalList := make([]fiware.UrboVertical, 0, len(vertical.Verticals))
 	for _, v := range vertical.Verticals {
 		verticalList = append(verticalList, v)
@@ -164,7 +166,7 @@ func postVerticals(ctx config.Config, u *urbo.Urbo, header http.Header, vertical
 	listMessage("POSTing verticals with slugs", verticalList,
 		func(g fiware.UrboVertical) string { return g.Slug },
 	)
-	return u.PostVerticals(httpClient(), header, vertical.Verticals)
+	return u.PostVerticals(client, header, vertical.Verticals)
 }
 
 func listMessage[T any](msg string, items []T, label func(T) string) {

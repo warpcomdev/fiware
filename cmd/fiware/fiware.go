@@ -186,6 +186,7 @@ func main() {
 					return getResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
+					verboseFlag,
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
@@ -212,6 +213,7 @@ func main() {
 					return downloadResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
+					verboseFlag,
 					outdirFlag,
 					tokenFlag,
 					urboTokenFlag,
@@ -227,6 +229,7 @@ func main() {
 					return uploadResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
+					verboseFlag,
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
@@ -244,6 +247,7 @@ func main() {
 					return postResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
+					verboseFlag,
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
@@ -263,6 +267,7 @@ func main() {
 					return deleteResource(c, currentStore)
 				},
 				Flags: []cli.Flag{
+					verboseFlag,
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,

@@ -115,6 +115,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 	defer outfile.Close()
 
 	vertical := &fiware.Vertical{Subservice: selected.Subservice}
+	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
 		var u *urbo.Urbo
@@ -124,7 +125,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getDevices(selected, header, vertical); err != nil {
+			if err := getDevices(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "services":
@@ -133,7 +134,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getServices(selected, header, vertical); err != nil {
+			if err := getServices(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "subscriptions":
@@ -144,7 +145,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getSuscriptions(selected, header, vertical); err != nil {
+			if err := getSuscriptions(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "entities":
@@ -153,35 +154,35 @@ func getResource(c *cli.Context, store *config.Store) error {
 			}
 			filterId := c.String(filterIdFlag.Name)
 			filterType := c.String(filterTypeFlag.Name)
-			if err := getEntities(selected, header, filterId, filterType, vertical); err != nil {
+			if err := getEntities(selected, client, header, filterId, filterType, vertical); err != nil {
 				return err
 			}
 		case "rules":
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getRules(selected, header, vertical); err != nil {
+			if err := getRules(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "projects":
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getProjects(selected, k, header, vertical); err != nil {
+			if err := getProjects(selected, client, k, header, vertical); err != nil {
 				return err
 			}
 		case "panels":
 			if u, header, err = getUrboHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getPanels(selected, u, header, vertical); err != nil {
+			if err := getPanels(selected, client, u, header, vertical); err != nil {
 				return err
 			}
 		case "verticals":
 			if u, header, err = getUrboHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := getVerticals(selected, u, header, vertical); err != nil {
+			if err := getVerticals(selected, client, u, header, vertical); err != nil {
 				return err
 			}
 		default:
@@ -192,12 +193,12 @@ func getResource(c *cli.Context, store *config.Store) error {
 	return output.Encode(outfile, vertical, selected.Params)
 }
 
-func getDevices(ctx config.Config, header http.Header, vertical *fiware.Vertical) error {
+func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
-	devices, err := api.Devices(httpClient(), header)
+	devices, err := api.Devices(c, header)
 	if err != nil {
 		return err
 	}
@@ -205,12 +206,12 @@ func getDevices(ctx config.Config, header http.Header, vertical *fiware.Vertical
 	return nil
 }
 
-func getServices(ctx config.Config, header http.Header, vertical *fiware.Vertical) error {
+func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
-	groups, err := api.Services(httpClient(), header)
+	groups, err := api.Services(c, header)
 	if err != nil {
 		return err
 	}
@@ -218,12 +219,12 @@ func getServices(ctx config.Config, header http.Header, vertical *fiware.Vertica
 	return nil
 }
 
-func getSuscriptions(ctx config.Config, header http.Header, vertical *fiware.Vertical) error {
+func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	suscriptions, err := api.Suscriptions(httpClient(), header)
+	suscriptions, err := api.Suscriptions(c, header)
 	if err != nil {
 		return err
 	}
@@ -231,12 +232,12 @@ func getSuscriptions(ctx config.Config, header http.Header, vertical *fiware.Ver
 	return nil
 }
 
-func getEntities(ctx config.Config, header http.Header, filterId, filterType string, vertical *fiware.Vertical) error {
+func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType string, vertical *fiware.Vertical) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	types, values, err := api.Entities(httpClient(), header, filterId, filterType)
+	types, values, err := api.Entities(c, header, filterId, filterType)
 	if err != nil {
 		return err
 	}
@@ -245,12 +246,12 @@ func getEntities(ctx config.Config, header http.Header, filterId, filterType str
 	return nil
 }
 
-func getRules(ctx config.Config, header http.Header, vertical *fiware.Vertical) error {
+func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
 	}
-	rules, err := api.Rules(httpClient(), header)
+	rules, err := api.Rules(c, header)
 	if err != nil {
 		return err
 	}
@@ -258,8 +259,8 @@ func getRules(ctx config.Config, header http.Header, vertical *fiware.Vertical) 
 	return nil
 }
 
-func getProjects(ctx config.Config, k *keystone.Keystone, header http.Header, vertical *fiware.Vertical) error {
-	projects, err := k.Projects(httpClient(), header)
+func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Vertical) error {
+	projects, err := k.Projects(c, header)
 	if err != nil {
 		return err
 	}
@@ -267,8 +268,8 @@ func getProjects(ctx config.Config, k *keystone.Keystone, header http.Header, ve
 	return nil
 }
 
-func getPanels(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
-	panels, err := u.Panels(httpClient(), header)
+func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
+	panels, err := u.Panels(c, header)
 	if err != nil {
 		return err
 	}
@@ -276,8 +277,8 @@ func getPanels(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fi
 	return nil
 }
 
-func getVerticals(ctx config.Config, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
-	verticals, err := u.GetVerticals(httpClient(), header)
+func getVerticals(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
+	verticals, err := u.GetVerticals(c, header)
 	if err != nil {
 		return err
 	}

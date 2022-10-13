@@ -40,13 +40,14 @@ func auth(c *cli.Context, store *config.Store) error {
 	if err != nil {
 		return err
 	}
+	client := httpClient(c.Bool(verboseFlag.Name))
 	var fiwareToken, urboToken string
 	var fiwareError, urboError error
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fiwareToken, fiwareError = k.Login(httpClient(), string(bytepw))
+		fiwareToken, fiwareError = k.Login(client, string(bytepw))
 	}()
 	if selected.UrboURL != "" {
 		wg.Add(1)
@@ -56,7 +57,7 @@ func auth(c *cli.Context, store *config.Store) error {
 		}
 		go func() {
 			defer wg.Done()
-			urboToken, urboError = u.Login(httpClient(), string(bytepw))
+			urboToken, urboError = u.Login(client, string(bytepw))
 		}()
 	}
 	wg.Wait()
