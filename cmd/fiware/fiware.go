@@ -171,6 +171,7 @@ func main() {
 					return auth(c, currentStore)
 				},
 				Flags: []cli.Flag{
+					verboseFlag,
 					saveFlag,
 				},
 			},

@@ -218,10 +218,11 @@ import (
         if name == "timeinstant" {
             notNull: true
         }
-        if list.Contains(_municipalityAttribs, name) {
-            notNull: true
-            default: "NA"
-        }
+        // deprecated
+        //if list.Contains(_municipalityAttribs, name) {
+        //    notNull: true
+        //    default: "NA"
+        //}
         let _type= strings.ToLower(_attr.type)
         type: [
         if name == "timeinstant" {
