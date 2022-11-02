@@ -216,7 +216,7 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs      []string          `json:"attrs,omitempty"`
+	Attrs      []string          `json:"attrs"`
 	Expression SubjectExpression `json:"expression,omitempty"`
 }
 

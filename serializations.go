@@ -427,13 +427,11 @@ func (x SubjectCondition) MarshalJSON() ([]byte, error) {
 }
 
 func (x SubjectCondition) Serialize(s serialize.Serializer) {
-	if len(x.Attrs) > 0 {
-		s.BeginList("attrs")
-		for _, y := range x.Attrs {
-			s.String(y)
-		}
-		s.EndList()
+	s.BeginList("attrs")
+	for _, y := range x.Attrs {
+		s.String(y)
 	}
+	s.EndList()
 	if !x.Expression.IsEmpty() {
 		s.BeginBlock("expression")
 		x.Expression.Serialize(s)

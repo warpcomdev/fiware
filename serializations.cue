@@ -111,7 +111,7 @@ verticals?: [string]: #UrboVertical
 }
 
 #SubjectCondition: {
-	attrs?: [...string]
+	attrs: [...string]
 	expression?: #SubjectExpression
 }
 
