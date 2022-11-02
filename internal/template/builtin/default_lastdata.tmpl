@@ -9,12 +9,12 @@ INSERT INTO :target_schema.:scope:{{ $table_name }}_lastdata (
   entityid, entitytype, recvtime{{ range .columns }},{{printf "\n  %s" .name}}{{ end }})
 SELECT
   entityid, entitytype, recvtime{{ range .columns }},{{ printf "\n  %s" .name}}{{ end }}
-FROM (SELECT *, ROW_NUMBER() OVER PARTITION BY (entityid, timeinstant DESC) AS rn
+FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY entityid ORDER BY timeinstant DESC) AS rn
   FROM :target_schema.:scope:{{ $table_name }}_table
-  WHERE timeinstant > NOW() - interval '10 days'
+  WHERE timeinstant > NOW() - interval '720 days'
 ) AS source
 WHERE source.rn = 1
 ON CONFLICT(entityid) DO UPDATE SET
-  entitytype=source.entitytype,
-  recvtime=source.recvtime{{ range .columns }},{{ printf "\n  %s" .name}}=source.{{.name}}{{ end }}
+  entitytype=excluded.entitytype,
+  recvtime=excluded.recvtime{{ range .columns }},{{ printf "\n  %s" .name}}=excluded.{{.name}}{{ end }};
 {{- end }}
