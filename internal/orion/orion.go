@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -92,7 +94,7 @@ func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Head
 		if err != nil {
 			return err
 		}
-		if err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
+		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
 			errList = multierror.Append(errList, err)
 		}
 	}
@@ -244,6 +246,12 @@ func (p *entityPaginator) PutBuffer(buf interface{}) int {
 	buffer := buf.(*[]Entity)
 	p.response = append(p.response, *buffer...)
 	count := len(*buffer)
+	ids := sort.StringSlice(make([]string, 0, len(*buffer)))
+	for _, entity := range *buffer {
+		ids = append(ids, entity.ID())
+	}
+	ids.Sort()
+	fmt.Printf("Read %d entities %s", len(*buffer), strings.Join(ids, ", "))
 	return count
 }
 

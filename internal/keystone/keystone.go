@@ -161,7 +161,8 @@ const maximumPayload = 16 * 1024 * 1024 // 16MB should be large enough
 // GetJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
 // TODO: Add a variant with pagination support
 func GetJSON(client HTTPClient, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
-	return Query(client, http.MethodGet, headers, path, data, allowUnknownFields)
+	_, err := Query(client, http.MethodGet, headers, path, data, allowUnknownFields)
+	return err
 }
 
 type Paginator interface {
@@ -171,22 +172,30 @@ type Paginator interface {
 
 // GetPaginatedJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
 func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool) error {
-	offset, limit := 0, 50
-	for {
+	offset, limit, total := 0, 50, 50
+	for offset < total {
 		limitedURL := *path // make a copy
 		values := limitedURL.Query()
+		remain := total - offset
+		if remain > limit {
+			remain = limit
+		}
 		values.Add("offset", strconv.Itoa(offset))
-		values.Add("limit", strconv.Itoa(limit))
+		values.Add("limit", strconv.Itoa(remain))
+		values.Add("options", "count")
 		limitedURL.RawQuery = values.Encode()
 		data := p.GetBuffer()
-		if err := Query(client, http.MethodGet, headers, &limitedURL, data, allowUnknownFields); err != nil {
+		header, err := Query(client, http.MethodGet, headers, &limitedURL, data, allowUnknownFields)
+		if err != nil {
 			return err
 		}
-		if count := p.PutBuffer(data); count < limit {
-			return nil
+		total, err = strconv.Atoi(header.Get("Fiware-Total-Count"))
+		if err != nil {
+			return err
 		}
-		offset += limit
+		offset += p.PutBuffer(data)
 	}
+	return nil
 }
 
 // PostJSON is a convenience wrapper for Update(client, http.MethodPost, ...)
@@ -200,7 +209,7 @@ func PutJSON(client HTTPClient, headers http.Header, path *url.URL, data interfa
 }
 
 // Query performs an HTTP request without payload, loads the result into `data`
-func Query(client HTTPClient, method string, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) error {
+func Query(client HTTPClient, method string, headers http.Header, path *url.URL, data interface{}, allowUnknownFields bool) (http.Header, error) {
 
 	req := &http.Request{
 		Header: headers,
@@ -210,29 +219,29 @@ func Query(client HTTPClient, method string, headers http.Header, path *url.URL,
 	resp, err := client.Do(req)
 	defer Exhaust(resp)
 	if err != nil {
-		return newNetError(req, nil, err)
+		return nil, newNetError(req, nil, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return newNetError(req, resp, nil)
+		return nil, newNetError(req, resp, nil)
 	}
 	if data == nil { // payload not required
-		return nil
+		return resp.Header, nil
 	}
 	raw, err := ioutil.ReadAll(io.LimitReader(resp.Body, maximumPayload))
 	if err != nil {
-		return newNetError(req, resp, err)
+		return nil, newNetError(req, resp, err)
 	}
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	if !allowUnknownFields {
 		decoder.DisallowUnknownFields()
 	}
 	if err := decoder.Decode(data); err != nil {
-		return DecodeError{
+		return nil, DecodeError{
 			Data: raw,
 			Err:  err,
 		}
 	}
-	return nil
+	return resp.Header, nil
 }
 
 type pager interface {
@@ -250,7 +259,7 @@ func page(client HTTPClient, method string, headers http.Header, path *url.URL, 
 		q.Set("limit", strconv.Itoa(limit))
 		q.Set("offset", strconv.Itoa(offset))
 		path.RawQuery = q.Encode()
-		if err := Query(client, method, headers, path, data.Next(), allowUnknownFields); err != nil {
+		if _, err := Query(client, method, headers, path, data.Next(), allowUnknownFields); err != nil {
 			return err
 		}
 		if recv := data.Done(); recv < limit {
@@ -290,10 +299,10 @@ func Update(client HTTPClient, method string, headers http.Header, path *url.URL
 
 	// Perform Request
 	req := &http.Request{
-		Header: newHeaders,
-		URL:    path,
-		Method: method,
-		Body:   io.NopCloser(bytes.NewReader(dataBytes)),
+		Header:        newHeaders,
+		URL:           path,
+		Method:        method,
+		Body:          io.NopCloser(bytes.NewReader(dataBytes)),
 		ContentLength: int64(len(dataBytes)),
 	}
 	resp, err := client.Do(req)
@@ -327,7 +336,7 @@ func (k *Keystone) Projects(client HTTPClient, headers http.Header) ([]fiware.Pr
 		return nil, err
 	}
 	var projects keystoneProjects
-	if err := Query(client, http.MethodGet, headers, urlProjects, &projects, true); err != nil {
+	if _, err := Query(client, http.MethodGet, headers, urlProjects, &projects, true); err != nil {
 		return nil, err
 	}
 	return projects.Projects, nil

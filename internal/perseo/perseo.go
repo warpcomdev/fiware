@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"github.com/hashicorp/go-multierror"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/keystone"
 )
 
-// PErseo manages connections to Perseo API
+// Perseo manages connections to Perseo API
 type Perseo struct {
 	URL                *url.URL
 	AllowUnknownFields bool
@@ -30,6 +31,9 @@ func New(perseoURL string) (*Perseo, error) {
 		URL: apiURL,
 	}, nil
 }
+
+// rulenameRegext matches rule name section
+var rulenameRegexp *regexp.Regexp = regexp.MustCompile(`(?i)select\s+[^\s]+\s+as ruleName,\s*`)
 
 // Rules reads the list of rules from Perseo
 func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiware.Rule, error) {
@@ -48,6 +52,14 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 	if len(response.Error) > 0 && !bytes.Equal(response.Error, []byte("null")) {
 		return nil, fmt.Errorf("perseo replied with error: %s", string(response.Error))
 	}
+	// HACK: no voy a volcar el ruleName, voy a dejar que lo ponga perseo
+	for index, data := range response.Data {
+		if data.Text != "" {
+			data.Text = rulenameRegexp.ReplaceAllLiteralString(data.Text, "select ")
+			response.Data[index] = data
+		}
+	}
+	// FIN DE HACK 2
 	return response.Data, nil
 }
 
@@ -134,6 +146,9 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 			return errors.New("All rules must have name")
 		}
 		if rule.Text != "" {
+			// HACK 2: no voy a subir el ruleName, voy a dejar que lo ponga perseo
+			rule.Text = rulenameRegexp.ReplaceAllLiteralString(rule.Text, "select ")
+			// FIN DE HACK 2
 			rule.NoSignal = nil // those two are mutually exclusive
 		}
 		path, err := o.URL.Parse("rules")
@@ -159,7 +174,7 @@ func (o *Perseo) DeleteRules(client keystone.HTTPClient, headers http.Header, ru
 		if err != nil {
 			return err
 		}
-		if err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
+		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
 			errList = multierror.Append(errList, err)
 		}
 	}

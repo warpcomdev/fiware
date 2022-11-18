@@ -103,7 +103,7 @@ func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, 
 		query.Add("apikey", service.APIKey)
 		query.Add("protocol", service.Protocol)
 		path.RawQuery = query.Encode()
-		if err := keystone.Query(client, http.MethodDelete, headers, path, nil, true); err != nil {
+		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, true); err != nil {
 			errList = multierror.Append(errList, err)
 		}
 	}
@@ -147,7 +147,7 @@ func (i *Iotam) DeleteDevices(client keystone.HTTPClient, headers http.Header, d
 		if err != nil {
 			return err
 		}
-		if err := keystone.Query(client, http.MethodDelete, headers, path, nil, true); err != nil {
+		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, true); err != nil {
 			errList = multierror.Append(errList, err)
 		}
 	}
