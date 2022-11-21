@@ -6,6 +6,7 @@ entityTypes?: [...#EntityType]
 entities?: [...#Entity]
 serviceMappings?: [...#ServiceMapping]
 suscriptions?: [...#Suscription]
+registrations?: [...#Registration]
 tables?: [...#Table]
 views?: [...#View]
 services?: [...#Service]
@@ -122,6 +123,14 @@ verticals?: [string]: #UrboVertical
 #SubjectEntity: {
 	idPattern?: string
 	type:       string
+}
+
+#Registration: {
+	id:            string
+	description:   string
+	dataProvided?: #Json
+	provider?:     #Json
+	status:        string @anonymous(RegistrationStatus)
 }
 
 #Table: {

@@ -27,6 +27,7 @@ var canGet []string = []string{
 	"panels",
 	"verticals",
 	"entities",
+	"regitrations",
 }
 
 type serializerWithSetup interface {
@@ -148,6 +149,13 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if err := getSuscriptions(selected, client, header, vertical); err != nil {
 				return err
 			}
+		case "registrations":
+			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+				return err
+			}
+			if err := getRegistrations(selected, client, header, vertical); err != nil {
+				return err
+			}
 		case "entities":
 			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
@@ -229,6 +237,19 @@ func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Heade
 		return err
 	}
 	vertical.Suscriptions = suscriptions
+	return nil
+}
+
+func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
+	api, err := orion.New(ctx.OrionURL)
+	if err != nil {
+		return err
+	}
+	registrations, err := api.Registrations(c, header)
+	if err != nil {
+		return err
+	}
+	vertical.Registrations = registrations
 	return nil
 }
 

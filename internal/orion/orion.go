@@ -37,19 +37,37 @@ func New(orionURL string) (*Orion, error) {
 
 type suscriptionPaginator struct {
 	response []fiware.Suscription
-	buffer   []fiware.Suscription
 }
 
 // GetBuffer implements Paginator
 func (p *suscriptionPaginator) GetBuffer() interface{} {
-	return &p.buffer
+	var buffer []fiware.Registration
+	return &buffer
 }
 
 // PutBuffer implements Paginator
 func (p *suscriptionPaginator) PutBuffer(buf interface{}) int {
-	p.response = append(p.response, p.buffer...)
-	count := len(p.buffer)
-	p.buffer = p.buffer[:0] // Reset the buffer before next cycle
+	buffer := buf.(*[]fiware.Suscription)
+	p.response = append(p.response, *buffer...)
+	count := len(*buffer)
+	return count
+}
+
+type registrationPaginator struct {
+	response []fiware.Registration
+}
+
+// GetBuffer implements Paginator
+func (p *registrationPaginator) GetBuffer() interface{} {
+	var buffer []fiware.Registration
+	return &buffer
+}
+
+// PutBuffer implements Paginator
+func (p *registrationPaginator) PutBuffer(buf interface{}) int {
+	buffer := buf.(*[]fiware.Registration)
+	p.response = append(p.response, *buffer...)
+	count := len(*buffer)
 	return count
 }
 
@@ -60,6 +78,19 @@ func (o *Orion) Suscriptions(client keystone.HTTPClient, headers http.Header) ([
 		return nil, err
 	}
 	var pages suscriptionPaginator
+	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
+		return nil, err
+	}
+	return pages.response, nil
+}
+
+// Suscriptions reads the list of suscriptions from the Context Broker
+func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) ([]fiware.Registration, error) {
+	path, err := o.URL.Parse("v2/registrations")
+	if err != nil {
+		return nil, err
+	}
+	var pages registrationPaginator
 	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
 		return nil, err
 	}

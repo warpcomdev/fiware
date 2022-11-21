@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -174,6 +175,10 @@ type Paginator interface {
 func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool) error {
 	offset, limit, total := 0, 50, 50
 	for offset < total {
+		if total > 2*limit {
+			// If it's going to tke long, then print a progress indicator
+			log.Printf("Getting %d items of %d at offset %d", limit, total, offset)
+		}
 		limitedURL := *path // make a copy
 		values := limitedURL.Query()
 		remain := total - offset

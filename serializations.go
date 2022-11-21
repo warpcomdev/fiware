@@ -49,6 +49,15 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.Registrations) > 0 {
+		s.BeginList("registrations")
+		for _, y := range x.Registrations {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
 	if len(x.Tables) > 0 {
 		s.BeginList("tables")
 		for _, y := range x.Tables {
@@ -468,6 +477,30 @@ func (x SuscriptionStatus) Serialize(s serialize.Serializer) {
 	if x.ID != "" {
 		s.KeyString("id", string(x.ID))
 	}
+}
+
+func (x Registration) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Registration) Serialize(s serialize.Serializer) {
+	s.KeyString("id", string(x.ID))
+	s.KeyString("description", string(x.Description))
+	if len(x.DataProvided) > 0 {
+		s.KeyRaw("dataProvided", x.DataProvided, false)
+	}
+	if len(x.Provider) > 0 {
+		s.KeyRaw("provider", x.Provider, false)
+	}
+	x.RegistrationStatus.Serialize(s)
+}
+
+func (x RegistrationStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x RegistrationStatus) Serialize(s serialize.Serializer) {
+	s.KeyString("status", string(x.Status))
 }
 
 func (x Table) MarshalJSON() ([]byte, error) {

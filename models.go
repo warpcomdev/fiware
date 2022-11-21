@@ -27,7 +27,8 @@ type Vertical struct {
 	// ServiceMappings para cygnus
 	ServiceMappings []ServiceMapping `json:"serviceMappings,omitempty"`
 	// Suscripciones al context broker
-	Suscriptions []Suscription `json:"suscriptions,omitempty"`
+	Suscriptions  []Suscription  `json:"suscriptions,omitempty"`
+	Registrations []Registration `json:"registrations,omitempty"`
 	// Tablas *sencillas* relacionadas con entidades
 	Tables []Table `json:"tables,omitempty"`
 	Views  []View  `json:"views,omitempty"`
@@ -146,6 +147,19 @@ type AttributeMapping struct {
 	OriginalAttributeType string `json:"originalAttributeType,omitempty"`
 	NewAttributeName      string `json:"newAttributeName,omitempty"`
 	NewAttributeType      string `json:"newAttributeType,omitempty"`
+}
+
+// Registration representa un registro
+type Registration struct {
+	ID           string          `json:"id"`
+	Description  string          `json:"description,omitemty"`
+	DataProvided json.RawMessage `json:"dataProvided,omitempty"`
+	Provider     json.RawMessage `json:"provider,omitempty"`
+	RegistrationStatus
+}
+
+type RegistrationStatus struct {
+	Status string `json:"status"`
 }
 
 // Suscription representa una suscripcion
