@@ -332,6 +332,13 @@ func main() {
 						},
 					},
 					{
+						Name:  "env",
+						Usage: "Dump as an urbo-deployer Environment",
+						Action: func(c *cli.Context) error {
+							return envContext(currentStore, c)
+						},
+					},
+					{
 						Name:  "set",
 						Usage: "Set a context variable",
 						Action: func(c *cli.Context) error {

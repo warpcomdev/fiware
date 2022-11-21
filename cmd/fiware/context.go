@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -93,6 +95,30 @@ func dupContext(s *config.Store, c *cli.Context) error {
 		return err
 	}
 	fmt.Printf("Using context %s\n", s.Current.Name)
+	return nil
+}
+
+func envContext(s *config.Store, c *cli.Context) error {
+	var name string
+	if c.NArg() > 0 {
+		name = c.Args().Get(0)
+	}
+	if err := s.Use(name); err != nil {
+		return err
+	}
+	if s.Current.Name == "" {
+		fmt.Println("no contexts available")
+		return nil
+	}
+	env, err := s.Current.Env()
+	if err != nil {
+		return err
+	}
+	var dst bytes.Buffer
+	if err := json.Indent(&dst, env, "", "  "); err != nil {
+		return err
+	}
+	fmt.Println(dst.String())
 	return nil
 }
 

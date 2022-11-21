@@ -25,18 +25,61 @@ const (
 
 // Config almacena información de conexión a un entorno
 type Config struct {
-	Name        string            `json:"name"`
-	KeystoneURL string            `json:"keystone"`
-	OrionURL    string            `json:"orion"`
-	UrboURL     string            `json:"urbo"`
-	IotamURL    string            `json:"iotam"`
-	PerseoURL   string            `json:"perseo"`
-	Service     string            `json:"service"`
-	Subservice  string            `json:"subservice"`
-	Username    string            `json:"username"`
-	Token       string            `json:"token,omitempty"`
-	UrboToken   string            `json:"urbotoken,omitempty"`
-	Params      map[string]string `json:"params,omitempty"`
+	Name          string            `json:"name"`
+	Type          string            `json:"type"`
+	Customer      string            `json:"customer"`
+	KeystoneURL   string            `json:"keystone"`
+	OrionURL      string            `json:"orion"`
+	IotamURL      string            `json:"iotam"`
+	PerseoURL     string            `json:"perseo"`
+	UrboURL       string            `json:"urbo"`
+	OrchURL       string            `json:"orch"`
+	PostgisURL    string            `json:"postgis"`
+	JenkinsURL    string            `json:"jenkins"`
+	PentahoURL    string            `json:"pentaho"`
+	Service       string            `json:"service"`
+	Subservice    string            `json:"subservice"`
+	Database      string            `json:"database"`
+	Schema        string            `json:"schema"`
+	Username      string            `json:"username"`
+	JenkinsLabel  string            `json:"jenkinsLabel"`
+	JenkinsFolder string            `json:"jenkinsFolder"`
+	BIConnection  string            `json:"biConnection"`
+	Token         string            `json:"token,omitempty"`
+	UrboToken     string            `json:"urbotoken,omitempty"`
+	Params        map[string]string `json:"params,omitempty"`
+}
+
+func (c *Config) defaults() {
+	if c.Database == "" {
+		c.Database = "urbo2"
+	}
+	if c.Schema == "" {
+		c.Schema = c.Service
+	}
+	if c.Type == "" {
+		c.Type = "DEV"
+	}
+	if c.Customer == "" {
+		c.Customer = c.Name
+	}
+	if c.JenkinsLabel == "" {
+		if c.JenkinsFolder != "" {
+			c.JenkinsLabel = c.JenkinsFolder
+		} else {
+			c.JenkinsLabel = c.Customer
+		}
+	}
+	if c.JenkinsFolder == "" {
+		if c.JenkinsLabel != "" {
+			c.JenkinsFolder = c.JenkinsLabel
+		} else {
+			c.JenkinsFolder = c.Customer
+		}
+	}
+	if c.BIConnection == "" {
+		c.BIConnection = c.Service
+	}
 }
 
 func writePair(w *bufio.Writer, sep1, k, sep2, v string) {
@@ -46,34 +89,49 @@ func writePair(w *bufio.Writer, sep1, k, sep2, v string) {
 	fmt.Fprintf(w, "%q", v) // in case it contains invalid chars
 }
 
+// Pairs of config key and value
+func (c *Config) pairs() map[string]*string {
+	p := map[string]*string{
+		"type":          &c.Type,
+		"customer":      &c.Customer,
+		"keystone":      &c.KeystoneURL,
+		"orion":         &c.OrionURL,
+		"iotam":         &c.IotamURL,
+		"perseo":        &c.PerseoURL,
+		"urbo":          &c.UrboURL,
+		"orch":          &c.OrchURL,
+		"postgis":       &c.PostgisURL,
+		"jenkins":       &c.JenkinsURL,
+		"pentaho":       &c.PentahoURL,
+		"service":       &c.Service,
+		"subservice":    &c.Subservice,
+		"database":      &c.Database,
+		"schema":        &c.Schema,
+		"jenkinsLabel":  &c.JenkinsLabel,
+		"jenkinsFolder": &c.JenkinsFolder,
+		"biConnection":  &c.BIConnection,
+		"username":      &c.Username,
+	}
+	return p
+}
+
 func (c *Config) String() string {
 	var buffer bytes.Buffer
 	w := bufio.NewWriter(&buffer)
 	e := json.NewEncoder(w)
-	pairs := [][2]string{
-		{"keystone", c.KeystoneURL},
-		{"orion", c.OrionURL},
-		{"iotam", c.IotamURL},
-		{"perseo", c.PerseoURL},
-		{"urbo", c.UrboURL},
-		{"service", c.Service},
-		{"subservice", c.Subservice},
-		{"username", c.Username},
-	}
-	detailed := append(
-		[][2]string{{"name", c.Name}},
-		pairs...,
-	)
+	hidden := HiddenToken
+	pairs := c.pairs()
+	pairs["name"] = &c.Name
 	if c.Token != "" {
-		detailed = append(detailed, [2]string{"token", HiddenToken})
+		pairs["token"] = &hidden
 	}
 	if c.UrboToken != "" {
-		detailed = append(detailed, [2]string{"urboToken", HiddenToken})
+		pairs["urboToken"] = &hidden
 	}
 	w.WriteString("{")
 	sep := "\n  \""
-	for _, pair := range detailed {
-		writePair(w, sep, pair[0], "\": ", pair[1])
+	for label, value := range pairs {
+		writePair(w, sep, label, "\": ", *value)
 		sep = ",\n  \""
 	}
 	if len(c.Params) <= 0 {
@@ -86,8 +144,8 @@ func (c *Config) String() string {
 		// Encode adds a "\n", we don't need to add another
 		w.WriteString("}\n> fiware context set")
 	}
-	for _, pair := range pairs {
-		writePair(w, " ", pair[0], " ", pair[1])
+	for label, value := range pairs {
+		writePair(w, " ", label, " ", *value)
 	}
 	if len(c.Params) > 0 {
 		w.WriteString("\n> fiware context params")
@@ -98,6 +156,11 @@ func (c *Config) String() string {
 	w.WriteString("\n")
 	w.Flush()
 	return string(buffer.Bytes())
+}
+
+// Env dumps the config as an Environment entity from urbo-deployer
+func (c *Config) Env() (json.RawMessage, error) {
+	return json.Marshal(fromConfig(c))
 }
 
 func (c *Config) HasToken() string {
@@ -246,6 +309,7 @@ func (s *Store) Use(name string) error {
 	}
 	if len(ctx) > 0 {
 		s.Current = ctx[0]
+		s.Current.defaults()
 	}
 	return nil
 }
@@ -291,23 +355,20 @@ func (s *Store) Dup(name string) error {
 
 // CanConfig returns a list of parameter names recoginzed by `Set`
 func (s *Store) CanConfig() []string {
-	return []string{
-		"user", // alias for username
-		"username",
-		"service",
-		"ss", // alias for subservice
-		"subservice",
-		"keystone",
-		"orion",
-		"manager", // alias for iotam
-		"iotam",
-		"cep", // alias for perseo
-		"perseo",
+	result := []string{
 		"name",
+		"user",    // alias for username
+		"ss",      // alias for subservice
+		"manager", // alias for iotam
+		"cep",     // alias for perseo
 	}
+	for label := range s.Current.pairs() {
+		result = append(result, label)
+	}
+	return result
 }
 
-func (s *Store) Set(pairs []string) error {
+func (s *Store) Set(strPairs []string) error {
 	ctx, err := s.read()
 	if err != nil {
 		return err
@@ -316,36 +377,22 @@ func (s *Store) Set(pairs []string) error {
 		return ErrNoContext
 	}
 	selected := ctx[0]
-	if len(pairs)%2 != 0 {
+	if len(strPairs)%2 != 0 {
 		return ErrParametersNumber
 	}
-	for i := 0; i < len(pairs); i += 2 {
-		param, value := pairs[i], pairs[i+1]
+	pairs := selected.pairs()
+	for i := 0; i < len(strPairs); i += 2 {
+		param, value := strPairs[i], strPairs[i+1]
 		switch param {
+		// aliases
 		case "user":
-			fallthrough
-		case "username":
 			selected.Username = value
-		case "service":
-			selected.Service = value
 		case "ss":
-			fallthrough
-		case "subservice":
 			selected.Subservice = value
-		case "keystone":
-			selected.KeystoneURL = value
-		case "orion":
-			selected.OrionURL = value
 		case "manager":
-			fallthrough
-		case "iotam":
 			selected.IotamURL = value
 		case "cep":
-			fallthrough
-		case "perseo":
 			selected.PerseoURL = value
-		case "urbo":
-			selected.UrboURL = value
 		case "name":
 			for _, curr := range ctx {
 				if curr.Name == value {
@@ -366,9 +413,14 @@ func (s *Store) Set(pairs []string) error {
 			}
 			selected.UrboToken = value
 		default:
-			return fmt.Errorf("unknown config parameter %s", param)
+			if v, ok := pairs[param]; ok {
+				*v = value
+			} else {
+				return fmt.Errorf("unknown config parameter %s", param)
+			}
 		}
 	}
+	selected.defaults()
 	ctx[0] = selected
 	if err := s.save(ctx); err != nil {
 		return err
