@@ -143,13 +143,14 @@ func (o *Keystone) Headers(subservice, token string) http.Header {
 
 // DecodeError returned when failed to decode json data
 type DecodeError struct {
+	Type interface{}
 	Data json.RawMessage
 	Err  error
 }
 
 // Error implements error
 func (d DecodeError) Error() string {
-	return fmt.Sprintf("failed to parse '%s': %v", string(d.Data), d.Err)
+	return fmt.Sprintf("failed to parse '%s' into '%s': %v", string(d.Data), fmt.Sprintf("%T", d.Type), d.Err)
 }
 
 // Unwrap implements errors.Unwrap
@@ -242,6 +243,7 @@ func Query(client HTTPClient, method string, headers http.Header, path *url.URL,
 	}
 	if err := decoder.Decode(data); err != nil {
 		return nil, DecodeError{
+			Type: data,
 			Data: raw,
 			Err:  err,
 		}

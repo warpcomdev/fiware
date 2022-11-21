@@ -41,7 +41,7 @@ type suscriptionPaginator struct {
 
 // GetBuffer implements Paginator
 func (p *suscriptionPaginator) GetBuffer() interface{} {
-	var buffer []fiware.Registration
+	var buffer []fiware.Suscription
 	return &buffer
 }
 
