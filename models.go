@@ -184,6 +184,8 @@ type Notification struct {
 	AttrsFormat      string             `json:"attrsFormat"`
 	HTTP             NotificationHTTP   `json:"http,omitempty"`
 	HTTPCustom       NotificationCustom `json:"httpCustom,omitempty"`
+	MQTT             json.RawMessage    `json:"mqtt,omitempty"`
+	MQTTCustom       json.RawMessage    `json:"mqttCustom,omitempty"`
 	OnlyChangedAttrs bool               `json:"onlyChangedAttrs,omitempty"`
 	Covered          bool               `json:"covered,omitempty"`
 	NotificationStatus

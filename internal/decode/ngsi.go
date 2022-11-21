@@ -273,8 +273,18 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	scanner := bufio.NewScanner(infile)
 	mustPipe := true    // true if table lines MUST start with "|"
 	longtermIndex := -1 // columna que contiene el tipo de longterm
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+	done := false
+	for !done {
+		var line string
+		if scanner.Scan() {
+			line = strings.TrimSpace(scanner.Text())
+		} else {
+			// Scan one empty line after scanner.Scan() returns false,
+			// to detect model end if the model is the last thing in
+			// the file and there is no ending empty line.
+			line = ""
+			done = true
+		}
 		if inside {
 			// Empty line is the end of a block
 			if line == "" {

@@ -83,6 +83,8 @@ verticals?: [string]: #UrboVertical
 	attrsFormat:        string
 	http?:              #NotificationHTTP
 	httpCustom?:        #NotificationCustom
+	mqtt?:              #Json
+	mqttCustom?:        #Json
 	onlyChangedAttrs?:  bool
 	covered?:           bool
 	lastFailure?:       string @anonymous(NotificationStatus)

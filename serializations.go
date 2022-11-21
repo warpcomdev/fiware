@@ -345,6 +345,12 @@ func (x Notification) Serialize(s serialize.Serializer) {
 		x.HTTPCustom.Serialize(s)
 		s.EndBlock()
 	}
+	if len(x.MQTT) > 0 {
+		s.KeyRaw("mqtt", x.MQTT, false)
+	}
+	if len(x.MQTTCustom) > 0 {
+		s.KeyRaw("mqttCustom", x.MQTTCustom, false)
+	}
 	if x.OnlyChangedAttrs {
 		s.KeyBool("onlyChangedAttrs", x.OnlyChangedAttrs)
 	}
