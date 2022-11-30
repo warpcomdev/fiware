@@ -54,6 +54,10 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 		if compact != "true" {
 			compact = "false"
 		}
+		sort := tags.Get("sort")
+		if sort != "true" {
+			sort = "false"
+		}
 		switch {
 		case _typ.Kind() == reflect.String:
 			if omitempty {
@@ -100,8 +104,13 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 				w.WriteString("if len(x." + name + ") > 0 {\n")
 			}
 			w.WriteString("s.BeginList(\"" + jsonName + "\")\n")
-			w.WriteString("for _, y := range x." + name + " {\n")
 			innerKind := _typ.Elem().Kind()
+			if innerKind == reflect.String && sort == "true" {
+				// If the slice is of string, sort first
+				w.WriteString("for _, y := range serialize.Sorted(x." + name + ") {\n")
+			} else {
+				w.WriteString("for _, y := range x." + name + " {\n")
+			}
 			switch {
 			case innerKind == reflect.String:
 				w.WriteString("s.String(y)\n")
@@ -123,7 +132,8 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 				w.WriteString("if len(x." + name + ") > 0 {\n")
 			}
 			w.WriteString("s.BeginBlock(\"" + jsonName + "\")\n")
-			w.WriteString("for k, v := range x." + name + " {\n")
+			w.WriteString("for _, k := range serialize.Keys(x." + name + ") {\n")
+			w.WriteString("v := x." + name + "[k]\n")
 			innerKind := _typ.Elem().Kind()
 			switch {
 			case innerKind == reflect.String:

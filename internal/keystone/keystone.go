@@ -3,10 +3,12 @@ package keystone
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -112,8 +114,41 @@ func newNetError(req *http.Request, resp *http.Response, err error) error {
 	}
 }
 
+// Backoff controls retry policy
+type Backoff interface {
+	KeepTrying(retries int) (bool, time.Duration)
+}
+
+// LinealBackoff performs lineal backoff
+type LinealBackoff struct {
+	MaxRetries int
+	Delay      time.Duration
+}
+
+// KeepTrying implements Retry
+func (l LinealBackoff) KeepTrying(retries int) (bool, time.Duration) {
+	return (retries < l.MaxRetries), l.Delay
+}
+
+// ExponentialBackoff performs exponential backoff
+type ExponentialBackoff struct {
+	MaxRetries   int
+	InitialDelay time.Duration
+	DelayFactor  float64
+	MaxDelay     time.Duration
+}
+
+// KeepTrying implements Retry
+func (l ExponentialBackoff) KeepTrying(retries int) (bool, time.Duration) {
+	targetDelay := time.Duration(float64(l.InitialDelay) * math.Pow(l.DelayFactor, float64(retries)))
+	if targetDelay > l.MaxDelay {
+		targetDelay = l.MaxDelay
+	}
+	return (retries < l.MaxRetries), targetDelay
+}
+
 // Login into the Context Broker, get a session token
-func (o *Keystone) Login(client HTTPClient, password string) (string, error) {
+func (o *Keystone) Login(client HTTPClient, password string, retries Backoff) (string, error) {
 	payload := fmt.Sprintf(
 		`{"auth": {"identity": {"methods": ["password"], "password": {"user": {"domain": {"name": %q}, "name": %q, "password": %q}}}, "scope": {"domain": {"name": %q}}}}`,
 		o.Service, o.Username, password, o.Service,
@@ -122,11 +157,26 @@ func (o *Keystone) Login(client HTTPClient, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	header, _, err := PostJSON(client, nil, loginURL, payload)
-	if err != nil {
-		return "", err
+	var current int
+	for {
+		header, _, err := PostJSON(client, nil, loginURL, payload)
+		if err == nil {
+			return header.Get("X-Subject-Token"), nil
+		}
+		// retry errors 500
+		var netErr NetError
+		if errors.As(err, &netErr) {
+			if netErr.StatusCode != 500 {
+				return "", err
+			}
+		}
+		retry, delay := retries.KeepTrying(current)
+		current += 1
+		if !retry {
+			return "", err
+		}
+		<-time.After(delay)
 	}
-	return header.Get("X-Subject-Token"), nil
 }
 
 // Headers returns the authentication headers for a subservice

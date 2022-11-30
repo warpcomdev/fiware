@@ -17,7 +17,7 @@ import (
 )
 
 // Auth inicia sesión y vuelca el token por consola
-func auth(c *cli.Context, store *config.Store) error {
+func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	if err := store.Read(); err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func auth(c *cli.Context, store *config.Store) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fiwareToken, fiwareError = k.Login(client, string(bytepw))
+		fiwareToken, fiwareError = k.Login(client, string(bytepw), backoff)
 	}()
 	if selected.UrboURL != "" {
 		wg.Add(1)
@@ -57,7 +57,7 @@ func auth(c *cli.Context, store *config.Store) error {
 		}
 		go func() {
 			defer wg.Done()
-			urboToken, urboError = u.Login(client, string(bytepw))
+			urboToken, urboError = u.Login(client, string(bytepw), backoff)
 		}()
 	}
 	wg.Wait()

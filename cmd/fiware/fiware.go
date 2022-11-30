@@ -8,11 +8,13 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
+	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/template"
 )
 
@@ -37,6 +39,14 @@ func main() {
 				fmt.Println(strings.Join(configs, "\n"))
 			}
 		}
+	}
+
+	// Backoff policy
+	backoff := keystone.ExponentialBackoff{
+		MaxRetries:   3,
+		InitialDelay: 2 * time.Second,
+		DelayFactor:  2,
+		MaxDelay:     10 * time.Second,
 	}
 
 	app := &cli.App{
@@ -168,7 +178,7 @@ func main() {
 				Aliases:  []string{"auth"},
 				Usage:    "Login into keystone",
 				Action: func(c *cli.Context) error {
-					return auth(c, currentStore)
+					return auth(c, currentStore, backoff)
 				},
 				Flags: []cli.Flag{
 					verboseFlag,

@@ -6,6 +6,7 @@ package fiware
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // Tipos de datos que se usan para relacionarse con la vertical.
@@ -36,13 +37,37 @@ type Vertical struct {
 	Services []Service `json:"services,omitempty"`
 	Devices  []Device  `json:"devices,omitempty"`
 	// CEP rules
-	Rules []Rule `json:"rules,omitempty"`
+	Rules map[string]Rule `json:"rules,omitempty"`
 	// Lista de proyectos, paneles y verticals de urbo.
 	// Esto no pertenece a la vertical, sino al entorno,
 	// pero me facilita meterlo aqui...
 	Projects  []Project               `json:"projects,omitempty"`
 	Panels    map[string]UrboPanel    `json:"panels,omitempty"`
 	Verticals map[string]UrboVertical `json:"verticals,omitempty"`
+}
+
+// RuleNames enumerates all rule names
+func (v *Vertical) RuleNames() ([]string, error) {
+	ruleNames := make([]string, 0, len(v.Rules))
+	for name, rule := range v.Rules {
+		if rule.Name == "" {
+			rule.Name = name
+		}
+		if rule.Name != name {
+			return nil, fmt.Errorf("rule label (%s) and name (%s) do not match", name, rule.Name)
+		}
+		ruleNames = append(ruleNames, rule.Name)
+	}
+	return ruleNames, nil
+}
+
+// RuleValues enumerates all rule values
+func (v *Vertical) RuleValues() []Rule {
+	ruleValues := make([]Rule, 0, len(v.Rules))
+	for _, rule := range v.Rules {
+		ruleValues = append(ruleValues, rule)
+	}
+	return ruleValues
 }
 
 // UrboPanel representa un panel de Urbo
@@ -102,7 +127,7 @@ type Attribute struct {
 	// Indica si este atributo debe conservarse de alguna forma en longterm
 	Longterm LongtermKind `json:"longterm,omitempty"`
 	// Si longterm == LongtermEnum, estas serían las opciones
-	LongtermOptions []string `json:"longtermOptions,omitempty"`
+	LongtermOptions []string `json:"longtermOptions,omitempty" sort:"true"`
 }
 
 // Entity representa una instancia de EntityType
@@ -179,8 +204,8 @@ type SuscriptionStatus struct {
 
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
-	Attrs            []string           `json:"attrs,omitempty"`
-	ExceptAttrs      []string           `json:"exceptAttrs,omitempty"`
+	Attrs            []string           `json:"attrs,omitempty" sort:"true"`
+	ExceptAttrs      []string           `json:"exceptAttrs,omitempty" sort:"true"`
 	AttrsFormat      string             `json:"attrsFormat"`
 	HTTP             NotificationHTTP   `json:"http,omitempty"`
 	HTTPCustom       NotificationCustom `json:"httpCustom,omitempty"`
@@ -232,7 +257,7 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs      []string          `json:"attrs"`
+	Attrs      []string          `json:"attrs" sort:"true"`
 	Expression SubjectExpression `json:"expression,omitempty"`
 }
 

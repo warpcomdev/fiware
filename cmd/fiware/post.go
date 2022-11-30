@@ -140,10 +140,14 @@ func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header
 	if err != nil {
 		return err
 	}
-	listMessage("POSTing rules with names", vertical.Rules,
-		func(g fiware.Rule) string { return g.Name },
+	ruleNames, err := vertical.RuleNames()
+	if err != nil {
+		return err
+	}
+	listMessage("POSTing rules with names", ruleNames,
+		func(g string) string { return g },
 	)
-	return api.PostRules(client, header, vertical.Rules)
+	return api.PostRules(client, header, vertical.RuleValues())
 }
 
 func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {

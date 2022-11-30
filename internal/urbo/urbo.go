@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
@@ -33,7 +34,7 @@ func New(urboURL string, username, service, scopeService string) (*Urbo, error) 
 	}, nil
 }
 
-func (u *Urbo) Login(client keystone.HTTPClient, password string) (string, error) {
+func (u *Urbo) Login(client keystone.HTTPClient, password string, backoff keystone.Backoff) (string, error) {
 	loginURL, err := u.URL.Parse("/auth/sso/login")
 	if err != nil {
 		return "", err
@@ -45,9 +46,25 @@ func (u *Urbo) Login(client keystone.HTTPClient, password string) (string, error
 	}{
 		Service: u.Service, Username: u.Username, Password: password,
 	}
-	_, body, err := keystone.Update(client, http.MethodPost, nil, loginURL, payload)
-	if err != nil {
-		return "", err
+	var body []byte
+	var retries int
+	for {
+		_, body, err = keystone.Update(client, http.MethodPost, nil, loginURL, payload)
+		if err == nil {
+			break
+		}
+		var netErr keystone.NetError
+		if errors.As(err, &netErr) {
+			if netErr.StatusCode != 500 {
+				return "", err
+			}
+		}
+		keepTrying, delay := backoff.KeepTrying(retries)
+		retries += 1
+		if !keepTrying {
+			return "", err
+		}
+		<-time.After(delay)
 	}
 	var result struct {
 		Token string `json:"token"`

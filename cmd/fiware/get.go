@@ -276,7 +276,11 @@ func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vert
 	if err != nil {
 		return err
 	}
-	vertical.Rules = rules
+	namedRules := make(map[string]fiware.Rule, len(rules))
+	for _, rule := range rules {
+		namedRules[rule.Name] = rule
+	}
+	vertical.Rules = namedRules
 	return nil
 }
 

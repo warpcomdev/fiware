@@ -11,7 +11,7 @@ tables?: [...#Table]
 views?: [...#View]
 services?: [...#Service]
 devices?: [...#Device]
-rules?: [...#Rule]
+rules?: [string]: #Rule
 projects?: [...#Project]
 panels?: [string]:    #UrboPanel
 verticals?: [string]: #UrboVertical

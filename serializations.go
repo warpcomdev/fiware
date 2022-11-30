@@ -95,13 +95,14 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		s.EndList()
 	}
 	if len(x.Rules) > 0 {
-		s.BeginList("rules")
-		for _, y := range x.Rules {
-			s.BeginBlock("")
-			s.Serialize(y)
+		s.BeginBlock("rules")
+		for _, k := range serialize.Keys(x.Rules) {
+			v := x.Rules[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
 			s.EndBlock()
 		}
-		s.EndList()
+		s.EndBlock()
 	}
 	if len(x.Projects) > 0 {
 		s.BeginList("projects")
@@ -114,7 +115,8 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 	}
 	if len(x.Panels) > 0 {
 		s.BeginBlock("panels")
-		for k, v := range x.Panels {
+		for _, k := range serialize.Keys(x.Panels) {
+			v := x.Panels[k]
 			s.BeginBlock(k)
 			s.Serialize(v)
 			s.EndBlock()
@@ -123,7 +125,8 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 	}
 	if len(x.Verticals) > 0 {
 		s.BeginBlock("verticals")
-		for k, v := range x.Verticals {
+		for _, k := range serialize.Keys(x.Verticals) {
+			v := x.Verticals[k]
 			s.BeginBlock(k)
 			s.Serialize(v)
 			s.EndBlock()
@@ -181,7 +184,7 @@ func (x Attribute) Serialize(s serialize.Serializer) {
 	}
 	if len(x.LongtermOptions) > 0 {
 		s.BeginList("longtermOptions")
-		for _, y := range x.LongtermOptions {
+		for _, y := range serialize.Sorted(x.LongtermOptions) {
 			s.String(y)
 		}
 		s.EndList()
@@ -196,13 +199,15 @@ func (x Entity) Serialize(s serialize.Serializer) {
 	s.KeyString("entityID", string(x.ID))
 	s.KeyString("entityType", string(x.Type))
 	s.BeginBlock("attrs")
-	for k, v := range x.Attrs {
+	for _, k := range serialize.Keys(x.Attrs) {
+		v := x.Attrs[k]
 		s.KeyRaw(k, v, true)
 	}
 	s.EndBlock()
 	if len(x.MetaDatas) > 0 {
 		s.BeginBlock("metadatas")
-		for k, v := range x.MetaDatas {
+		for _, k := range serialize.Keys(x.MetaDatas) {
+			v := x.MetaDatas[k]
 			s.KeyRaw(k, v, true)
 		}
 		s.EndBlock()
@@ -322,14 +327,14 @@ func (x Notification) MarshalJSON() ([]byte, error) {
 func (x Notification) Serialize(s serialize.Serializer) {
 	if len(x.Attrs) > 0 {
 		s.BeginList("attrs")
-		for _, y := range x.Attrs {
+		for _, y := range serialize.Sorted(x.Attrs) {
 			s.String(y)
 		}
 		s.EndList()
 	}
 	if len(x.ExceptAttrs) > 0 {
 		s.BeginList("exceptAttrs")
-		for _, y := range x.ExceptAttrs {
+		for _, y := range serialize.Sorted(x.ExceptAttrs) {
 			s.String(y)
 		}
 		s.EndList()
@@ -376,7 +381,8 @@ func (x NotificationCustom) Serialize(s serialize.Serializer) {
 	s.KeyString("url", string(x.URL))
 	if len(x.Headers) > 0 {
 		s.BeginBlock("headers")
-		for k, v := range x.Headers {
+		for _, k := range serialize.Keys(x.Headers) {
+			v := x.Headers[k]
 			s.KeyString(k, string(v))
 		}
 		s.EndBlock()
@@ -443,7 +449,7 @@ func (x SubjectCondition) MarshalJSON() ([]byte, error) {
 
 func (x SubjectCondition) Serialize(s serialize.Serializer) {
 	s.BeginList("attrs")
-	for _, y := range x.Attrs {
+	for _, y := range serialize.Sorted(x.Attrs) {
 		s.String(y)
 	}
 	s.EndList()
