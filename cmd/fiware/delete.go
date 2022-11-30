@@ -68,7 +68,8 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteSuscriptions(selected, client, header, vertical); err != nil {
+			useDescription := c.Bool(useDescriptionFlag.Name)
+			if err := deleteSuscriptions(selected, client, header, vertical, useDescription); err != nil {
 				return err
 			}
 		case "rules":
@@ -114,15 +115,21 @@ func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.H
 	return api.DeleteServices(client, header, vertical.Services)
 }
 
-func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical, useDescription bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	listMessage("DELETing suscriptions with descriptions", vertical.Suscriptions,
-		func(g fiware.Suscription) string { return g.Description },
-	)
-	return api.DeleteSuscriptions(client, header, vertical.Suscriptions)
+	if !useDescription {
+		listMessage("DELETing suscriptions with IDs", vertical.Suscriptions,
+			func(g fiware.Suscription) string { return g.ID },
+		)
+	} else {
+		listMessage("DELETing suscriptions with ids (or descriptions)", vertical.Suscriptions,
+			func(g fiware.Suscription) string { return fmt.Sprintf("%s (%s)", g.ID, g.Description) },
+		)
+	}
+	return api.DeleteSuscriptions(client, header, vertical.Suscriptions, useDescription)
 }
 
 func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {

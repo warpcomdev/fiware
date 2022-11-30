@@ -91,4 +91,11 @@ var (
 		Usage: "Do not validate data schema",
 		Value: false,
 	}
+
+	useDescriptionFlag = &cli.BoolFlag{
+		Name:    "use_description",
+		Aliases: []string{"ud"},
+		Usage:   "Use description to match subscriptions to remove, instead of id",
+		Value:   false,
+	}
 )

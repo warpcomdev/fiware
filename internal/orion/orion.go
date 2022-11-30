@@ -115,18 +115,57 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 }
 
 // DeleteSuscriptions deletes a list of suscriptions from Orion
-func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription) error {
+func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription, useDescription bool) error {
 	var errList error
+	byDescription := make(map[string]struct{})
 	for _, sub := range subs {
 		if sub.ID == "" {
-			return errors.New("All suscriptions must have an ID")
+			if !useDescription || sub.Description == "" {
+				return errors.New("All suscriptions must have an ID")
+			} else {
+				if useDescription {
+					byDescription[sub.Description] = struct{}{}
+				}
+			}
 		}
 		path, err := o.URL.Parse(fmt.Sprintf("v2/subscriptions/%s", sub.ID))
 		if err != nil {
 			return err
 		}
 		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
-			errList = multierror.Append(errList, err)
+			var netErr keystone.NetError
+			if useDescription && errors.As(err, &netErr) {
+				if netErr.StatusCode == 404 {
+					byDescription[sub.Description] = struct{}{}
+				} else {
+					errList = multierror.Append(errList, err)
+				}
+			} else {
+				errList = multierror.Append(errList, err)
+			}
+		}
+	}
+	if len(byDescription) <= 0 {
+		return errList
+	}
+	// If there are some subscriptions we have to remove by description,
+	// collect the current subscriptions and try to match them
+	allSubs, err := o.Suscriptions(client, headers)
+	if err != nil {
+		errList = multierror.Append(errList, err)
+		return errList
+	}
+	for _, sub := range allSubs {
+		if sub.Description != "" {
+			if _, ok := byDescription[sub.Description]; ok {
+				path, err := o.URL.Parse(fmt.Sprintf("v2/subscriptions/%s", sub.ID))
+				if err != nil {
+					return err
+				}
+				if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
+					errList = multierror.Append(errList, err)
+				}
+			}
 		}
 	}
 	return errList

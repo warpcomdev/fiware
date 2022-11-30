@@ -274,6 +274,7 @@ func main() {
 					subServiceFlag,
 					dataFlag,
 					libFlag,
+					useDescriptionFlag,
 				},
 			},
 
