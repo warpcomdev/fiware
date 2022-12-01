@@ -59,7 +59,21 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 			response.Data[index] = data
 		}
 	}
-	// FIN DE HACK 2
+	// FIN DE HACK
+	// HACK: Me aseguro de que todas las acciones son listas
+	for index, rule := range response.Data {
+		if rule.Action != nil && len(rule.Action) > 0 {
+			reader := bytes.NewReader(rule.Action)
+			if rune, size, err := reader.ReadRune(); err != nil && size > 0 && rune != '[' {
+				var newAction bytes.Buffer
+				newAction.WriteString("[")
+				newAction.Write(rule.Action)
+				newAction.WriteString("]")
+				response.Data[index].Action = json.RawMessage(newAction.Bytes())
+			}
+		}
+	}
+	// FIN DE HACK
 	return response.Data, nil
 }
 
@@ -71,72 +85,44 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 		// a menos que use variables (contenga "${}").
 		// Así que decodifico la acción y compruebo si tiene los campos
 		// "service" y "subservice", y de ser así los omito.
-		var actionList []map[string]interface{}
-		if len(rule.Action) > 0 {
-			var action interface{}
-			if err := json.Unmarshal(rule.Action, &action); err == nil {
-				actionList = make([]map[string]interface{}, 0, 4)
-				allMaps := true
-				switch action := action.(type) {
-				case map[string]interface{}:
-					actionList = append(actionList, action)
-				case []interface{}:
-					for _, item := range action {
-						m, ok := item.(map[string]interface{})
-						if !ok {
-							allMaps = false
-							break
-						}
-						actionList = append(actionList, m)
-					}
-				default:
-					allMaps = false
-				}
-				// Si no he podido procesarlo todo,
-				// vaciar la lista
-				if !allMaps {
-					actionList = nil
-				}
-			}
-		}
-		var replaced bool // indica si hemos reemplazado alguna accion
-		if len(actionList) > 0 {
-			// PAra prever el caso en que descargamos reglas de
+		actionList := rule.ActionList()
+		replaced := false // indica si hemos reemplazado alguna accion
+		if actionList != nil && len(actionList) > 0 {
+			// Para prever el caso en que descargamos reglas de
 			// un servicio, y queremos aplicarlas a otro.
 			keys := map[string]string{
 				"service":    rule.Service,
 				"subservice": rule.Subservice,
 			}
 			for index, current := range actionList {
-				// Preservamos todas las claves si al menos una es variable
-				preserve := false
-				for key, defValue := range keys {
-					if k, ok := current[key]; ok {
-						if s, ok := k.(string); ok {
-							if s != defValue {
-								preserve = true
+				switch current := current.(type) {
+				case map[string]interface{}:
+					// Preservamos todas las claves si al menos una es variable
+					preserve := false
+					for key, defValue := range keys {
+						if k, ok := current[key]; ok {
+							if s, ok := k.(string); ok {
+								if s != defValue {
+									preserve = true
+								}
 							}
 						}
 					}
-				}
-				if !preserve {
-					for key := range keys {
-						if _, ok := current[key]; ok {
-							delete(current, key)
-							replaced = true
-							fmt.Printf("Removing attribute %s from action %d in rule %s\n", key, index, rule.Name)
+					if !preserve {
+						for key := range keys {
+							if _, ok := current[key]; ok {
+								delete(current, key)
+								replaced = true
+								fmt.Printf("Removing attribute %s from action %d in rule %s\n", key, index, rule.Name)
+							}
 						}
+						actionList[index] = current
 					}
-					actionList[index] = current
 				}
 			}
 		}
 		if replaced {
-			var newAction interface{} = actionList
-			if len(actionList) == 1 {
-				newAction = actionList[0]
-			}
-			if newBytes, err := json.Marshal(newAction); err == nil {
+			if newBytes, err := json.Marshal(actionList); err == nil {
 				rule.Action = newBytes
 			}
 		}
@@ -149,6 +135,9 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 			// HACK 2: no voy a subir el ruleName, voy a dejar que lo ponga perseo
 			rule.Text = rulenameRegexp.ReplaceAllLiteralString(rule.Text, "select ")
 			// FIN DE HACK 2
+			if rule.NoSignal != nil && len(rule.NoSignal) > 0 {
+				return fmt.Errorf("both rule.Text and rule.NoSignal defined for rule %s", rule.Name)
+			}
 			rule.NoSignal = nil // those two are mutually exclusive
 		}
 		path, err := o.URL.Parse("rules")

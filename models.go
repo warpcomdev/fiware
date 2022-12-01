@@ -402,6 +402,23 @@ type Rule struct {
 	RuleStatus
 }
 
+// ActionList converts the action field into list of actions
+func (rule Rule) ActionList() []interface{} {
+	var actionList []interface{}
+	if rule.Action != nil && len(rule.Action) > 0 {
+		var action interface{}
+		if err := json.Unmarshal(rule.Action, &action); err == nil {
+			switch action := action.(type) {
+			case []interface{}:
+				actionList = action
+			default:
+				actionList = append(make([]interface{}, 0, 1), action)
+			}
+		}
+	}
+	return actionList
+}
+
 // RuleStatus agrupa atributos de estado que no se usan al crear una Rule
 type RuleStatus struct {
 	Subservice string `json:"subservice,omitempty"`

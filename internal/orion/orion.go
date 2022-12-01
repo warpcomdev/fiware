@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -321,7 +320,6 @@ func (p *entityPaginator) PutBuffer(buf interface{}) int {
 		ids = append(ids, entity.ID())
 	}
 	ids.Sort()
-	fmt.Printf("Read %d entities %s", len(*buffer), strings.Join(ids, ", "))
 	return count
 }
 
