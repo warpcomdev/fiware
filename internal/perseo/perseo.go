@@ -60,6 +60,12 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 		}
 	}
 	// FIN DE HACK
+	// HACK: Omito la NoSignal si es igual a la cadena vacía
+	for index, rule := range response.Data {
+		if rule.NoSignal != nil && len(rule.NoSignal) > 0 && bytes.Equal(rule.NoSignal, []byte("\"\"")) {
+			response.Data[index].NoSignal = nil
+		}
+	}
 	// HACK: Me aseguro de que todas las acciones son listas
 	for index, rule := range response.Data {
 		if rule.Action != nil && len(rule.Action) > 0 {
@@ -135,7 +141,7 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 			// HACK 2: no voy a subir el ruleName, voy a dejar que lo ponga perseo
 			rule.Text = rulenameRegexp.ReplaceAllLiteralString(rule.Text, "select ")
 			// FIN DE HACK 2
-			if rule.NoSignal != nil && len(rule.NoSignal) > 0 {
+			if rule.NoSignal != nil && len(rule.NoSignal) > 0 && !bytes.Equal(rule.NoSignal, []byte("\"\"")) {
 				return fmt.Errorf("both rule.Text and rule.NoSignal defined for rule %s", rule.Name)
 			}
 			rule.NoSignal = nil // those two are mutually exclusive

@@ -92,10 +92,10 @@ var (
 		Value: false,
 	}
 
-	useDescriptionFlag = &cli.BoolFlag{
-		Name:    "use_description",
-		Aliases: []string{"ud"},
-		Usage:   "Use description to match subscriptions to remove, instead of id",
+	useExactIdFlag = &cli.BoolFlag{
+		Name:    "exact",
+		Aliases: []string{"x"},
+		Usage:   "Match subscriptions by exact ID instead of description",
 		Value:   false,
 	}
 )

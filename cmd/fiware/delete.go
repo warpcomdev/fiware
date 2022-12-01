@@ -68,7 +68,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			useDescription := c.Bool(useDescriptionFlag.Name)
+			useDescription := !c.Bool(useExactIdFlag.Name)
 			if err := deleteSuscriptions(selected, client, header, vertical, useDescription); err != nil {
 				return err
 			}

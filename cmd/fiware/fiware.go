@@ -264,6 +264,7 @@ func main() {
 					subServiceFlag,
 					dataFlag,
 					libFlag,
+					useExactIdFlag,
 				},
 			},
 
@@ -284,7 +285,7 @@ func main() {
 					subServiceFlag,
 					dataFlag,
 					libFlag,
-					useDescriptionFlag,
+					useExactIdFlag,
 				},
 			},
 

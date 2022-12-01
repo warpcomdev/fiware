@@ -97,8 +97,32 @@ func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) (
 }
 
 // PostSuscriptions posts a list of suscriptions to orion
-func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription) error {
+func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription, useDescription bool) error {
 	var errList error
+	if useDescription {
+		// Check there is not a subscription with the same description
+		descId := make(map[string]string)
+		allSubs, err := o.Suscriptions(client, headers)
+		if err != nil {
+			return err
+		}
+		for _, sub := range allSubs {
+			if sub.Description != "" {
+				descId[sub.Description] = sub.ID
+			}
+		}
+		for _, sub := range subs {
+			if sub.Description != "" {
+				if _, ok := descId[sub.Description]; ok {
+					err := fmt.Errorf("subscription with description %s already exists", sub.Description)
+					errList = multierror.Append(errList, err)
+				}
+			}
+		}
+		if errList != nil {
+			return errList
+		}
+	}
 	for _, sub := range subs {
 		sub.SuscriptionStatus = fiware.SuscriptionStatus{}
 		sub.Notification.NotificationStatus = fiware.NotificationStatus{}

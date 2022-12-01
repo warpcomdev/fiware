@@ -42,6 +42,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		return err
 	}
 
+	useDescription := !c.Bool(useExactIdFlag.Name)
 	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, arg := range c.Args().Slice() {
 		var u *urbo.Urbo
@@ -71,7 +72,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postSuscriptions(selected, client, header, vertical); err != nil {
+			if err := postSuscriptions(selected, client, header, vertical, useDescription); err != nil {
 				return err
 			}
 		case "rules":
@@ -124,7 +125,7 @@ func postServices(ctx config.Config, client keystone.HTTPClient, header http.Hea
 	return api.PostServices(client, header, vertical.Services)
 }
 
-func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical, useDescription bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -132,7 +133,7 @@ func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http
 	listMessage("POSTing suscriptions with descriptions", vertical.Suscriptions,
 		func(g fiware.Suscription) string { return g.Description },
 	)
-	return api.PostSuscriptions(client, header, vertical.Suscriptions)
+	return api.PostSuscriptions(client, header, vertical.Suscriptions, useDescription)
 }
 
 func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {

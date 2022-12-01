@@ -94,7 +94,7 @@ import (
     }] + [for entityType in entityTypes {
         #subscription & {
             _entityType: entityType,
-            description: "Suscripción a POSTGRES (lastdata) para " + entityType.entityType
+            description: "Suscripción a POSTGRES lastdata para " + entityType.entityType
             notification: http: url: "http://iot-cygnus:5059/notify"
         }
     }]
