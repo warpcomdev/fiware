@@ -1080,3 +1080,105 @@ func (x UrboVerticalStatus) Serialize(s serialize.Serializer) {
 		s.EndList()
 	}
 }
+func (x Manifest) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Manifest) Serialize(s serialize.Serializer) {
+	if !x.Deployment.IsEmpty() {
+		s.BeginBlock("deployment")
+		x.Deployment.Serialize(s)
+		s.EndBlock()
+	}
+	if !x.Panels.IsEmpty() {
+		s.BeginBlock("panels")
+		x.Panels.Serialize(s)
+		s.EndBlock()
+	}
+	if len(x.Verticals) > 0 {
+		s.BeginBlock("verticals")
+		for _, k := range serialize.Keys(x.Verticals) {
+			v := x.Verticals[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
+		}
+		s.EndBlock()
+	}
+	if len(x.Rules) > 0 {
+		s.BeginBlock("rules")
+		for _, k := range serialize.Keys(x.Rules) {
+			v := x.Rules[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
+		}
+		s.EndBlock()
+	}
+	if len(x.Subscriptions) > 0 {
+		s.BeginBlock("subscriptions")
+		for _, k := range serialize.Keys(x.Subscriptions) {
+			v := x.Subscriptions[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
+		}
+		s.EndBlock()
+	}
+	if !x.Environment.IsEmpty() {
+		s.BeginBlock("environment")
+		x.Environment.Serialize(s)
+		s.EndBlock()
+	}
+}
+
+func (x DeploymentManifest) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x DeploymentManifest) Serialize(s serialize.Serializer) {
+	if len(x.Sources) > 0 {
+		s.BeginBlock("sources")
+		for _, k := range serialize.Keys(x.Sources) {
+			v := x.Sources[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
+		}
+		s.EndBlock()
+	}
+}
+
+func (x ManifestSource) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x ManifestSource) Serialize(s serialize.Serializer) {
+	if x.Path != "" {
+		s.KeyString("path", string(x.Path))
+	}
+	if len(x.Files) > 0 {
+		s.BeginList("files")
+		for _, y := range x.Files {
+			s.String(y)
+		}
+		s.EndList()
+	}
+}
+
+func (x PanelManifest) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x PanelManifest) Serialize(s serialize.Serializer) {
+	if len(x.Sources) > 0 {
+		s.BeginBlock("sources")
+		for _, k := range serialize.Keys(x.Sources) {
+			v := x.Sources[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
+			s.EndBlock()
+		}
+		s.EndBlock()
+	}
+}

@@ -98,13 +98,21 @@ type UrboPanel struct {
 	Section       string `json:"section,omitempty"`
 }
 
-// URboVertical representauna vertical de Urbo
+// UrboVertical representa una vertical de Urbo
 type UrboVertical struct {
-	Panels       []UrboPanel     `json:"panels,omitempty"`
-	ShadowPanels []UrboPanel     `json:"shadowPanels,omitempty"`
-	I18n         json.RawMessage `json:"i18n,omitempty"`
-	Name         string          `json:"name"`
+	Panels       []string        `json:"panels,omitempty"`
+	ShadowPanels []string        `json:"shadowPanels,omitempty"`
 	Slug         string          `json:"slug"`
+	Name         string          `json:"name"`
+	Icon         string          `json:"icon,omitempty"`
+	I18n         json.RawMessage `json:"i18n,omitempty"`
+	UrboVerticalStatus
+}
+
+// UrboVerticalStatus contains detailed vertical status
+type UrboVerticalStatus struct {
+	PanelsObjects       []UrboPanel `json:"panelsObjects,omitempty"`
+	ShadowPanelsObjects []UrboPanel `json:"shadowPanelsObjects,omitempty"`
 }
 
 // EntityType representa un tipo de entidad
@@ -512,4 +520,35 @@ type Project struct {
 
 type ProjectStatus struct {
 	Links json.RawMessage `json:"links,omitempty"`
+}
+
+// Manifest in UrboDeployer format
+type Manifest struct {
+	Deployment    DeploymentManifest      `json:"deployment,omitempty"`
+	Panels        PanelManifest           `json:"panels,omitempty"`
+	Verticals     map[string]UrboVertical `json:"verticals,omitempty"`
+	Rules         map[string]Rule         `json:"rules,omitempty"`
+	Subscriptions map[string]Subscription `json:"subscriptions,omitempty"`
+	Environment   Environment             `json:"environment,omitempty"`
+}
+
+type DeploymentManifest struct {
+	Sources map[string]ManifestSource `json:"sources,omitempty"`
+}
+
+func (d DeploymentManifest) IsEmpty() bool {
+	return len(d.Sources) <= 0
+}
+
+type PanelManifest struct {
+	Sources map[string]ManifestSource `json:"sources,omitempty"`
+}
+
+func (p PanelManifest) IsEmpty() bool {
+	return len(p.Sources) <= 0
+}
+
+type ManifestSource struct {
+	Path  string   `json:"path,omitempty"`
+	Files []string `json:"files,omitempty"`
 }
