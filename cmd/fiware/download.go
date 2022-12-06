@@ -102,12 +102,12 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 	return nil
 }
 
-func downloadPanel(u *urbo.Urbo, client keystone.HTTPClient, header http.Header, panel fiware.UrboPanel, outdir string) error {
-	data, err := u.DownloadPanel(client, header, panel.Slug)
+func downloadPanel(u *urbo.Urbo, client keystone.HTTPClient, header http.Header, slug string, outdir string) error {
+	data, err := u.DownloadPanel(client, header, slug)
 	if err != nil {
 		return err
 	}
-	output := outputFile(filepath.Join(outdir, fmt.Sprintf("%s.json", panel.Slug)))
+	output := outputFile(filepath.Join(outdir, fmt.Sprintf("%s.json", slug)))
 	outfile, err := output.Create()
 	if err != nil {
 		return err

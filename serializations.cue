@@ -295,11 +295,14 @@ verticals?: [string]: #UrboVertical
 }
 
 #UrboVertical: {
-	panels?: [...#UrboPanel]
-	shadowPanels?: [...#UrboPanel]
-	i18n?: #Json
-	name:  string
+	panels?: [...string]
+	shadowPanels?: [...string]
 	slug:  string
+	name:  string
+	icon?: string
+	i18n?: #Json
+	panelsObjects?: [...#UrboPanel] @anonymous(UrboVerticalStatus)
+	shadowPanelsObjects?: [...#UrboPanel] @anonymous(UrboVerticalStatus)
 }
 
 #Json: _ // cuaquier cosa...

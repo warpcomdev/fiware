@@ -102,7 +102,7 @@ func (u *Urbo) slugResource(client keystone.HTTPClient, headers http.Header, api
 	return nil
 }
 
-// Rules reads the list of rules from Perseo
+// Panels reads the list of panels from Urbo
 func (u *Urbo) Panels(client keystone.HTTPClient, headers http.Header) (map[string]fiware.UrboPanel, error) {
 	var response []fiware.UrboPanel
 	if err := u.slugResource(client, headers, "/api/panels", map[string]string{"unassigned": "true"}, &response); err != nil {
@@ -116,31 +116,33 @@ func (u *Urbo) Panels(client keystone.HTTPClient, headers http.Header) (map[stri
 }
 
 type apiVertical struct {
-	Panels       []string        `json:"panels,omitempty"`
-	ShadowPanels []string        `json:"shadowPanels,omitempty"`
-	Slug         string          `json:"slug"`
-	Name         string          `json:"name,omitempty"`
-	I18n         json.RawMessage `json:"i18n,omitempty"`
-	Service      string          `json:"service"`
+	Panels  []fiware.UrboPanel `json:"panels,omitempty"`
+	Slug    string             `json:"slug"`
+	Name    string             `json:"name,omitempty"`
+	I18n    json.RawMessage    `json:"i18n,omitempty"`
+	Icon    string             `json:"icon,omitempty"`
+	Service string             `json:"service"`
 }
 
-type detailedVertical struct {
-	apiVertical
-	PanelsObjects       []fiware.UrboPanel `json:"panelsObjects,omitempty"`
-	ShadowPanelsObjects []fiware.UrboPanel `json:"shadowPanelsObjects,omitempty"`
+func slugs(panels []fiware.UrboPanel) []string {
+	slugs := make([]string, 0, len(panels))
+	for _, panel := range panels {
+		slugs = append(slugs, panel.Slug)
+	}
+	return slugs
 }
 
 // GetVerticals reads the list of verticals from Urbo
 func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (map[string]fiware.UrboVertical, error) {
-	var response []fiware.UrboVertical
+	var response []apiVertical
 	if err := u.slugResource(client, headers, "/api/verticals", map[string]string{"shadowPanels": "true"}, &response); err != nil {
 		return nil, err
 	}
 	verticals := make(map[string]fiware.UrboVertical)
-	// Must read verticals one by one again because at some point, '/verticals' stopped
-	// supporting the `shadowPanels` argument
+	// Must read verticals one by one again because '/verticals'
+	// does not tell regular panels from shadow panels
 	for _, p := range response {
-		var detailed detailedVertical
+		var detailed fiware.UrboVertical
 		if err := u.slugResource(client, headers, "/api/verticals/"+p.Slug, map[string]string{"shadowPanels": "true"}, &detailed); err != nil {
 			return nil, err
 		}
@@ -148,8 +150,12 @@ func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (ma
 			Name:         detailed.Name,
 			Slug:         detailed.Slug,
 			I18n:         detailed.I18n,
-			Panels:       detailed.PanelsObjects,
-			ShadowPanels: detailed.ShadowPanelsObjects,
+			Panels:       slugs(detailed.PanelsObjects),
+			ShadowPanels: slugs(detailed.ShadowPanelsObjects),
+			UrboVerticalStatus: fiware.UrboVerticalStatus{
+				PanelsObjects:       detailed.PanelsObjects,
+				ShadowPanelsObjects: detailed.ShadowPanelsObjects,
+			},
 		}
 	}
 	return verticals, nil
@@ -166,20 +172,8 @@ func (u *Urbo) PostVerticals(client keystone.HTTPClient, headers http.Header, ve
 	query.Add("scopeService", u.ScopeService)
 	path.RawQuery = query.Encode()
 	for _, vertical := range verticals {
-		av := apiVertical{
-			Service:      u.Service,
-			Name:         vertical.Name,
-			Slug:         vertical.Slug,
-			I18n:         vertical.I18n,
-			Panels:       make([]string, 0, len(vertical.Panels)),
-			ShadowPanels: make([]string, 0, len(vertical.ShadowPanels)),
-		}
-		for _, p := range vertical.Panels {
-			av.Panels = append(av.Panels, p.Slug)
-		}
-		for _, p := range vertical.ShadowPanels {
-			av.ShadowPanels = append(av.ShadowPanels, p.Slug)
-		}
+		av := vertical
+		vertical.UrboVerticalStatus = fiware.UrboVerticalStatus{}
 		if _, _, err := keystone.PostJSON(client, headers, path, av); err != nil {
 			var netErr keystone.NetError
 			if errors.As(err, &netErr) {
