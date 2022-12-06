@@ -54,6 +54,11 @@ type CueSerializer struct {
 	serialize.BufferedSerializer
 }
 
+func (j *CueSerializer) Setup(w serialize.Writer, params map[string]string) {
+	j.BufferedSerializer.Setup(w, params)
+	j.SupportParams = true
+}
+
 func (j *CueSerializer) End() {
 	// Prepend matched variables
 	if len(j.Matched) > 0 {

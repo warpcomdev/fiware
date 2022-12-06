@@ -47,8 +47,10 @@ func (output outputFile) Encode(outfile serialize.Writer, vertical serialize.Ser
 		encoder = &importer.StarlarkSerializer{
 			Name: string(output[0 : len(output)-len(ext)]),
 		}
-	default:
+	case output != "" && strings.HasSuffix(lower, ".cue"):
 		encoder = &importer.CueSerializer{}
+	default:
+		encoder = &serialize.JsonSerializer{}
 	}
 	encoder.Setup(outfile, params)
 	encoder.Begin()

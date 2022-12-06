@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -35,18 +36,18 @@ func New(orionURL string) (*Orion, error) {
 }
 
 type suscriptionPaginator struct {
-	response []fiware.Suscription
+	response []fiware.Subscription
 }
 
 // GetBuffer implements Paginator
 func (p *suscriptionPaginator) GetBuffer() interface{} {
-	var buffer []fiware.Suscription
+	var buffer []fiware.Subscription
 	return &buffer
 }
 
 // PutBuffer implements Paginator
 func (p *suscriptionPaginator) PutBuffer(buf interface{}) int {
-	buffer := buf.(*[]fiware.Suscription)
+	buffer := buf.(*[]fiware.Subscription)
 	p.response = append(p.response, *buffer...)
 	count := len(*buffer)
 	return count
@@ -70,8 +71,23 @@ func (p *registrationPaginator) PutBuffer(buf interface{}) int {
 	return count
 }
 
-// Suscriptions reads the list of suscriptions from the Context Broker
-func (o *Orion) Suscriptions(client keystone.HTTPClient, headers http.Header) ([]fiware.Suscription, error) {
+func simplifyEndpoint(ep string) string {
+	var buf strings.Builder
+	var last rune
+	for i, r := range ep {
+		if r == '/' || r == '?' || r == '&' {
+			r = ':'
+		}
+		if r != last || r != ':' || i == 0 {
+			buf.WriteRune(r)
+			last = r
+		}
+	}
+	return buf.String()
+}
+
+// Subscriptions reads the list of suscriptions from the Context Broker
+func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, notifEndpoints map[string]string) ([]fiware.Subscription, error) {
 	path, err := o.URL.Parse("v2/subscriptions")
 	if err != nil {
 		return nil, err
@@ -79,6 +95,31 @@ func (o *Orion) Suscriptions(client keystone.HTTPClient, headers http.Header) ([
 	var pages suscriptionPaginator
 	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
 		return nil, err
+	}
+	reverseEndpoints := make(map[string]string, len(notifEndpoints))
+	for k, v := range notifEndpoints {
+		reverseEndpoints[v] = k
+	}
+	simplify := func(empty bool, url *string) {
+		if !empty {
+			var (
+				simplified string
+				hit        bool
+			)
+			if simplified, hit = reverseEndpoints[*url]; !hit {
+				simplified = simplifyEndpoint(*url)
+				reverseEndpoints[*url] = simplified
+				notifEndpoints[simplified] = *url
+			}
+			*url = simplified
+		}
+	}
+	for idx, sub := range pages.response {
+		simplify(sub.Notification.HTTP.IsEmpty(), &sub.Notification.HTTP.URL)
+		simplify(sub.Notification.HTTPCustom.IsEmpty(), &sub.Notification.HTTPCustom.URL)
+		simplify(sub.Notification.MQTT.IsEmpty(), &sub.Notification.MQTT.URL)
+		simplify(sub.Notification.MQTTCustom.IsEmpty(), &sub.Notification.MQTTCustom.URL)
+		pages.response[idx] = sub
 	}
 	return pages.response, nil
 }
@@ -97,12 +138,16 @@ func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) (
 }
 
 // PostSuscriptions posts a list of suscriptions to orion
-func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription, useDescription bool) error {
+func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Subscription, ep map[string]string, useDescription bool) error {
 	var errList error
 	if useDescription {
+		epCopy := make(map[string]string, len(ep))
+		for k, v := range ep {
+			epCopy[k] = v
+		}
 		// Check there is not a subscription with the same description
 		descId := make(map[string]string)
-		allSubs, err := o.Suscriptions(client, headers)
+		allSubs, err := o.Subscriptions(client, headers, epCopy)
 		if err != nil {
 			return err
 		}
@@ -124,21 +169,26 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 		}
 	}
 	for _, sub := range subs {
-		sub.SuscriptionStatus = fiware.SuscriptionStatus{}
+		sub.SubscriptionStatus = fiware.SubscriptionStatus{}
 		sub.Notification.NotificationStatus = fiware.NotificationStatus{}
 		path, err := o.URL.Parse("v2/subscriptions")
 		if err != nil {
 			return err
 		}
-		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, sub); err != nil {
+		sub, err = sub.UpdateEndpoint(ep)
+		if err != nil {
 			errList = multierror.Append(errList, err)
+		} else {
+			if _, _, err := keystone.Update(client, http.MethodPost, headers, path, sub); err != nil {
+				errList = multierror.Append(errList, err)
+			}
 		}
 	}
 	return errList
 }
 
 // DeleteSuscriptions deletes a list of suscriptions from Orion
-func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Suscription, useDescription bool) error {
+func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Subscription, useDescription bool) error {
 	var errList error
 	byDescription := make(map[string]struct{})
 	for _, sub := range subs {
@@ -173,7 +223,8 @@ func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Head
 	}
 	// If there are some subscriptions we have to remove by description,
 	// collect the current subscriptions and try to match them
-	allSubs, err := o.Suscriptions(client, headers)
+	epCopy := make(map[string]string)
+	allSubs, err := o.Subscriptions(client, headers, epCopy)
 	if err != nil {
 		errList = multierror.Append(errList, err)
 		return errList

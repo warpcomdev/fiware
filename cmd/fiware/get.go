@@ -115,7 +115,12 @@ func getResource(c *cli.Context, store *config.Store) error {
 	}
 	defer outfile.Close()
 
-	vertical := &fiware.Vertical{Subservice: selected.Subservice}
+	vertical := &fiware.Vertical{
+		Subservice: selected.Subservice,
+		Environment: fiware.Environment{
+			NotificationEndpoints: config.FromConfig(selected).NotificationEndpoints,
+		},
+	}
 	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
@@ -232,11 +237,26 @@ func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Heade
 	if err != nil {
 		return err
 	}
-	suscriptions, err := api.Suscriptions(c, header)
+	if vertical.Environment.NotificationEndpoints == nil {
+		vertical.Environment.NotificationEndpoints = make(map[string]string)
+	}
+	suscriptions, err := api.Subscriptions(c, header, vertical.Environment.NotificationEndpoints)
 	if err != nil {
 		return err
 	}
-	vertical.Suscriptions = suscriptions
+	subsMap := make(map[string]fiware.Subscription, len(suscriptions))
+	for _, subs := range suscriptions {
+		desc := subs.Description
+		if desc == "" {
+			desc = subs.ID
+		} else {
+			if _, dup := subsMap[desc]; dup {
+				desc = fmt.Sprintf("%s-%s", desc, subs.ID)
+			}
+		}
+		subsMap[desc] = subs
+	}
+	vertical.Subscriptions = subsMap
 	return nil
 }
 

@@ -5,7 +5,8 @@ subservice: string
 entityTypes?: [...#EntityType]
 entities?: [...#Entity]
 serviceMappings?: [...#ServiceMapping]
-suscriptions?: [...#Suscription]
+environment?: #Environment
+subscriptions?: [string]: #Subscription
 registrations?: [...#Registration]
 tables?: [...#Table]
 views?: [...#View]
@@ -68,13 +69,17 @@ verticals?: [string]: #UrboVertical
 	newAttributeType?:      string
 }
 
-#Suscription: {
+#Environment: {
+	notificationEndpoints: [string]: string
+}
+
+#Subscription: {
 	description:  string
 	status?:      string
 	expires?:     string
 	notification: #Notification
 	subject:      #Subject
-	id?:          string @anonymous(SuscriptionStatus)
+	id?:          string @anonymous(SubscriptionStatus)
 }
 
 #Notification: {
@@ -83,8 +88,8 @@ verticals?: [string]: #UrboVertical
 	attrsFormat:        string
 	http?:              #NotificationHTTP
 	httpCustom?:        #NotificationCustom
-	mqtt?:              #Json
-	mqttCustom?:        #Json
+	mqtt?:              #NotificationMQTT
+	mqttCustom?:        #NotificationMQTTCustom
 	onlyChangedAttrs?:  bool
 	covered?:           bool
 	lastFailure?:       string @anonymous(NotificationStatus)
@@ -97,15 +102,38 @@ verticals?: [string]: #UrboVertical
 }
 
 #NotificationHTTP: {
-	url: string
+	url:      string
+	timeout?: int
 }
 
 #NotificationCustom: {
-	url: string
+	url:      string
+	timeout?: int
 	headers?: [string]: string
-	payload?: #Json
+	qs?: [string]:      string
 	method?:  string
+	payload?: #Json
 	json?:    #Json
+	ngsi?:    #Json
+}
+
+#NotificationMQTT: {
+	url:       string
+	string:    string
+	qos?:      string
+	user?:     string
+	password?: string
+}
+
+#NotificationMQTTCustom: {
+	url:       string
+	string:    string
+	qos?:      string
+	user?:     string
+	password?: string
+	payload?:  #Json
+	json?:     #Json
+	ngsi?:     #Json
 }
 
 #Subject: {
@@ -185,6 +213,7 @@ verticals?: [string]: #UrboVertical
 	static_attributes?: [...#DeviceAttribute]
 	commands?: [...#DeviceCommand]
 	expressionLanguage?: string
+	entityNameExp?:      string
 	_id?:                string @anonymous(GroupStatus)
 	iotagent?:           string @anonymous(GroupStatus)
 	service_path?:       string @anonymous(GroupStatus)

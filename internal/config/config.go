@@ -158,11 +158,6 @@ func (c *Config) String() string {
 	return string(buffer.Bytes())
 }
 
-// Env dumps the config as an Environment entity from urbo-deployer
-func (c *Config) Env() (json.RawMessage, error) {
-	return json.Marshal(fromConfig(c))
-}
-
 func (c *Config) HasToken() string {
 	if c.Token == HiddenToken {
 		return ""

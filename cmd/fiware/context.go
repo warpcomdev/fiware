@@ -110,7 +110,7 @@ func envContext(s *config.Store, c *cli.Context) error {
 		fmt.Println("no contexts available")
 		return nil
 	}
-	env, err := s.Current.Env()
+	env, err := json.Marshal(config.FromConfig(s.Current))
 	if err != nil {
 		return err
 	}

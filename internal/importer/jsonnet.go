@@ -29,6 +29,11 @@ type JsonnetSerializer struct {
 	serialize.BufferedSerializer
 }
 
+func (j *JsonnetSerializer) Setup(w serialize.Writer, params map[string]string) {
+	j.BufferedSerializer.Setup(w, params)
+	j.SupportParams = true
+}
+
 func (j *JsonnetSerializer) End() {
 	// Prepend matched variables
 	if len(j.Matched) > 0 {

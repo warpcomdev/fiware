@@ -101,6 +101,11 @@ type StarlarkSerializer struct {
 	Name string
 }
 
+func (j *StarlarkSerializer) Setup(w serialize.Writer, params map[string]string) {
+	j.BufferedSerializer.Setup(w, params)
+	j.SupportParams = true
+}
+
 func (j *StarlarkSerializer) Begin() {
 	j.Depth += 1 // keep everything indented inside the function
 	j.BufferedSerializer.Begin()

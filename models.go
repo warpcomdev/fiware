@@ -6,6 +6,7 @@ package fiware
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -28,8 +29,9 @@ type Vertical struct {
 	// ServiceMappings para cygnus
 	ServiceMappings []ServiceMapping `json:"serviceMappings,omitempty"`
 	// Suscripciones al context broker
-	Suscriptions  []Suscription  `json:"suscriptions,omitempty"`
-	Registrations []Registration `json:"registrations,omitempty"`
+	Environment   Environment             `json:"environment,omitempty"`
+	Subscriptions map[string]Subscription `json:"subscriptions,omitempty"`
+	Registrations []Registration          `json:"registrations,omitempty"`
 	// Tablas *sencillas* relacionadas con entidades
 	Tables []Table `json:"tables,omitempty"`
 	Views  []View  `json:"views,omitempty"`
@@ -53,21 +55,36 @@ func (v *Vertical) RuleNames() ([]string, error) {
 		if rule.Name == "" {
 			rule.Name = name
 		}
-		if rule.Name != name {
-			return nil, fmt.Errorf("rule label (%s) and name (%s) do not match", name, rule.Name)
-		}
 		ruleNames = append(ruleNames, rule.Name)
 	}
 	return ruleNames, nil
 }
 
-// RuleValues enumerates all rule values
-func (v *Vertical) RuleValues() []Rule {
-	ruleValues := make([]Rule, 0, len(v.Rules))
-	for _, rule := range v.Rules {
-		ruleValues = append(ruleValues, rule)
+// SummaryOf makes a summary of every item in the list
+func SummaryOf[V any](items map[string]V, summary func(k string, v V) string) []string {
+	values := make([]string, 0, len(items))
+	for k, item := range items {
+		values = append(values, summary(k, item))
 	}
-	return ruleValues
+	return values
+}
+
+func ValuesOf[V any](items map[string]V) []V {
+	values := make([]V, 0, len(items))
+	for _, item := range items {
+		values = append(values, item)
+	}
+	return values
+}
+
+// Environment settings
+type Environment struct {
+	NotificationEndpoints map[string]string `json:"notificationEndpoints"`
+}
+
+// Environment is empty?
+func (e Environment) IsEmpty() bool {
+	return len(e.NotificationEndpoints) <= 0
 }
 
 // UrboPanel representa un panel de Urbo
@@ -187,32 +204,53 @@ type RegistrationStatus struct {
 	Status string `json:"status"`
 }
 
-// Suscription representa una suscripcion
-type Suscription struct {
+// Subscription representa una suscripcion
+type Subscription struct {
 	Description  string       `json:"description"`
 	Status       string       `json:"status,omitempty"`
 	Expires      string       `json:"expires,omitempty"`
 	Notification Notification `json:"notification"`
 	Subject      Subject      `json:"subject"`
-	SuscriptionStatus
+	SubscriptionStatus
 }
 
-// SuscriptionStatus agrupa los datos de estado de la suscripción
-type SuscriptionStatus struct {
+// UpdateEndpoint updates the notification endpoint
+func (subs Subscription) UpdateEndpoint(notificationEndpoints map[string]string) (Subscription, error) {
+	result := subs
+	var url *string
+	if result.Notification.HTTP.URL != "" {
+		url = &(result.Notification.HTTP.URL)
+	}
+	if result.Notification.HTTPCustom.URL != "" {
+		url = &(result.Notification.HTTPCustom.URL)
+	}
+	if url == nil {
+		return result, errors.New("subscription has no notification URL")
+	}
+	ep, ok := notificationEndpoints[*url]
+	if !ok {
+		return result, fmt.Errorf("notification endpoint %s not found", *url)
+	}
+	*url = ep
+	return result, nil
+}
+
+// SubscriptionStatus agrupa los datos de estado de la suscripción
+type SubscriptionStatus struct {
 	ID string `json:"id,omitempty"`
 }
 
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
-	Attrs            []string           `json:"attrs,omitempty" sort:"true"`
-	ExceptAttrs      []string           `json:"exceptAttrs,omitempty" sort:"true"`
-	AttrsFormat      string             `json:"attrsFormat"`
-	HTTP             NotificationHTTP   `json:"http,omitempty"`
-	HTTPCustom       NotificationCustom `json:"httpCustom,omitempty"`
-	MQTT             json.RawMessage    `json:"mqtt,omitempty"`
-	MQTTCustom       json.RawMessage    `json:"mqttCustom,omitempty"`
-	OnlyChangedAttrs bool               `json:"onlyChangedAttrs,omitempty"`
-	Covered          bool               `json:"covered,omitempty"`
+	Attrs            []string               `json:"attrs,omitempty" sort:"true"`
+	ExceptAttrs      []string               `json:"exceptAttrs,omitempty" sort:"true"`
+	AttrsFormat      string                 `json:"attrsFormat"`
+	HTTP             NotificationHTTP       `json:"http,omitempty"`
+	HTTPCustom       NotificationCustom     `json:"httpCustom,omitempty"`
+	MQTT             NotificationMQTT       `json:"mqtt,omitempty"`
+	MQTTCustom       NotificationMQTTCustom `json:"mqttCustom,omitempty"`
+	OnlyChangedAttrs bool                   `json:"onlyChangedAttrs,omitempty"`
+	Covered          bool                   `json:"covered,omitempty"`
 	NotificationStatus
 }
 
@@ -229,7 +267,8 @@ type NotificationStatus struct {
 
 // NotificationHTTP son los datos de una notificacion
 type NotificationHTTP struct {
-	URL string `json:"url"`
+	URL     string `json:"url"`
+	Timeout int    `json:"timeout,omitempty"`
 }
 
 func (n NotificationHTTP) IsEmpty() bool {
@@ -239,14 +278,46 @@ func (n NotificationHTTP) IsEmpty() bool {
 // NotificationHTTP son los datos de una notificacion
 type NotificationCustom struct {
 	URL     string            `json:"url"`
+	Timeout int               `json:"timeout,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
-	Payload json.RawMessage   `json:"payload,omitempty"`
+	Qs      map[string]string `json:"qs,omitempty"`
 	Method  string            `json:"method,omitempty"`
+	Payload json.RawMessage   `json:"payload,omitempty"`
 	Json    json.RawMessage   `json:"json,omitempty"`
+	NGSI    json.RawMessage   `json:"ngsi,omitempty"`
 }
 
 func (n NotificationCustom) IsEmpty() bool {
-	return n.URL == "" && len(n.Headers) <= 0
+	return n.URL == ""
+}
+
+// NotificationMQTT son los datos de una notificacion MQTT
+type NotificationMQTT struct {
+	URL      string `json:"url"`
+	Topic    string `json:"string"`
+	QoS      string `json:"qos,omitempty"`
+	User     string `json:"user,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+func (n NotificationMQTT) IsEmpty() bool {
+	return n.URL == "" || n.Topic == ""
+}
+
+// NotificationMQTTCustom son los datos de una notificacion MQTT Custom
+type NotificationMQTTCustom struct {
+	URL      string          `json:"url"`
+	Topic    string          `json:"string"`
+	QoS      string          `json:"qos,omitempty"`
+	User     string          `json:"user,omitempty"`
+	Password string          `json:"password,omitempty"`
+	Payload  json.RawMessage `json:"payload,omitempty"`
+	Json     json.RawMessage `json:"json,omitempty"`
+	NGSI     json.RawMessage `json:"ngsi,omitempty"`
+}
+
+func (n NotificationMQTTCustom) IsEmpty() bool {
+	return n.URL == "" || n.Topic == ""
 }
 
 // Subject es el sujeto de la suscripcion
@@ -332,6 +403,7 @@ type Service struct {
 	StaticAttributes   []DeviceAttribute `json:"static_attributes,omitempty"`
 	Commands           []DeviceCommand   `json:"commands,omitempty"`
 	ExpressionLanguage string            `json:"expressionLanguage,omitempty"`
+	EntityNameExp      string            `json:"entityNameExp,omitempty"`
 	GroupStatus
 }
 

@@ -85,17 +85,23 @@ import (
         }
     }
     
-    suscriptions: [for entityType in entityTypes {
-        #subscription & {
+    environment: notificationEndpoints: {
+        CYGNUS: "http://iot-cygnus:5057/notify"
+        LASTDATA: "http://iot-cygnus:5059/notify"
+    }
+
+    subscriptions: {for entityType in entityTypes {
+        "\(entityType):CYGNUS": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES para " + entityType.entityType
-            notification: http: url: "http://iot-cygnus:5057/notify"
+            notification: http: url: "CYGNUS"
         }
-    }] + [for entityType in entityTypes {
-        #subscription & {
+    }}
+    subscription: {for entityType in entityTypes {
+        "\(entityType):LASTDATA": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES lastdata para " + entityType.entityType
-            notification: http: url: "http://iot-cygnus:5059/notify"
+            notification: http: url: "LASTDATA"
         }
     }]
 

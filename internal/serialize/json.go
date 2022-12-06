@@ -18,6 +18,7 @@ const MinIndent = "  "
 // Serializes a JSON object to a string.
 type JsonSerializer struct {
 	Writer        Writer            // Where to write
+	SupportParams bool              // True to support parameter matching
 	ReverseParams map[string]string // match strings and turn into parameters
 	Matched       map[string]string // Which params were matched
 	Depth         int               // indentation depth, if -1 then do not indent
@@ -72,7 +73,7 @@ func (j *JsonSerializer) Param(s string) {
 	if j.Err != nil {
 		return
 	}
-	if j.ReverseParams != nil {
+	if j.SupportParams && j.ReverseParams != nil {
 		if r, ok := j.ReverseParams[s]; ok {
 			if _, err := j.Writer.WriteString(r); err == nil {
 				j.Matched[r] = s

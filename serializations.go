@@ -40,14 +40,20 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	if len(x.Suscriptions) > 0 {
-		s.BeginList("suscriptions")
-		for _, y := range x.Suscriptions {
-			s.BeginBlock("")
-			s.Serialize(y)
+	if !x.Environment.IsEmpty() {
+		s.BeginBlock("environment")
+		x.Environment.Serialize(s)
+		s.EndBlock()
+	}
+	if len(x.Subscriptions) > 0 {
+		s.BeginBlock("subscriptions")
+		for _, k := range serialize.Keys(x.Subscriptions) {
+			v := x.Subscriptions[k]
+			s.BeginBlock(k)
+			s.Serialize(v)
 			s.EndBlock()
 		}
-		s.EndList()
+		s.EndBlock()
 	}
 	if len(x.Registrations) > 0 {
 		s.BeginList("registrations")
@@ -299,11 +305,24 @@ func (x AttributeMapping) Serialize(s serialize.Serializer) {
 	}
 }
 
-func (x Suscription) MarshalJSON() ([]byte, error) {
+func (x Environment) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
 
-func (x Suscription) Serialize(s serialize.Serializer) {
+func (x Environment) Serialize(s serialize.Serializer) {
+	s.BeginBlock("notificationEndpoints")
+	for _, k := range serialize.Keys(x.NotificationEndpoints) {
+		v := x.NotificationEndpoints[k]
+		s.KeyString(k, string(v))
+	}
+	s.EndBlock()
+}
+
+func (x Subscription) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Subscription) Serialize(s serialize.Serializer) {
 	s.KeyString("description", string(x.Description))
 	if x.Status != "" {
 		s.KeyString("status", string(x.Status))
@@ -317,7 +336,7 @@ func (x Suscription) Serialize(s serialize.Serializer) {
 	s.BeginBlock("subject")
 	x.Subject.Serialize(s)
 	s.EndBlock()
-	x.SuscriptionStatus.Serialize(s)
+	x.SubscriptionStatus.Serialize(s)
 }
 
 func (x Notification) MarshalJSON() ([]byte, error) {
@@ -350,11 +369,15 @@ func (x Notification) Serialize(s serialize.Serializer) {
 		x.HTTPCustom.Serialize(s)
 		s.EndBlock()
 	}
-	if len(x.MQTT) > 0 {
-		s.KeyRaw("mqtt", x.MQTT, false)
+	if !x.MQTT.IsEmpty() {
+		s.BeginBlock("mqtt")
+		x.MQTT.Serialize(s)
+		s.EndBlock()
 	}
-	if len(x.MQTTCustom) > 0 {
-		s.KeyRaw("mqttCustom", x.MQTTCustom, false)
+	if !x.MQTTCustom.IsEmpty() {
+		s.BeginBlock("mqttCustom")
+		x.MQTTCustom.Serialize(s)
+		s.EndBlock()
 	}
 	if x.OnlyChangedAttrs {
 		s.KeyBool("onlyChangedAttrs", x.OnlyChangedAttrs)
@@ -371,6 +394,9 @@ func (x NotificationHTTP) MarshalJSON() ([]byte, error) {
 
 func (x NotificationHTTP) Serialize(s serialize.Serializer) {
 	s.KeyString("url", string(x.URL))
+	if x.Timeout != 0 {
+		s.KeyInt("timeout", x.Timeout)
+	}
 }
 
 func (x NotificationCustom) MarshalJSON() ([]byte, error) {
@@ -379,6 +405,9 @@ func (x NotificationCustom) MarshalJSON() ([]byte, error) {
 
 func (x NotificationCustom) Serialize(s serialize.Serializer) {
 	s.KeyString("url", string(x.URL))
+	if x.Timeout != 0 {
+		s.KeyInt("timeout", x.Timeout)
+	}
 	if len(x.Headers) > 0 {
 		s.BeginBlock("headers")
 		for _, k := range serialize.Keys(x.Headers) {
@@ -387,14 +416,70 @@ func (x NotificationCustom) Serialize(s serialize.Serializer) {
 		}
 		s.EndBlock()
 	}
-	if len(x.Payload) > 0 {
-		s.KeyRaw("payload", x.Payload, false)
+	if len(x.Qs) > 0 {
+		s.BeginBlock("qs")
+		for _, k := range serialize.Keys(x.Qs) {
+			v := x.Qs[k]
+			s.KeyString(k, string(v))
+		}
+		s.EndBlock()
 	}
 	if x.Method != "" {
 		s.KeyString("method", string(x.Method))
 	}
+	if len(x.Payload) > 0 {
+		s.KeyRaw("payload", x.Payload, false)
+	}
 	if len(x.Json) > 0 {
 		s.KeyRaw("json", x.Json, false)
+	}
+	if len(x.NGSI) > 0 {
+		s.KeyRaw("ngsi", x.NGSI, false)
+	}
+}
+
+func (x NotificationMQTT) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x NotificationMQTT) Serialize(s serialize.Serializer) {
+	s.KeyString("url", string(x.URL))
+	s.KeyString("string", string(x.Topic))
+	if x.QoS != "" {
+		s.KeyString("qos", string(x.QoS))
+	}
+	if x.User != "" {
+		s.KeyString("user", string(x.User))
+	}
+	if x.Password != "" {
+		s.KeyString("password", string(x.Password))
+	}
+}
+
+func (x NotificationMQTTCustom) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x NotificationMQTTCustom) Serialize(s serialize.Serializer) {
+	s.KeyString("url", string(x.URL))
+	s.KeyString("string", string(x.Topic))
+	if x.QoS != "" {
+		s.KeyString("qos", string(x.QoS))
+	}
+	if x.User != "" {
+		s.KeyString("user", string(x.User))
+	}
+	if x.Password != "" {
+		s.KeyString("password", string(x.Password))
+	}
+	if len(x.Payload) > 0 {
+		s.KeyRaw("payload", x.Payload, false)
+	}
+	if len(x.Json) > 0 {
+		s.KeyRaw("json", x.Json, false)
+	}
+	if len(x.NGSI) > 0 {
+		s.KeyRaw("ngsi", x.NGSI, false)
 	}
 }
 
@@ -481,11 +566,11 @@ func (x SubjectEntity) Serialize(s serialize.Serializer) {
 	s.KeyString("type", string(x.Type))
 }
 
-func (x SuscriptionStatus) MarshalJSON() ([]byte, error) {
+func (x SubscriptionStatus) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
 
-func (x SuscriptionStatus) Serialize(s serialize.Serializer) {
+func (x SubscriptionStatus) Serialize(s serialize.Serializer) {
 	if x.ID != "" {
 		s.KeyString("id", string(x.ID))
 	}
@@ -680,6 +765,9 @@ func (x Service) Serialize(s serialize.Serializer) {
 	}
 	if x.ExpressionLanguage != "" {
 		s.KeyString("expressionLanguage", string(x.ExpressionLanguage))
+	}
+	if x.EntityNameExp != "" {
+		s.KeyString("entityNameExp", string(x.EntityNameExp))
 	}
 	x.GroupStatus.Serialize(s)
 }

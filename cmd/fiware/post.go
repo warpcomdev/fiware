@@ -130,10 +130,10 @@ func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http
 	if err != nil {
 		return err
 	}
-	listMessage("POSTing suscriptions with descriptions", vertical.Suscriptions,
-		func(g fiware.Suscription) string { return g.Description },
+	dictMessage("POSTing suscriptions with descriptions", vertical.Subscriptions,
+		func(k string, v fiware.Subscription) string { return v.Description },
 	)
-	return api.PostSuscriptions(client, header, vertical.Suscriptions, useDescription)
+	return api.PostSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), vertical.Environment.NotificationEndpoints, useDescription)
 }
 
 func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
@@ -141,14 +141,15 @@ func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header
 	if err != nil {
 		return err
 	}
-	ruleNames, err := vertical.RuleNames()
-	if err != nil {
-		return err
-	}
-	listMessage("POSTing rules with names", ruleNames,
-		func(g string) string { return g },
+	dictMessage("POSTing rules with names", vertical.Rules,
+		func(k string, v fiware.Rule) string {
+			if v.Name != "" {
+				return v.Name
+			}
+			return k
+		},
 	)
-	return api.PostRules(client, header, vertical.RuleValues())
+	return api.PostRules(client, header, fiware.ValuesOf(vertical.Rules))
 }
 
 func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
@@ -164,20 +165,21 @@ func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Hea
 }
 
 func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Vertical) error {
-	verticalList := make([]fiware.UrboVertical, 0, len(vertical.Verticals))
-	for _, v := range vertical.Verticals {
-		verticalList = append(verticalList, v)
-	}
-	listMessage("POSTing verticals with slugs", verticalList,
-		func(g fiware.UrboVertical) string { return g.Slug },
+	dictMessage("POSTing verticals with slugs", vertical.Verticals,
+		func(k string, v fiware.UrboVertical) string { return v.Slug },
 	)
 	return u.PostVerticals(client, header, vertical.Verticals)
 }
 
-func listMessage[T any](msg string, items []T, label func(T) string) {
+func dictMessage[T any](msg string, items map[string]T, summary func(string, T) string) {
+	labels := fiware.SummaryOf(items, summary)
+	fmt.Printf("%s '%s'\n", msg, strings.Join(labels, "','"))
+}
+
+func listMessage[T any](msg string, items []T, summary func(T) string) {
 	labels := make([]string, 0, len(items))
 	for _, item := range items {
-		labels = append(labels, label(item))
+		labels = append(labels, summary(item))
 	}
 	fmt.Printf("%s '%s'\n", msg, strings.Join(labels, "','"))
 }

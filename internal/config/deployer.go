@@ -1,7 +1,7 @@
 package config
 
-// Urbo-deployer environment model
-type environment struct {
+// Urbo-deployer Environment model
+type Environment struct {
 	EnvironmentName string            `json:"environmentName"`
 	EnvironmentType string            `json:"environmentType"`
 	Customer        string            `json:"customer"`
@@ -24,8 +24,8 @@ type environment struct {
 	NotificationEndpoints map[string]string `json:"notificationEndpoints"`
 }
 
-func fromConfig(cfg *Config) environment {
-	result := environment{
+func FromConfig(cfg Config) Environment {
+	result := Environment{
 		EnvironmentName:       cfg.Name,
 		EnvironmentType:       cfg.Type,
 		Customer:              cfg.Customer,
@@ -46,14 +46,17 @@ func fromConfig(cfg *Config) environment {
 	result.Api.Perseo = cfg.PerseoURL
 	result.Api.Pentaho = cfg.PentahoURL
 	result.Api.Urbo = cfg.UrboURL
-	if cygnus, ok := cfg.Params["cygnus_url"]; ok {
-		result.NotificationEndpoints["HISTORIC"] = cygnus
-	}
-	if lastdata, ok := cfg.Params["cygnus_url_lastdata"]; ok {
-		result.NotificationEndpoints["LASTDATA"] = lastdata
-	}
-	if perseo, ok := cfg.Params["perseo_url"]; ok {
-		result.NotificationEndpoints["RULES"] = perseo
+	for param, endpoint := range map[string]string{
+		"cygnus_url":          "HISTORIC",
+		"cygnus_url_lastdata": "LASTDATA",
+		"perseo_url":          "RULES",
+		"HISTORIC":            "HISTORIC",
+		"LASTDATA":            "LASTDATA",
+		"RULES":               "RULES",
+	} {
+		if value, ok := cfg.Params[param]; ok {
+			result.NotificationEndpoints[endpoint] = value
+		}
 	}
 	return result
 }

@@ -121,15 +121,15 @@ func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header ht
 		return err
 	}
 	if !useDescription {
-		listMessage("DELETing suscriptions with IDs", vertical.Suscriptions,
-			func(g fiware.Suscription) string { return g.ID },
+		dictMessage("DELETing suscriptions with IDs", vertical.Subscriptions,
+			func(k string, v fiware.Subscription) string { return v.ID },
 		)
 	} else {
-		listMessage("DELETing suscriptions with ids (or descriptions)", vertical.Suscriptions,
-			func(g fiware.Suscription) string { return fmt.Sprintf("%s (%s)", g.ID, g.Description) },
+		dictMessage("DELETing suscriptions with ids (or descriptions)", vertical.Subscriptions,
+			func(k string, v fiware.Subscription) string { return fmt.Sprintf("%s (%s)", v.ID, v.Description) },
 		)
 	}
-	return api.DeleteSuscriptions(client, header, vertical.Suscriptions, useDescription)
+	return api.DeleteSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), useDescription)
 }
 
 func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
@@ -144,7 +144,7 @@ func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Head
 	listMessage("DELETing rules with names", ruleNames,
 		func(g string) string { return g },
 	)
-	return api.DeleteRules(client, header, vertical.RuleValues())
+	return api.DeleteRules(client, header, fiware.ValuesOf(vertical.Rules))
 }
 
 func knownEntities(vertical fiware.Vertical) []fiware.Entity {
