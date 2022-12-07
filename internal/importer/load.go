@@ -24,8 +24,8 @@ func Load(datafile string, params map[string]string, output interface{}, libPath
 			jsonStr, err = loadStarlark(datafile, params, libPath)
 		case strings.HasSuffix(lowerName, ".csv"): // support for loading a CSV. Only makes sense to delete entities.
 			types, entities := decode.CSV(datafile)
-			vertical := fiware.Vertical{EntityTypes: types, Entities: entities}
-			if v, ok := output.(*fiware.Vertical); ok {
+			vertical := fiware.Manifest{EntityTypes: types, Entities: entities}
+			if v, ok := output.(*fiware.Manifest); ok {
 				*v = vertical
 				return nil
 			}

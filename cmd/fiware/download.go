@@ -21,7 +21,7 @@ func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	vertical := &fiware.Vertical{Subservice: selected.Subservice}
+	vertical := &fiware.Manifest{Subservice: selected.Subservice}
 	client := httpClient(c.Bool(verboseFlag.Name))
 	u, header, err := getUrboHeaders(c, selected)
 	if err != nil {
@@ -74,7 +74,7 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	vertical := &fiware.Vertical{Subservice: selected.Subservice}
+	vertical := &fiware.Manifest{Subservice: selected.Subservice}
 	client := httpClient(c.Bool(verboseFlag.Name))
 	u, header, err := getUrboHeaders(c, selected)
 	if err != nil {
@@ -107,7 +107,7 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 					Verticals: map[string]fiware.UrboVertical{
 						v.Slug: clean_vertical,
 					},
-					Panels: fiware.PanelManifest{
+					ManifestPanels: fiware.PanelManifest{
 						Sources: make(map[string]fiware.ManifestSource),
 					},
 				}

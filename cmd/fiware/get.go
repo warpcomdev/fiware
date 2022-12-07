@@ -115,7 +115,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 	}
 	defer outfile.Close()
 
-	vertical := &fiware.Vertical{
+	vertical := &fiware.Manifest{
 		Subservice: selected.Subservice,
 		Environment: fiware.Environment{
 			NotificationEndpoints: config.FromConfig(selected).NotificationEndpoints,
@@ -206,7 +206,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 	return output.Encode(outfile, vertical, selected.Params)
 }
 
-func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
+func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -219,7 +219,7 @@ func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, ve
 	return nil
 }
 
-func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
+func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -232,7 +232,7 @@ func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, v
 	return nil
 }
 
-func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
+func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Heade
 	return nil
 }
 
-func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
+func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -273,7 +273,7 @@ func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Head
 	return nil
 }
 
-func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType string, vertical *fiware.Vertical) error {
+func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType string, vertical *fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -287,7 +287,7 @@ func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, f
 	return nil
 }
 
-func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Vertical) error {
+func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
@@ -304,7 +304,7 @@ func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vert
 	return nil
 }
 
-func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Vertical) error {
+func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
 	projects, err := k.Projects(c, header)
 	if err != nil {
 		return err
@@ -313,7 +313,7 @@ func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone,
 	return nil
 }
 
-func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
+func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Manifest) error {
 	panels, err := u.Panels(c, header)
 	if err != nil {
 		return err
@@ -322,7 +322,7 @@ func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header ht
 	return nil
 }
 
-func getVerticals(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Vertical) error {
+func getVerticals(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Manifest) error {
 	verticals, err := u.GetVerticals(c, header)
 	if err != nil {
 		return err

@@ -37,7 +37,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 	}
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var vertical fiware.Vertical
+	var vertical fiware.Manifest
 	if err := importer.Load(datapath, selected.Params, &vertical, libpath); err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 	return nil
 }
 
-func postDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func postDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func postDevices(ctx config.Config, client keystone.HTTPClient, header http.Head
 	return api.PostDevices(client, header, vertical.Devices)
 }
 
-func postServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func postServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func postServices(ctx config.Config, client keystone.HTTPClient, header http.Hea
 	return api.PostServices(client, header, vertical.Services)
 }
 
-func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical, useDescription bool) error {
+func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, useDescription bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http
 	return api.PostSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), vertical.Environment.NotificationEndpoints, useDescription)
 }
 
-func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header
 	return api.PostRules(client, header, fiware.ValuesOf(vertical.Rules))
 }
 
-func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Hea
 	return api.UpdateEntities(client, header, merged)
 }
 
-func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Vertical) error {
+func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Manifest) error {
 	dictMessage("POSTing verticals with slugs", vertical.Verticals,
 		func(k string, v fiware.UrboVertical) string { return v.Slug },
 	)

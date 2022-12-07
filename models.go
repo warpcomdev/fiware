@@ -17,39 +17,35 @@ import (
 // La interfaz se implementa automáticamente con el siguiente generador:
 //go:generate go run cmd/generate/generate.go
 
-// Vertical representa una vertical
-type Vertical struct {
-	Name       string `json:"name"`       // `tourism`, `wifi`, `watermeter`, etc
-	Subservice string `json:"subservice"` // `turismo`, `wifi`, `contadores`, etc.
+// Manifest representa un manifiesto de vertical
+type Manifest struct {
+	Name       string `json:"name,omitempty"`       // `tourism`, `wifi`, `watermeter`, etc
+	Subservice string `json:"subservice,omitempty"` // `turismo`, `wifi`, `contadores`, etc.
 	// Tipos de entidad definidos en la vertical.
 	// El ID y los valores de los atributos son opcionales.
 	EntityTypes []EntityType `json:"entityTypes,omitempty"`
 	// Entidades específicas de alguno de los tipos anteriores
 	Entities []Entity `json:"entities,omitempty"`
-	// ServiceMappings para cygnus
-	ServiceMappings []ServiceMapping `json:"serviceMappings,omitempty"`
-	// Suscripciones al context broker
-	Environment   Environment             `json:"environment,omitempty"`
-	Subscriptions map[string]Subscription `json:"subscriptions,omitempty"`
-	Registrations []Registration          `json:"registrations,omitempty"`
-	// Tablas *sencillas* relacionadas con entidades
-	Tables []Table `json:"tables,omitempty"`
-	Views  []View  `json:"views,omitempty"`
-	// Grupos de dispositivos
-	Services []Service `json:"services,omitempty"`
-	Devices  []Device  `json:"devices,omitempty"`
-	// CEP rules
-	Rules map[string]Rule `json:"rules,omitempty"`
-	// Lista de proyectos, paneles y verticals de urbo.
-	// Esto no pertenece a la vertical, sino al entorno,
-	// pero me facilita meterlo aqui...
-	Projects  []Project               `json:"projects,omitempty"`
-	Panels    map[string]UrboPanel    `json:"panels,omitempty"`
-	Verticals map[string]UrboVertical `json:"verticals,omitempty"`
+	// Contenidos compatibles con urbo-deployer
+	Environment    Environment             `json:"environment,omitempty"`
+	Deployment     DeploymentManifest      `json:"deployment,omitempty"`
+	ManifestPanels PanelManifest           `json:"panels,omitempty"`
+	Subscriptions  map[string]Subscription `json:"subscriptions,omitempty"`
+	Rules          map[string]Rule         `json:"rules,omitempty"`
+	Verticals      map[string]UrboVertical `json:"verticals,omitempty"`
+	Services       []Service               `json:"services,omitempty"`
+	Devices        []Device                `json:"devices,omitempty"`
+	// Otros datos de estado no asociados al manifest
+	ServiceMappings []ServiceMapping     `json:"serviceMappings,omitempty"`
+	Projects        []Project            `json:"projects,omitempty"`
+	Registrations   []Registration       `json:"registrations,omitempty"`
+	Panels          map[string]UrboPanel `json:"urboPanels,omitempty"`
+	Tables          []Table              `json:"tables,omitempty"`
+	Views           []View               `json:"views,omitempty"`
 }
 
 // RuleNames enumerates all rule names
-func (v *Vertical) RuleNames() ([]string, error) {
+func (v *Manifest) RuleNames() ([]string, error) {
 	ruleNames := make([]string, 0, len(v.Rules))
 	for name, rule := range v.Rules {
 		if rule.Name == "" {
@@ -520,16 +516,6 @@ type Project struct {
 
 type ProjectStatus struct {
 	Links json.RawMessage `json:"links,omitempty"`
-}
-
-// Manifest in UrboDeployer format
-type Manifest struct {
-	Deployment    DeploymentManifest      `json:"deployment,omitempty"`
-	Panels        PanelManifest           `json:"panels,omitempty"`
-	Verticals     map[string]UrboVertical `json:"verticals,omitempty"`
-	Rules         map[string]Rule         `json:"rules,omitempty"`
-	Subscriptions map[string]Subscription `json:"subscriptions,omitempty"`
-	Environment   Environment             `json:"environment,omitempty"`
 }
 
 type DeploymentManifest struct {

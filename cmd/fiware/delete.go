@@ -35,7 +35,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	}
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var vertical fiware.Vertical
+	var vertical fiware.Manifest
 	if err := importer.Load(datapath, selected.Params, &vertical, libpath); err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	return nil
 }
 
-func deleteDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func deleteDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func deleteDevices(ctx config.Config, client keystone.HTTPClient, header http.He
 	return api.DeleteDevices(client, header, vertical.Devices)
 }
 
-func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.H
 	return api.DeleteServices(client, header, vertical.Services)
 }
 
-func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical, useDescription bool) error {
+func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, useDescription bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header ht
 	return api.DeleteSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), useDescription)
 }
 
-func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
@@ -147,7 +147,7 @@ func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Head
 	return api.DeleteRules(client, header, fiware.ValuesOf(vertical.Rules))
 }
 
-func knownEntities(vertical fiware.Vertical) []fiware.Entity {
+func knownEntities(vertical fiware.Manifest) []fiware.Entity {
 	knownTypes := make(map[string]struct{})
 	for _, entType := range vertical.EntityTypes {
 		knownTypes[entType.Type] = struct{}{}
@@ -161,7 +161,7 @@ func knownEntities(vertical fiware.Vertical) []fiware.Entity {
 	return knownEntities
 }
 
-func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Vertical) error {
+func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err

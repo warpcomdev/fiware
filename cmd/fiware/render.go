@@ -11,7 +11,7 @@ import (
 )
 
 type verticalWithParams struct {
-	fiware.Vertical
+	fiware.Manifest
 	Params map[string]string `json:"params,omitempty"`
 }
 
@@ -36,7 +36,7 @@ func render(c *cli.Context, params map[string]string) error {
 		data = relaxedData
 	} else {
 		var strictData verticalWithParams
-		if err := importer.Load(datapath, params, &strictData.Vertical, libpath); err != nil {
+		if err := importer.Load(datapath, params, &strictData.Manifest, libpath); err != nil {
 			return err
 		}
 		strictData.Params = params
@@ -65,7 +65,7 @@ func export(c *cli.Context, params map[string]string) error {
 	defer outFile.Close()
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var vertical fiware.Vertical
+	var vertical fiware.Manifest
 	if err := importer.Load(datapath, params, &vertical, libpath); err != nil {
 		return err
 	}
