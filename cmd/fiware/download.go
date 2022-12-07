@@ -64,12 +64,17 @@ func (d *verticalDownloader) Download(v fiware.Vertical, outdir string) (string,
 		},
 	}
 	paneldir := filepath.Join(outdir, v.Slug)
-	if err := ensureDir(paneldir); err != nil {
-		return "", err
-	}
+
+	panelCount := len(v.Panels) + len(v.ShadowPanels)
 	sources := fiware.ManifestSource{
 		Path:  v.Slug,
-		Files: make([]string, 0, len(v.Panels)+len(v.ShadowPanels)),
+		Files: make([]string, 0, panelCount),
+	}
+	if panelCount <= 0 {
+		return "", nil
+	}
+	if err := ensureDir(paneldir); err != nil {
+		return "", err
 	}
 	for _, panel := range v.Panels {
 		fileName, err := downloadPanel(d.Urbo, d.Client, d.Headers, panel, paneldir)
@@ -85,7 +90,7 @@ func (d *verticalDownloader) Download(v fiware.Vertical, outdir string) (string,
 		}
 		sources.Files = append(sources.Files, fileName)
 	}
-	manifestFilename := fmt.Sprintf("%s.json", v.Slug)
+	manifestFilename := fmt.Sprintf("urbo-%s.json", v.Slug)
 	manifestFullname := outputFile(filepath.Join(outdir, manifestFilename))
 	manifestFile, err := manifestFullname.Create()
 	if err != nil {
@@ -132,9 +137,16 @@ func newProjectDownloader(c *cli.Context, store *config.Store) (*projectDownload
 		return nil, err
 	}
 	downloader.ProjectNames = make([]string, 0, len(downloader.Manifest.Verticals))
+	cursor := 0
 	for _, item := range downloader.Manifest.Projects {
-		downloader.ProjectNames = append(downloader.ProjectNames, item.Name)
+		if strings.HasPrefix(item.Name, "/") {
+			downloader.ProjectNames = append(downloader.ProjectNames, item.Name)
+			downloader.Manifest.Projects[cursor] = item
+			cursor += 1
+		}
 	}
+	// Skip - ignore projects with names not starting with "/"
+	downloader.Manifest.Projects = downloader.Manifest.Projects[0:cursor]
 	return &downloader, nil
 }
 
@@ -234,7 +246,7 @@ func ensureDir(outdir string) error {
 	return nil
 }
 
-func downloadResource(c *cli.Context, store *config.Store) error {
+func downloadVertical(c *cli.Context, store *config.Store) error {
 	downloader, err := newVerticalDownloader(c, store)
 	if err != nil {
 		return err
@@ -277,8 +289,10 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 		if err != nil {
 			return err
 		}
-		manifest.Deployment.Sources["vertical:"+v.Slug] = fiware.ManifestSource{
-			Files: []string{filename},
+		if filename != "" {
+			manifest.Deployment.Sources["vertical:"+v.Slug] = fiware.ManifestSource{
+				Files: []string{filename},
+			}
 		}
 	}
 
@@ -331,8 +345,10 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 		if err != nil {
 			return err
 		}
-		manifest.Deployment.Sources["subservice:"+v.Name] = fiware.ManifestSource{
-			Files: []string{filename},
+		if filename != "" {
+			manifest.Deployment.Sources["subservice:"+v.Name] = fiware.ManifestSource{
+				Files: []string{filename},
+			}
 		}
 	}
 

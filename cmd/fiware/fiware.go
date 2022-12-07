@@ -227,7 +227,7 @@ func main() {
 							}
 						},
 						Action: func(c *cli.Context) error {
-							return downloadResource(c, currentStore)
+							return downloadVertical(c, currentStore)
 						},
 						Flags: []cli.Flag{
 							verboseFlag,
