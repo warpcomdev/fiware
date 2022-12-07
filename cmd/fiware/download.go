@@ -63,8 +63,16 @@ func (d *verticalDownloader) Download(v fiware.Vertical, outdir string) (string,
 			Sources: make(map[string]fiware.ManifestSource),
 		},
 	}
-	paneldir := filepath.Join(outdir, v.Slug)
+	manifestPrefixed := "urbo-" + v.Slug
+	manifestFilename := manifestPrefixed + ".json"
+	manifestFullname := outputFile(filepath.Join(outdir, manifestFilename))
+	manifestFile, err := manifestFullname.Create()
+	if err != nil {
+		return "", err
+	}
+	defer manifestFile.Close()
 
+	paneldir := filepath.Join(outdir, manifestPrefixed)
 	panelCount := len(v.Panels) + len(v.ShadowPanels)
 	sources := fiware.ManifestSource{
 		Path:  v.Slug,
@@ -90,13 +98,6 @@ func (d *verticalDownloader) Download(v fiware.Vertical, outdir string) (string,
 		}
 		sources.Files = append(sources.Files, fileName)
 	}
-	manifestFilename := fmt.Sprintf("urbo-%s.json", v.Slug)
-	manifestFullname := outputFile(filepath.Join(outdir, manifestFilename))
-	manifestFile, err := manifestFullname.Create()
-	if err != nil {
-		return "", err
-	}
-	defer manifestFile.Close()
 	manifestFullname.Encode(manifestFile, manifest, nil)
 	return manifestFilename, nil
 }
@@ -160,15 +161,18 @@ func listProjects(c *cli.Context, store *config.Store, manifest *fiware.Manifest
 
 // Dowload all panels in vertical, return file name of manifest written
 func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, error) {
-	trimmedSubservice := strings.TrimLeft(v.Name, "/")
-	manifestFilename := fmt.Sprintf("%s.json", trimmedSubservice)
+	// IMPORTANT! must set selected subservice!
+	d.Selected.Subservice = v.Name
+	d.Headers.Set("Fiware-Servicepath", v.Name)
+	manifestPrefixed := "orion-" + strings.TrimLeft(v.Name, "/")
+	manifestFilename := manifestPrefixed + ".json"
 	manifestFullname := outputFile(filepath.Join(outdir, manifestFilename))
 	manifestFile, err := manifestFullname.Create()
 	if err != nil {
 		return "", err
 	}
 	defer manifestFile.Close()
-	assetdir := filepath.Join(outdir, trimmedSubservice)
+	assetdir := filepath.Join(outdir, manifestPrefixed)
 	if err := ensureDir(assetdir); err != nil {
 		return "", err
 	}
@@ -180,7 +184,7 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 		"registrations": getRegistrations,
 	}
 	assetSource := fiware.ManifestSource{
-		Path:  trimmedSubservice,
+		Path:  manifestPrefixed,
 		Files: make([]string, 0, len(resources)),
 	}
 	for label, getter := range resources {
@@ -191,7 +195,7 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 		assetManifest.ClearStatus()
 		// Save the resources in a separate manifest file
 		assetFilename := fmt.Sprintf("%s.json", label)
-		assetFullname := outputFile(filepath.Join(outdir, trimmedSubservice, assetFilename))
+		assetFullname := outputFile(filepath.Join(outdir, manifestPrefixed, assetFilename))
 		assetFile, err := assetFullname.Create()
 		if err != nil {
 			return "", err
@@ -203,7 +207,7 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 	}
 	// Also save entities
 	csvFilename := "entities.csv"
-	csvFullname := outputFile(filepath.Join(outdir, trimmedSubservice, csvFilename))
+	csvFullname := outputFile(filepath.Join(outdir, manifestPrefixed, csvFilename))
 	csvFile, err := csvFullname.Create()
 	defer csvFile.Close()
 	entityManifest := fiware.Manifest{}
@@ -221,7 +225,7 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 	manifest := fiware.Manifest{
 		Deployment: fiware.DeploymentManifest{
 			Sources: map[string]fiware.ManifestSource{
-				fmt.Sprintf("subservice:%s:assets", trimmedSubservice): assetSource,
+				fmt.Sprintf("subservice:%s:assets", manifestPrefixed): assetSource,
 			},
 		},
 	}
@@ -272,7 +276,7 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	output := outputFile(filepath.Join(outdir, "00_verticals.json"))
+	output := outputFile(filepath.Join(outdir, "00_urbo.json"))
 	outfile, err := output.Create()
 	if err != nil {
 		return err
@@ -328,7 +332,7 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	output := outputFile(filepath.Join(outdir, "00_assets.json"))
+	output := outputFile(filepath.Join(outdir, "00_orion.json"))
 	outfile, err := output.Create()
 	if err != nil {
 		return err

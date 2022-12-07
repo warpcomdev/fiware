@@ -312,11 +312,11 @@ func (n NotificationCustom) IsEmpty() bool {
 
 // NotificationMQTT son los datos de una notificacion MQTT
 type NotificationMQTT struct {
-	URL      string `json:"url"`
-	Topic    string `json:"string"`
-	QoS      string `json:"qos,omitempty"`
-	User     string `json:"user,omitempty"`
-	Password string `json:"password,omitempty"`
+	URL    string `json:"url"`
+	Topic  string `json:"topic"`
+	QoS    string `json:"qos,omitempty"`
+	User   string `json:"user,omitempty"`
+	Passwd string `json:"passwd,omitempty"`
 }
 
 func (n NotificationMQTT) IsEmpty() bool {
@@ -325,14 +325,14 @@ func (n NotificationMQTT) IsEmpty() bool {
 
 // NotificationMQTTCustom son los datos de una notificacion MQTT Custom
 type NotificationMQTTCustom struct {
-	URL      string          `json:"url"`
-	Topic    string          `json:"string"`
-	QoS      string          `json:"qos,omitempty"`
-	User     string          `json:"user,omitempty"`
-	Password string          `json:"password,omitempty"`
-	Payload  json.RawMessage `json:"payload,omitempty" compact:"true"`
-	Json     json.RawMessage `json:"json,omitempty" compact:"true"`
-	NGSI     json.RawMessage `json:"ngsi,omitempty" compact:"true"`
+	URL     string          `json:"url"`
+	Topic   string          `json:"topic"`
+	QoS     int             `json:"qos,omitempty"`
+	User    string          `json:"user,omitempty"`
+	Passwd  string          `json:"passwd,omitempty"`
+	Payload json.RawMessage `json:"payload,omitempty" compact:"true"`
+	Json    json.RawMessage `json:"json,omitempty" compact:"true"`
+	NGSI    json.RawMessage `json:"ngsi,omitempty" compact:"true"`
 }
 
 func (n NotificationMQTTCustom) IsEmpty() bool {

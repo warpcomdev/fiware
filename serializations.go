@@ -424,15 +424,15 @@ func (x NotificationMQTT) MarshalJSON() ([]byte, error) {
 
 func (x NotificationMQTT) Serialize(s serialize.Serializer) {
 	s.KeyString("url", string(x.URL))
-	s.KeyString("string", string(x.Topic))
+	s.KeyString("topic", string(x.Topic))
 	if x.QoS != "" {
 		s.KeyString("qos", string(x.QoS))
 	}
 	if x.User != "" {
 		s.KeyString("user", string(x.User))
 	}
-	if x.Password != "" {
-		s.KeyString("password", string(x.Password))
+	if x.Passwd != "" {
+		s.KeyString("passwd", string(x.Passwd))
 	}
 }
 
@@ -442,15 +442,15 @@ func (x NotificationMQTTCustom) MarshalJSON() ([]byte, error) {
 
 func (x NotificationMQTTCustom) Serialize(s serialize.Serializer) {
 	s.KeyString("url", string(x.URL))
-	s.KeyString("string", string(x.Topic))
-	if x.QoS != "" {
-		s.KeyString("qos", string(x.QoS))
+	s.KeyString("topic", string(x.Topic))
+	if x.QoS != 0 {
+		s.KeyInt("qos", x.QoS)
 	}
 	if x.User != "" {
 		s.KeyString("user", string(x.User))
 	}
-	if x.Password != "" {
-		s.KeyString("password", string(x.Password))
+	if x.Passwd != "" {
+		s.KeyString("passwd", string(x.Passwd))
 	}
 	if len(x.Payload) > 0 {
 		s.KeyRaw("payload", x.Payload, true)

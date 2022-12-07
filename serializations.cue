@@ -106,22 +106,22 @@ views?: [...#View]
 }
 
 #NotificationMQTT: {
-	url:       string
-	string:    string
-	qos?:      string
-	user?:     string
-	password?: string
+	url:     string
+	topic:   string
+	qos?:    string
+	user?:   string
+	passwd?: string
 }
 
 #NotificationMQTTCustom: {
-	url:       string
-	string:    string
-	qos?:      string
-	user?:     string
-	password?: string
-	payload?:  #Json
-	json?:     #Json
-	ngsi?:     #Json
+	url:      string
+	topic:    string
+	qos?:     int
+	user?:    string
+	passwd?:  string
+	payload?: #Json
+	json?:    #Json
+	ngsi?:    #Json
 }
 
 #Subject: {
