@@ -64,6 +64,7 @@ func ValuesOf[V any](items map[string]V) []V {
 func (m *Manifest) ClearStatus() {
 	for k, v := range m.Subscriptions {
 		v.SubscriptionStatus = SubscriptionStatus{}
+		v.Notification.NotificationStatus = NotificationStatus{}
 		m.Subscriptions[k] = v
 	}
 	for k, v := range m.Rules {
@@ -77,6 +78,11 @@ func (m *Manifest) ClearStatus() {
 	for k, v := range m.Devices {
 		v.DeviceStatus = DeviceStatus{}
 		m.Devices[k] = v
+	}
+	for _, knownEndpoint := range []string{"HISTORIC", "LASTDATA", "RULES"} {
+		if _, ok := m.Environment.NotificationEndpoints[knownEndpoint]; ok {
+			delete(m.Environment.NotificationEndpoints, knownEndpoint)
+		}
 	}
 }
 
