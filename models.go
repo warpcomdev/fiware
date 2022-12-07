@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Tipos de datos que se usan para relacionarse con la vertical.
@@ -79,9 +80,10 @@ func (m *Manifest) ClearStatus() {
 		v.DeviceStatus = DeviceStatus{}
 		m.Devices[k] = v
 	}
-	for _, knownEndpoint := range []string{"HISTORIC", "LASTDATA", "RULES"} {
-		if _, ok := m.Environment.NotificationEndpoints[knownEndpoint]; ok {
-			delete(m.Environment.NotificationEndpoints, knownEndpoint)
+	// Remove known endpoints
+	for k := range m.Environment.NotificationEndpoints {
+		if !strings.Contains(k, ":") {
+			delete(m.Environment.NotificationEndpoints, k)
 		}
 	}
 }
