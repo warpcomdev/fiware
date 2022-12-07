@@ -53,10 +53,10 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 		return nil, fmt.Errorf("perseo replied with error: %s", string(response.Error))
 	}
 	// HACK: no voy a volcar el ruleName, voy a dejar que lo ponga perseo
-	for index, data := range response.Data {
-		if data.Text != "" {
-			data.Text = rulenameRegexp.ReplaceAllLiteralString(data.Text, "select ")
-			response.Data[index] = data
+	for index, rule := range response.Data {
+		if rule.Text != "" {
+			rule.Text = rulenameRegexp.ReplaceAllLiteralString(rule.Text, "select ")
+			response.Data[index] = rule
 		}
 	}
 	// FIN DE HACK
@@ -70,7 +70,7 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 	for index, rule := range response.Data {
 		if rule.Action != nil && len(rule.Action) > 0 {
 			reader := bytes.NewReader(rule.Action)
-			if rune, size, err := reader.ReadRune(); err != nil && size > 0 && rune != '[' {
+			if rune, size, err := reader.ReadRune(); err == nil && size > 0 && rune != '[' {
 				var newAction bytes.Buffer
 				newAction.WriteString("[")
 				newAction.Write(rule.Action)
