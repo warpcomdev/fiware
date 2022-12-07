@@ -11,7 +11,7 @@ type Serializable interface {
 
 type Serializer interface {
 	KeyString(k, v string)                            // , "key": "val"
-	String(v string)                                  // , "val"
+	String(v string, compact bool)                    // , "val"
 	KeyInt(k string, v int)                           // , "key": val
 	KeyFloat(k string, v float64)                     // , "key": val
 	KeyBool(k string, v bool)                         // , "key": val

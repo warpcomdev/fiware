@@ -9,7 +9,7 @@ deployment?:  #DeploymentManifest
 panels?:      #PanelManifest
 subscriptions?: [string]: #Subscription
 rules?: [string]:         #Rule
-verticals?: [string]:     #UrboVertical
+verticals?: [string]:     #Vertical
 services?: [...#Service]
 devices?: [...#Device]
 serviceMappings?: [...#ServiceMapping]
@@ -156,7 +156,7 @@ views?: [...#View]
 	_id?:         string @anonymous(RuleStatus)
 }
 
-#UrboVertical: {
+#Vertical: {
 	panels?: [...string]
 	shadowPanels?: [...string]
 	slug:  string

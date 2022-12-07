@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 )
 
 type Writer interface {
@@ -102,11 +103,22 @@ func (j *JsonSerializer) KeyString(k, v string) {
 }
 
 // KeyString dumps a string
-func (j *JsonSerializer) String(v string) {
+func (j *JsonSerializer) String(v string, compact bool) {
 	if j.Err != nil {
 		return
 	}
-	if _, err := fmt.Fprintf(j.Writer, "%s%s", j.sep, j.indent()); err != nil {
+	var (
+		indent string
+		sep    string
+	)
+	if compact && strings.HasPrefix(j.sep, ",") {
+		sep = ","
+		indent = " "
+	} else {
+		sep = j.sep
+		indent = j.indent()
+	}
+	if _, err := fmt.Fprintf(j.Writer, "%s%s", sep, indent); err != nil {
 		j.Err = err
 		return
 	}

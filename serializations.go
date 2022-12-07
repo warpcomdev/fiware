@@ -183,7 +183,7 @@ func (x Attribute) Serialize(s serialize.Serializer) {
 	if len(x.Description) > 0 {
 		s.BeginList("description")
 		for _, y := range x.Description {
-			s.String(y)
+			s.String(y, false)
 		}
 		s.EndList()
 	}
@@ -205,7 +205,7 @@ func (x Attribute) Serialize(s serialize.Serializer) {
 	if len(x.LongtermOptions) > 0 {
 		s.BeginList("longtermOptions")
 		for _, y := range serialize.Sorted(x.LongtermOptions) {
-			s.String(y)
+			s.String(y, false)
 		}
 		s.EndList()
 	}
@@ -275,7 +275,7 @@ func (x ManifestSource) Serialize(s serialize.Serializer) {
 	if len(x.Files) > 0 {
 		s.BeginList("files")
 		for _, y := range x.Files {
-			s.String(y)
+			s.String(y, false)
 		}
 		s.EndList()
 	}
@@ -327,14 +327,14 @@ func (x Notification) Serialize(s serialize.Serializer) {
 	if len(x.Attrs) > 0 {
 		s.BeginList("attrs")
 		for _, y := range serialize.Sorted(x.Attrs) {
-			s.String(y)
+			s.String(y, true)
 		}
 		s.EndList()
 	}
 	if len(x.ExceptAttrs) > 0 {
 		s.BeginList("exceptAttrs")
 		for _, y := range serialize.Sorted(x.ExceptAttrs) {
-			s.String(y)
+			s.String(y, true)
 		}
 		s.EndList()
 	}
@@ -408,13 +408,13 @@ func (x NotificationCustom) Serialize(s serialize.Serializer) {
 		s.KeyString("method", string(x.Method))
 	}
 	if len(x.Payload) > 0 {
-		s.KeyRaw("payload", x.Payload, false)
+		s.KeyRaw("payload", x.Payload, true)
 	}
 	if len(x.Json) > 0 {
-		s.KeyRaw("json", x.Json, false)
+		s.KeyRaw("json", x.Json, true)
 	}
 	if len(x.NGSI) > 0 {
-		s.KeyRaw("ngsi", x.NGSI, false)
+		s.KeyRaw("ngsi", x.NGSI, true)
 	}
 }
 
@@ -453,13 +453,13 @@ func (x NotificationMQTTCustom) Serialize(s serialize.Serializer) {
 		s.KeyString("password", string(x.Password))
 	}
 	if len(x.Payload) > 0 {
-		s.KeyRaw("payload", x.Payload, false)
+		s.KeyRaw("payload", x.Payload, true)
 	}
 	if len(x.Json) > 0 {
-		s.KeyRaw("json", x.Json, false)
+		s.KeyRaw("json", x.Json, true)
 	}
 	if len(x.NGSI) > 0 {
-		s.KeyRaw("ngsi", x.NGSI, false)
+		s.KeyRaw("ngsi", x.NGSI, true)
 	}
 }
 
@@ -515,7 +515,7 @@ func (x SubjectCondition) MarshalJSON() ([]byte, error) {
 func (x SubjectCondition) Serialize(s serialize.Serializer) {
 	s.BeginList("attrs")
 	for _, y := range serialize.Sorted(x.Attrs) {
-		s.String(y)
+		s.String(y, false)
 	}
 	s.EndList()
 	if !x.Expression.IsEmpty() {
@@ -607,14 +607,14 @@ func (x Vertical) Serialize(s serialize.Serializer) {
 	if len(x.Panels) > 0 {
 		s.BeginList("panels")
 		for _, y := range x.Panels {
-			s.String(y)
+			s.String(y, true)
 		}
 		s.EndList()
 	}
 	if len(x.ShadowPanels) > 0 {
 		s.BeginList("shadowPanels")
 		for _, y := range x.ShadowPanels {
-			s.String(y)
+			s.String(y, true)
 		}
 		s.EndList()
 	}
@@ -1062,7 +1062,7 @@ func (x Table) Serialize(s serialize.Serializer) {
 	s.EndList()
 	s.BeginList("primaryKey")
 	for _, y := range x.PrimaryKey {
-		s.String(y)
+		s.String(y, false)
 	}
 	s.EndList()
 	s.BeginList("indexes")
@@ -1076,7 +1076,7 @@ func (x Table) Serialize(s serialize.Serializer) {
 	if len(x.Singleton) > 0 {
 		s.BeginList("singleton")
 		for _, y := range x.Singleton {
-			s.String(y)
+			s.String(y, false)
 		}
 		s.EndList()
 	}
@@ -1105,7 +1105,7 @@ func (x TableIndex) Serialize(s serialize.Serializer) {
 	s.KeyString("name", string(x.Name))
 	s.BeginList("columns")
 	for _, y := range x.Columns {
-		s.String(y)
+		s.String(y, false)
 	}
 	s.EndList()
 	if x.Geometry {
@@ -1125,7 +1125,7 @@ func (x View) Serialize(s serialize.Serializer) {
 	s.KeyString("from", string(x.From))
 	s.BeginList("group")
 	for _, y := range x.Group {
-		s.String(y)
+		s.String(y, false)
 	}
 	s.EndList()
 	s.BeginList("columns")

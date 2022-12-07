@@ -71,6 +71,12 @@ var (
 		Value:   false,
 	}
 
+	allFlag = &cli.BoolFlag{
+		Name:  "all",
+		Usage: "Download all verticals or subservices",
+		Value: false,
+	}
+
 	outdirFlag = &cli.StringFlag{
 		Name:     "outdir",
 		Aliases:  []string{"o", "O"},

@@ -137,12 +137,13 @@ func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Head
 	if err != nil {
 		return err
 	}
-	ruleNames, err := vertical.RuleNames()
-	if err != nil {
-		return err
-	}
-	listMessage("DELETing rules with names", ruleNames,
-		func(g string) string { return g },
+	dictMessage("DELETing rules with names", vertical.Rules,
+		func(k string, v fiware.Rule) string {
+			if v.Name != "" {
+				return v.Name
+			}
+			return k
+		},
 	)
 	return api.DeleteRules(client, header, fiware.ValuesOf(vertical.Rules))
 }

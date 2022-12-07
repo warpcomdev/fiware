@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"go/format"
 	"io"
 	"log"
@@ -113,12 +114,12 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			}
 			switch {
 			case innerKind == reflect.String:
-				w.WriteString("s.String(y)\n")
+				w.WriteString(fmt.Sprintf("s.String(y, %s)\n", compact))
 			case innerKind == reflect.Struct:
 				pending = append(pending, pendingData{Name: _typ.Elem().Name(), Type: _typ.Elem()})
 				w.WriteString("s.BeginBlock(\"\"); s.Serialize(y); s.EndBlock();\n")
 			case innerKind == reflect.Slice && _typ.Elem().Elem().Kind() == reflect.Uint8: // json.RawMessage
-				w.WriteString("s.String(string(y))\n")
+				w.WriteString("s.String(string(y), false)\n")
 			default:
 				log.Fatalf("Unknown slice type: %s", innerKind)
 			}

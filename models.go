@@ -44,18 +44,6 @@ type Manifest struct {
 	Views           []View               `json:"views,omitempty"`
 }
 
-// RuleNames enumerates all rule names
-func (v *Manifest) RuleNames() ([]string, error) {
-	ruleNames := make([]string, 0, len(v.Rules))
-	for name, rule := range v.Rules {
-		if rule.Name == "" {
-			rule.Name = name
-		}
-		ruleNames = append(ruleNames, rule.Name)
-	}
-	return ruleNames, nil
-}
-
 // SummaryOf makes a summary of every item in the list
 func SummaryOf[V any](items map[string]V, summary func(k string, v V) string) []string {
 	values := make([]string, 0, len(items))
@@ -71,6 +59,25 @@ func ValuesOf[V any](items map[string]V) []V {
 		values = append(values, item)
 	}
 	return values
+}
+
+func (m *Manifest) ClearStatus() {
+	for k, v := range m.Subscriptions {
+		v.SubscriptionStatus = SubscriptionStatus{}
+		m.Subscriptions[k] = v
+	}
+	for k, v := range m.Rules {
+		v.RuleStatus = RuleStatus{}
+		m.Rules[k] = v
+	}
+	for k, v := range m.Services {
+		v.GroupStatus = GroupStatus{}
+		m.Services[k] = v
+	}
+	for k, v := range m.Devices {
+		v.DeviceStatus = DeviceStatus{}
+		m.Devices[k] = v
+	}
 }
 
 // Environment settings
@@ -96,8 +103,8 @@ type UrboPanel struct {
 
 // Vertical representa una vertical de Urbo
 type Vertical struct {
-	Panels       []string        `json:"panels,omitempty"`
-	ShadowPanels []string        `json:"shadowPanels,omitempty"`
+	Panels       []string        `json:"panels,omitempty" compact:"true"`
+	ShadowPanels []string        `json:"shadowPanels,omitempty" compact:"true"`
 	Slug         string          `json:"slug"`
 	Name         string          `json:"name"`
 	Icon         string          `json:"icon,omitempty"`
@@ -246,8 +253,8 @@ type SubscriptionStatus struct {
 
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
-	Attrs            []string               `json:"attrs,omitempty" sort:"true"`
-	ExceptAttrs      []string               `json:"exceptAttrs,omitempty" sort:"true"`
+	Attrs            []string               `json:"attrs,omitempty" sort:"true" compact:"true"`
+	ExceptAttrs      []string               `json:"exceptAttrs,omitempty" sort:"true" compact:"true"`
 	AttrsFormat      string                 `json:"attrsFormat"`
 	HTTP             NotificationHTTP       `json:"http,omitempty"`
 	HTTPCustom       NotificationCustom     `json:"httpCustom,omitempty"`
@@ -286,9 +293,9 @@ type NotificationCustom struct {
 	Headers map[string]string `json:"headers,omitempty"`
 	Qs      map[string]string `json:"qs,omitempty"`
 	Method  string            `json:"method,omitempty"`
-	Payload json.RawMessage   `json:"payload,omitempty"`
-	Json    json.RawMessage   `json:"json,omitempty"`
-	NGSI    json.RawMessage   `json:"ngsi,omitempty"`
+	Payload json.RawMessage   `json:"payload,omitempty" compact:"true"`
+	Json    json.RawMessage   `json:"json,omitempty" compact:"true"`
+	NGSI    json.RawMessage   `json:"ngsi,omitempty" compact:"true"`
 }
 
 func (n NotificationCustom) IsEmpty() bool {
@@ -315,9 +322,9 @@ type NotificationMQTTCustom struct {
 	QoS      string          `json:"qos,omitempty"`
 	User     string          `json:"user,omitempty"`
 	Password string          `json:"password,omitempty"`
-	Payload  json.RawMessage `json:"payload,omitempty"`
-	Json     json.RawMessage `json:"json,omitempty"`
-	NGSI     json.RawMessage `json:"ngsi,omitempty"`
+	Payload  json.RawMessage `json:"payload,omitempty" compact:"true"`
+	Json     json.RawMessage `json:"json,omitempty" compact:"true"`
+	NGSI     json.RawMessage `json:"ngsi,omitempty" compact:"true"`
 }
 
 func (n NotificationMQTTCustom) IsEmpty() bool {
@@ -327,7 +334,7 @@ func (n NotificationMQTTCustom) IsEmpty() bool {
 // Subject es el sujeto de la suscripcion
 type Subject struct {
 	Condition SubjectCondition `json:"condition"`
-	Entities  []SubjectEntity  `json:"entities"`
+	Entities  []SubjectEntity  `json:"entities" compact:"true"`
 }
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
