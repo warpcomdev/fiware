@@ -98,6 +98,15 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.Registrations) > 0 {
+		s.BeginList("registrations")
+		for _, y := range x.Registrations {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
 	if len(x.ServiceMappings) > 0 {
 		s.BeginList("serviceMappings")
 		for _, y := range x.ServiceMappings {
@@ -110,15 +119,6 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 	if len(x.Projects) > 0 {
 		s.BeginList("projects")
 		for _, y := range x.Projects {
-			s.BeginBlock("")
-			s.Serialize(y)
-			s.EndBlock()
-		}
-		s.EndList()
-	}
-	if len(x.Registrations) > 0 {
-		s.BeginList("registrations")
-		for _, y := range x.Registrations {
 			s.BeginBlock("")
 			s.Serialize(y)
 			s.EndBlock()
@@ -904,6 +904,30 @@ func (x DeviceStatus) Serialize(s serialize.Serializer) {
 	}
 }
 
+func (x Registration) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Registration) Serialize(s serialize.Serializer) {
+	s.KeyString("id", string(x.ID))
+	s.KeyString("description", string(x.Description))
+	if len(x.DataProvided) > 0 {
+		s.KeyRaw("dataProvided", x.DataProvided, false)
+	}
+	if len(x.Provider) > 0 {
+		s.KeyRaw("provider", x.Provider, false)
+	}
+	x.RegistrationStatus.Serialize(s)
+}
+
+func (x RegistrationStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x RegistrationStatus) Serialize(s serialize.Serializer) {
+	s.KeyString("status", string(x.Status))
+}
+
 func (x ServiceMapping) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
@@ -1021,30 +1045,6 @@ func (x ProjectStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
-}
-
-func (x Registration) MarshalJSON() ([]byte, error) {
-	return serialize.MarshalJSON(x)
-}
-
-func (x Registration) Serialize(s serialize.Serializer) {
-	s.KeyString("id", string(x.ID))
-	s.KeyString("description", string(x.Description))
-	if len(x.DataProvided) > 0 {
-		s.KeyRaw("dataProvided", x.DataProvided, false)
-	}
-	if len(x.Provider) > 0 {
-		s.KeyRaw("provider", x.Provider, false)
-	}
-	x.RegistrationStatus.Serialize(s)
-}
-
-func (x RegistrationStatus) MarshalJSON() ([]byte, error) {
-	return serialize.MarshalJSON(x)
-}
-
-func (x RegistrationStatus) Serialize(s serialize.Serializer) {
-	s.KeyString("status", string(x.Status))
 }
 
 func (x Table) MarshalJSON() ([]byte, error) {

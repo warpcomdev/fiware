@@ -12,9 +12,9 @@ rules?: [string]:         #Rule
 verticals?: [string]:     #Vertical
 services?: [...#Service]
 devices?: [...#Device]
+registrations?: [...#Registration]
 serviceMappings?: [...#ServiceMapping]
 projects?: [...#Project]
-registrations?: [...#Registration]
 urboPanels?: [string]: #UrboPanel
 tables?: [...#Table]
 views?: [...#View]
@@ -238,6 +238,14 @@ views?: [...#View]
 	service_path?:       string @anonymous(DeviceStatus)
 }
 
+#Registration: {
+	id:            string
+	description:   string
+	dataProvided?: #Json
+	provider?:     #Json
+	status:        string @anonymous(RegistrationStatus)
+}
+
 #ServiceMapping: {
 	originalService?: string
 	newService?:      string
@@ -275,14 +283,6 @@ views?: [...#View]
 	domain_id?:   string
 	name:         string
 	links?:       #Json @anonymous(ProjectStatus)
-}
-
-#Registration: {
-	id:            string
-	description:   string
-	dataProvided?: #Json
-	provider?:     #Json
-	status:        string @anonymous(RegistrationStatus)
 }
 
 #Table: {

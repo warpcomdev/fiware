@@ -36,10 +36,10 @@ type Manifest struct {
 	Verticals      map[string]Vertical     `json:"verticals,omitempty"`
 	Services       []Service               `json:"services,omitempty"`
 	Devices        []Device                `json:"devices,omitempty"`
+	Registrations  []Registration          `json:"registrations,omitempty"`
 	// Otros datos de estado no asociados al manifest
 	ServiceMappings []ServiceMapping     `json:"serviceMappings,omitempty"`
 	Projects        []Project            `json:"projects,omitempty"`
-	Registrations   []Registration       `json:"registrations,omitempty"`
 	Panels          map[string]UrboPanel `json:"urboPanels,omitempty"`
 	Tables          []Table              `json:"tables,omitempty"`
 	Views           []View               `json:"views,omitempty"`

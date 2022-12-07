@@ -13,6 +13,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/internal/template"
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
@@ -164,6 +165,7 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 		"subscriptions": getSuscriptions,
 		"groups":        getServices,
 		"devices":       getDevices,
+		"registrations": getRegistrations,
 	}
 	assetSource := fiware.ManifestSource{
 		Path:  trimmedSubservice,
@@ -187,6 +189,23 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 		// And add the manifest file as a source
 		assetSource.Files = append(assetSource.Files, assetFilename)
 	}
+	// Also save entities
+	csvFilename := "entities.csv"
+	csvFullname := outputFile(filepath.Join(outdir, trimmedSubservice, csvFilename))
+	csvFile, err := csvFullname.Create()
+	defer csvFile.Close()
+	entityManifest := fiware.Manifest{}
+	if err := getEntities(d.Selected, d.Client, d.Headers, "", "", &entityManifest); err != nil {
+		return "", err
+	}
+	plain, err := manifestForTemplate(entityManifest, nil)
+	if err != nil {
+		return "", err
+	}
+	if err := template.Render([]string{"default_csv.tmpl"}, plain, csvFile); err != nil {
+		return "", err
+	}
+	// And finally, write manifest
 	manifest := fiware.Manifest{
 		Deployment: fiware.DeploymentManifest{
 			Sources: map[string]fiware.ManifestSource{

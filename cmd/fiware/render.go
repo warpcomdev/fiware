@@ -15,6 +15,31 @@ type verticalWithParams struct {
 	Params map[string]string `json:"params,omitempty"`
 }
 
+// Turn a manifest into a json dict to use in a template
+func manifestForTemplate(manifest fiware.Manifest, params map[string]string) (interface{}, error) {
+	var (
+		data       interface{}
+		strictData verticalWithParams
+	)
+	strictData.Manifest = manifest
+	if len(params) > 0 {
+		strictData.Params = params
+	}
+	// Convierto a map[string]interface{} pasando por json,
+	// porque no quiero que los diseñadores de los templates
+	// necesiten conocer el formato de los objetos golang.
+	// Mejor que puedan trabajar con la misma estructura de atributos
+	// que en el fichero de datos.
+	text, err := json.Marshal(strictData)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(text, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 func render(c *cli.Context, params map[string]string) error {
 	output := outputFile(c.String(outputFlag.Name))
 	outFile, err := output.Create()
@@ -27,7 +52,7 @@ func render(c *cli.Context, params map[string]string) error {
 	var data interface{}
 	if c.Bool(relaxedFlag.Name) {
 		var relaxedData map[string]interface{}
-		if err := importer.Load(datapath, params, &relaxedData, libpath); err != nil {
+		if err = importer.Load(datapath, params, &relaxedData, libpath); err != nil {
 			return err
 		}
 		if len(params) > 0 {
@@ -35,21 +60,12 @@ func render(c *cli.Context, params map[string]string) error {
 		}
 		data = relaxedData
 	} else {
-		var strictData verticalWithParams
-		if err := importer.Load(datapath, params, &strictData.Manifest, libpath); err != nil {
+		var manifest fiware.Manifest
+		if err = importer.Load(datapath, params, &manifest, libpath); err != nil {
 			return err
 		}
-		strictData.Params = params
-		// Convierto a map[string]interface{} pasando por json,
-		// porque no quiero que los diseñadores de los templates
-		// necesiten conocer el formato de los objetos golang.
-		// Mejor que puedan trabajar con la misma estructura de atributos
-		// que en el fichero de datos.
-		text, err := json.Marshal(strictData)
+		data, err = manifestForTemplate(manifest, params)
 		if err != nil {
-			return err
-		}
-		if err := json.Unmarshal(text, &data); err != nil {
 			return err
 		}
 	}
