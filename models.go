@@ -32,7 +32,7 @@ type Manifest struct {
 	ManifestPanels PanelManifest           `json:"panels,omitempty"`
 	Subscriptions  map[string]Subscription `json:"subscriptions,omitempty"`
 	Rules          map[string]Rule         `json:"rules,omitempty"`
-	Verticals      map[string]UrboVertical `json:"verticals,omitempty"`
+	Verticals      map[string]Vertical     `json:"verticals,omitempty"`
 	Services       []Service               `json:"services,omitempty"`
 	Devices        []Device                `json:"devices,omitempty"`
 	// Otros datos de estado no asociados al manifest
@@ -94,8 +94,8 @@ type UrboPanel struct {
 	Section       string `json:"section,omitempty"`
 }
 
-// UrboVertical representa una vertical de Urbo
-type UrboVertical struct {
+// Vertical representa una vertical de Urbo
+type Vertical struct {
 	Panels       []string        `json:"panels,omitempty"`
 	ShadowPanels []string        `json:"shadowPanels,omitempty"`
 	Slug         string          `json:"slug"`

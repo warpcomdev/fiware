@@ -599,11 +599,11 @@ func (x RuleStatus) Serialize(s serialize.Serializer) {
 	}
 }
 
-func (x UrboVertical) MarshalJSON() ([]byte, error) {
+func (x Vertical) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
 
-func (x UrboVertical) Serialize(s serialize.Serializer) {
+func (x Vertical) Serialize(s serialize.Serializer) {
 	if len(x.Panels) > 0 {
 		s.BeginList("panels")
 		for _, y := range x.Panels {

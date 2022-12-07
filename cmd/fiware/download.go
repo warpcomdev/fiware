@@ -104,7 +104,7 @@ func downloadResource(c *cli.Context, store *config.Store) error {
 				clean_vertical := v
 				clean_vertical.UrboVerticalStatus = fiware.UrboVerticalStatus{}
 				slugManifest := fiware.Manifest{
-					Verticals: map[string]fiware.UrboVertical{
+					Verticals: map[string]fiware.Vertical{
 						v.Slug: clean_vertical,
 					},
 					ManifestPanels: fiware.PanelManifest{

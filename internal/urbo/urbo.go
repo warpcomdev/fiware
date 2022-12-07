@@ -133,20 +133,20 @@ func slugs(panels []fiware.UrboPanel) []string {
 }
 
 // GetVerticals reads the list of verticals from Urbo
-func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (map[string]fiware.UrboVertical, error) {
+func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (map[string]fiware.Vertical, error) {
 	var response []apiVertical
 	if err := u.slugResource(client, headers, "/api/verticals", map[string]string{"shadowPanels": "true"}, &response); err != nil {
 		return nil, err
 	}
-	verticals := make(map[string]fiware.UrboVertical)
+	verticals := make(map[string]fiware.Vertical)
 	// Must read verticals one by one again because '/verticals'
 	// does not tell regular panels from shadow panels
 	for _, p := range response {
-		var detailed fiware.UrboVertical
+		var detailed fiware.Vertical
 		if err := u.slugResource(client, headers, "/api/verticals/"+p.Slug, map[string]string{"shadowPanels": "true"}, &detailed); err != nil {
 			return nil, err
 		}
-		verticals[p.Slug] = fiware.UrboVertical{
+		verticals[p.Slug] = fiware.Vertical{
 			Name:         detailed.Name,
 			Slug:         detailed.Slug,
 			I18n:         detailed.I18n,
@@ -162,7 +162,7 @@ func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (ma
 }
 
 // PostVerticals reads the list of verticals from Urbo
-func (u *Urbo) PostVerticals(client keystone.HTTPClient, headers http.Header, verticals map[string]fiware.UrboVertical) error {
+func (u *Urbo) PostVerticals(client keystone.HTTPClient, headers http.Header, verticals map[string]fiware.Vertical) error {
 	path, err := u.URL.Parse(fmt.Sprintf("/api/verticals"))
 	if err != nil {
 		return err

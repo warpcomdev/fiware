@@ -166,7 +166,7 @@ func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Hea
 
 func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Manifest) error {
 	dictMessage("POSTing verticals with slugs", vertical.Verticals,
-		func(k string, v fiware.UrboVertical) string { return v.Slug },
+		func(k string, v fiware.Vertical) string { return v.Slug },
 	)
 	return u.PostVerticals(client, header, vertical.Verticals)
 }
