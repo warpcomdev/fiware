@@ -204,6 +204,7 @@ func main() {
 					outputFlag,
 					filterIdFlag,
 					filterTypeFlag,
+					simpleQueryFlag,
 				},
 			},
 
