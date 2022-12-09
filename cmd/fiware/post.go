@@ -37,8 +37,8 @@ func postResource(c *cli.Context, config *config.Store) error {
 	}
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var vertical fiware.Manifest
-	if err := importer.Load(datapath, selected.Params, &vertical, libpath); err != nil {
+	manifest, err := importer.Load(datapath, selected.Params, libpath)
+	if err != nil {
 		return err
 	}
 
@@ -52,7 +52,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postDevices(selected, client, header, vertical); err != nil {
+			if err := postDevices(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "services":
@@ -61,7 +61,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postServices(selected, client, header, vertical); err != nil {
+			if err := postServices(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "subscriptions":
@@ -72,28 +72,28 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postSuscriptions(selected, client, header, vertical, useDescription); err != nil {
+			if err := postSuscriptions(selected, client, header, manifest, useDescription); err != nil {
 				return err
 			}
 		case "rules":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postRules(selected, client, header, vertical); err != nil {
+			if err := postRules(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "entities":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postEntities(selected, client, header, vertical); err != nil {
+			if err := postEntities(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "verticals":
 			if u, header, err = getUrboHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := postVerticals(selected, client, u, header, vertical); err != nil {
+			if err := postVerticals(selected, client, u, header, manifest); err != nil {
 				return err
 			}
 		default:

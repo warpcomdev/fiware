@@ -35,8 +35,8 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	}
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var vertical fiware.Manifest
-	if err := importer.Load(datapath, selected.Params, &vertical, libpath); err != nil {
+	manifest, err := importer.Load(datapath, selected.Params, libpath)
+	if err != nil {
 		return err
 	}
 
@@ -48,7 +48,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteDevices(selected, client, header, vertical); err != nil {
+			if err := deleteDevices(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "services":
@@ -57,7 +57,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteServices(selected, client, header, vertical); err != nil {
+			if err := deleteServices(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "subscriptions":
@@ -69,21 +69,21 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 				return err
 			}
 			useDescription := !c.Bool(useExactIdFlag.Name)
-			if err := deleteSuscriptions(selected, client, header, vertical, useDescription); err != nil {
+			if err := deleteSuscriptions(selected, client, header, manifest, useDescription); err != nil {
 				return err
 			}
 		case "rules":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteRules(selected, client, header, vertical); err != nil {
+			if err := deleteRules(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "entities":
 			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
 				return err
 			}
-			if err := deleteEntities(selected, client, header, vertical); err != nil {
+			if err := deleteEntities(selected, client, header, manifest); err != nil {
 				return err
 			}
 		default:

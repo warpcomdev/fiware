@@ -264,7 +264,7 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	entities := make([]fiware.Entity, 0, 16)
 	latest := make([]string, 0, 256)
 	inside := false
-	infile, err := skipBOM(filename)
+	infile, err := SkipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
 	}

@@ -23,7 +23,7 @@ type header struct {
 
 // skips possible BOM at beginning of utf-8 file.
 // See http://www.unicode.org/faq/utf_bom.html#BOM
-func skipBOM(filename string) (io.ReadCloser, error) {
+func SkipBOM(filename string) (io.ReadCloser, error) {
 	fd, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -88,7 +88,7 @@ type entityWithSet struct {
 }
 
 func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
-	infile, err := skipBOM(filename)
+	infile, err := SkipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
 	}

@@ -9,10 +9,11 @@ import (
 	"github.com/warpcomdev/fiware/internal/decode"
 )
 
-func Load(datafile string, params map[string]string, output interface{}, libPath string) error {
+func Load(datafile string, params map[string]string, libPath string) (fiware.Manifest, error) {
 	var (
-		jsonStr string
-		err     error
+		jsonStr  string
+		err      error
+		manifest fiware.Manifest
 	)
 	if datafile != "" {
 		// Use starlark for .star or .py files
@@ -24,27 +25,25 @@ func Load(datafile string, params map[string]string, output interface{}, libPath
 			jsonStr, err = loadStarlark(datafile, params, libPath)
 		case strings.HasSuffix(lowerName, ".csv"): // support for loading a CSV. Only makes sense to delete entities.
 			types, entities := decode.CSV(datafile)
-			vertical := fiware.Manifest{EntityTypes: types, Entities: entities}
-			if v, ok := output.(*fiware.Manifest); ok {
-				*v = vertical
-				return nil
-			}
-			// If target is not a vertical, serialize to decode into it later
-			var jsonBytes []byte
-			if jsonBytes, err = json.Marshal(vertical); err == nil {
-				jsonStr = string(jsonBytes)
-			}
+			return fiware.Manifest{EntityTypes: types, Entities: entities}, nil
 		default:
 			jsonStr, err = loadCue(datafile, params, libPath)
 		}
 	}
 	if err != nil {
-		return err
+		return manifest, err
 	}
+	// first try to decode as regular manifest
 	decoder := json.NewDecoder(strings.NewReader(jsonStr))
 	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(output); err != nil {
-		return fmt.Errorf("failed to unmarshal file %s: %w", datafile, err)
+	if err := decoder.Decode(&manifest); err != nil {
+		// If that fails, decode as deployer config
+		rawDecoder := json.NewDecoder(strings.NewReader(jsonStr))
+		rawConfig := deployerConfig{}
+		if rawErr := rawDecoder.Decode(&rawConfig); rawErr != nil {
+			return manifest, fmt.Errorf("failed to unmarshal file %s: %w, then %w", datafile, err, rawErr)
+		}
+		manifest = rawConfig.ToManifest()
 	}
-	return nil
+	return manifest, nil
 }

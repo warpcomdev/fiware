@@ -49,25 +49,13 @@ func render(c *cli.Context, params map[string]string) error {
 	defer outFile.Close()
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var data interface{}
-	if c.Bool(relaxedFlag.Name) {
-		var relaxedData map[string]interface{}
-		if err = importer.Load(datapath, params, &relaxedData, libpath); err != nil {
-			return err
-		}
-		if len(params) > 0 {
-			relaxedData["params"] = params
-		}
-		data = relaxedData
-	} else {
-		var manifest fiware.Manifest
-		if err = importer.Load(datapath, params, &manifest, libpath); err != nil {
-			return err
-		}
-		data, err = manifestForTemplate(manifest, params)
-		if err != nil {
-			return err
-		}
+	manifest, err := importer.Load(datapath, params, libpath)
+	if err != nil {
+		return err
+	}
+	data, err := manifestForTemplate(manifest, params)
+	if err != nil {
+		return err
 	}
 	return template.Render(c.Args().Slice(), data, outFile)
 }
@@ -81,9 +69,9 @@ func export(c *cli.Context, params map[string]string) error {
 	defer outFile.Close()
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
-	var vertical fiware.Manifest
-	if err := importer.Load(datapath, params, &vertical, libpath); err != nil {
+	manifest, err := importer.Load(datapath, params, libpath)
+	if err != nil {
 		return err
 	}
-	return output.Encode(outFile, &vertical, params)
+	return output.Encode(outFile, &manifest, params)
 }

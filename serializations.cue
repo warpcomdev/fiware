@@ -13,6 +13,9 @@ verticals?: [string]:     #Vertical
 services?: [...#Service]
 devices?: [...#Device]
 registrations?: [...#Registration]
+sql?:  #Json
+cdas?: #Json
+etls?: #Json
 serviceMappings?: [...#ServiceMapping]
 projects?: [...#Project]
 urboPanels?: [string]: #UrboPanel

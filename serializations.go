@@ -107,6 +107,15 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.SQL) > 0 {
+		s.KeyRaw("sql", x.SQL, false)
+	}
+	if len(x.Cdas) > 0 {
+		s.KeyRaw("cdas", x.Cdas, false)
+	}
+	if len(x.Etls) > 0 {
+		s.KeyRaw("etls", x.Etls, false)
+	}
 	if len(x.ServiceMappings) > 0 {
 		s.BeginList("serviceMappings")
 		for _, y := range x.ServiceMappings {
