@@ -58,6 +58,12 @@ var (
 		Usage:   "Filter by entity Type",
 	}
 
+	simpleQueryFlag = &cli.StringFlag{
+		Name:    "simpleQuery",
+		Aliases: []string{"q"},
+		Usage:   "Filter by entity ID",
+	}
+
 	outputFlag = &cli.StringFlag{
 		Name:    "output",
 		Aliases: []string{"o"},

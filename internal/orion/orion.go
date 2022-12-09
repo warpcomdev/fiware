@@ -399,7 +399,7 @@ func (p *entityPaginator) PutBuffer(buf interface{}) int {
 }
 
 // Entities reads the list of entities from the Context Broker
-func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string) ([]fiware.EntityType, []fiware.Entity, error) {
+func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string, simpleQuery string) ([]fiware.EntityType, []fiware.Entity, error) {
 	path, err := o.URL.Parse("v2/entities")
 	if err != nil {
 		return nil, nil, err
@@ -412,6 +412,9 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 		}
 		if entityType != "" {
 			values.Add("type", entityType)
+		}
+		if simpleQuery != "" {
+			values.Add("q", simpleQuery)
 		}
 		path.RawQuery = values.Encode()
 	}

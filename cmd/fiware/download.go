@@ -211,7 +211,7 @@ func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, e
 	csvFile, err := csvFullname.Create()
 	defer csvFile.Close()
 	entityManifest := fiware.Manifest{}
-	if err := getEntities(d.Selected, d.Client, d.Headers, "", "", &entityManifest); err != nil {
+	if err := getEntities(d.Selected, d.Client, d.Headers, "", "", "", &entityManifest); err != nil {
 		return "", err
 	}
 	plain, err := manifestForTemplate(entityManifest, nil)

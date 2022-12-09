@@ -167,7 +167,8 @@ func getResource(c *cli.Context, store *config.Store) error {
 			}
 			filterId := c.String(filterIdFlag.Name)
 			filterType := c.String(filterTypeFlag.Name)
-			if err := getEntities(selected, client, header, filterId, filterType, vertical); err != nil {
+			simpleQuery := c.String(simpleQueryFlag.Name)
+			if err := getEntities(selected, client, header, filterId, filterType, simpleQuery, vertical); err != nil {
 				return err
 			}
 		case "rules":
@@ -273,12 +274,12 @@ func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Head
 	return nil
 }
 
-func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType string, vertical *fiware.Manifest) error {
+func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType, simpleQuery string, vertical *fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	types, values, err := api.Entities(c, header, filterId, filterType)
+	types, values, err := api.Entities(c, header, filterId, filterType, simpleQuery)
 	if err != nil {
 		return err
 	}
