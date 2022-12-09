@@ -38,7 +38,7 @@ type serializerWithSetup interface {
 }
 
 func getConfig(c *cli.Context, store *config.Store) (zero config.Config, err error) {
-	if err := store.Read(); err != nil {
+	if err := store.Read(""); err != nil {
 		return zero, err
 	}
 	if store.Current.Name == "" {

@@ -179,13 +179,17 @@ type Store struct {
 }
 
 // Read the config file
-func (s *Store) Read() error {
+func (s *Store) Read(contextName string) error {
 	configs, err := s.read()
 	if err != nil {
 		return err
 	}
 	if len(configs) > 0 {
-		s.Current = configs[0]
+		selected, err := findByName(configs, contextName)
+		if err != nil {
+			return err
+		}
+		s.Current = configs[selected]
 	}
 	return nil
 }
@@ -363,7 +367,7 @@ func (s *Store) CanConfig() []string {
 	return result
 }
 
-func (s *Store) Set(strPairs []string) error {
+func (s *Store) Set(contextName string, strPairs []string) error {
 	ctx, err := s.read()
 	if err != nil {
 		return err
@@ -371,7 +375,11 @@ func (s *Store) Set(strPairs []string) error {
 	if len(ctx) <= 0 {
 		return ErrNoContext
 	}
-	selected := ctx[0]
+	selectedIndex, err := findByName(ctx, contextName)
+	if err != nil {
+		return err
+	}
+	selected := ctx[selectedIndex]
 	if len(strPairs)%2 != 0 {
 		return ErrParametersNumber
 	}
@@ -416,15 +424,15 @@ func (s *Store) Set(strPairs []string) error {
 		}
 	}
 	selected.defaults()
-	ctx[0] = selected
+	ctx[selectedIndex] = selected
 	if err := s.save(ctx); err != nil {
 		return err
 	}
-	s.Current = ctx[0]
+	s.Current = ctx[selectedIndex]
 	return nil
 }
 
-func (s *Store) SetParams(pairs []string) error {
+func (s *Store) SetParams(contextName string, pairs []string) error {
 	ctx, err := s.read()
 	if err != nil {
 		return err
@@ -432,7 +440,11 @@ func (s *Store) SetParams(pairs []string) error {
 	if len(ctx) <= 0 {
 		return ErrNoContext
 	}
-	selected := ctx[0]
+	selectedIndex, err := findByName(ctx, contextName)
+	if err != nil {
+		return err
+	}
+	selected := ctx[selectedIndex]
 	if len(pairs)%2 != 0 {
 		return ErrParametersNumber
 	}
@@ -450,11 +462,23 @@ func (s *Store) SetParams(pairs []string) error {
 			}
 		}
 		selected.Params = params
-		ctx[0] = selected
+		ctx[selectedIndex] = selected
 		if err := s.save(ctx); err != nil {
 			return err
 		}
 	}
 	s.Current = selected
 	return nil
+}
+
+func findByName(ctx []Config, contextName string) (int, error) {
+	if contextName == "" {
+		return 0, nil
+	}
+	for index, current := range ctx {
+		if current.Name == contextName {
+			return index, nil
+		}
+	}
+	return -1, fmt.Errorf("context %s not found", contextName)
 }

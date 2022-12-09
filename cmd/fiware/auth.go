@@ -18,7 +18,8 @@ import (
 
 // Auth inicia sesión y vuelca el token por consola
 func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
-	if err := store.Read(); err != nil {
+	selectedContext := c.String(selectedContextFlag.Name)
+	if err := store.Read(selectedContext); err != nil {
 		return err
 	}
 	if store.Current.Name == "" {
@@ -68,7 +69,7 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 		return urboError
 	}
 	if c.Bool(saveFlag.Name) {
-		if err := store.Set([]string{
+		if err := store.Set(selectedContext, []string{
 			"token", fiwareToken, "urbotoken", urboToken,
 		}); err != nil {
 			return err

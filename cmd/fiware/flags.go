@@ -110,4 +110,10 @@ var (
 		Usage:   "Match subscriptions by exact ID instead of description",
 		Value:   false,
 	}
+
+	selectedContextFlag = &cli.StringFlag{
+		Name:    "context",
+		Aliases: []string{"c"},
+		Usage:   "Use an alternative context (instead of the one in use)",
+	}
 )

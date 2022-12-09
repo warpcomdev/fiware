@@ -122,8 +122,8 @@ func envContext(s *config.Store, c *cli.Context) error {
 	return nil
 }
 
-func setContext(s *config.Store, c *cli.Context, pairs []string) error {
-	if err := s.Set(pairs); err != nil {
+func setContext(s *config.Store, c *cli.Context, contextName string, pairs []string) error {
+	if err := s.Set(contextName, pairs); err != nil {
 		return err
 	}
 	fmt.Printf("using context %s\n", s.Current.Name)
@@ -131,8 +131,8 @@ func setContext(s *config.Store, c *cli.Context, pairs []string) error {
 	return nil
 }
 
-func setParamsContext(s *config.Store, c *cli.Context, pairs []string) error {
-	if err := s.SetParams(pairs); err != nil {
+func setParamsContext(s *config.Store, c *cli.Context, contextName string, pairs []string) error {
+	if err := s.SetParams(contextName, pairs); err != nil {
 		return err
 	}
 	fmt.Printf("using context %s\n", s.Current.Name)

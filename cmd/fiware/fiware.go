@@ -98,7 +98,7 @@ func main() {
 				Category: "template",
 				Usage:    "Read datafile and export with context params",
 				Action: func(c *cli.Context) error {
-					if err := currentStore.Read(); err != nil {
+					if err := currentStore.Read(""); err != nil {
 						return err
 					}
 					if currentStore.Current.Name == "" {
@@ -144,7 +144,7 @@ func main() {
 					if c.NArg() <= 0 {
 						return errors.New("please provide the path to the template file")
 					}
-					if err := currentStore.Read(); err != nil {
+					if err := currentStore.Read(""); err != nil {
 						return err
 					}
 					var params map[string]string
@@ -182,6 +182,7 @@ func main() {
 				},
 				Flags: []cli.Flag{
 					verboseFlag,
+					selectedContextFlag,
 					saveFlag,
 				},
 			},
@@ -387,7 +388,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							nargs := c.NArg()
 							if nargs > 0 && (nargs%2 == 0) {
-								return setContext(currentStore, c, c.Args().Slice())
+								return setContext(currentStore, c, "", c.Args().Slice())
 							}
 							return errors.New("please introduce variable - value pairs")
 						},
@@ -406,7 +407,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							nargs := c.NArg()
 							if nargs > 0 && (nargs%2 == 0) {
-								return setParamsContext(currentStore, c, c.Args().Slice())
+								return setParamsContext(currentStore, c, "", c.Args().Slice())
 							}
 							return errors.New("please introduce variable - value pairs")
 						},

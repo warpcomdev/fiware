@@ -37,6 +37,10 @@ type Manifest struct {
 	Services       []Service               `json:"services,omitempty"`
 	Devices        []Device                `json:"devices,omitempty"`
 	Registrations  []Registration          `json:"registrations,omitempty"`
+	// Solo por compatibilidad con urbo-deployer, no se usan
+	SQL  json.RawMessage `json:"sql,omitempty"`
+	Cdas json.RawMessage `json:"cdas,omitempty"`
+	Etls json.RawMessage `json:"etls,omitempty"`
 	// Otros datos de estado no asociados al manifest
 	ServiceMappings []ServiceMapping     `json:"serviceMappings,omitempty"`
 	Projects        []Project            `json:"projects,omitempty"`

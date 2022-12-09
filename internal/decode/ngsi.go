@@ -2,7 +2,6 @@ package decode
 
 import (
 	"bufio"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
