@@ -1,6 +1,7 @@
 package orion
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -273,9 +274,9 @@ func (e Entity) Attrs() map[string]EntityAttr {
 }
 
 type EntityAttr struct {
-	Type      string          `json:"type"`
-	Value     json.RawMessage `json:"value"`
-	Metadatas json.RawMessage `json:"metadatas,omitempty"`
+	Type     string          `json:"type"`
+	Value    json.RawMessage `json:"value"`
+	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
 
 // Merge fiware EntityType with Entity to build full Entity
@@ -301,10 +302,11 @@ func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
 						Value: value,
 					}
 					if md, ok := v.MetaDatas[name]; ok {
-						currentAttr.Metadatas = md
+						currentAttr.Metadata = md
 					} else {
+						// By default, all attributes inherit metadata from first entity found
 						if am.Metadatas != nil {
-							currentAttr.Metadatas = am.Metadatas
+							currentAttr.Metadata = am.Metadatas
 						}
 					}
 					value, _ = json.Marshal(currentAttr)
@@ -336,12 +338,22 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 		}
 		// Add an entity
 		newEntity := fiware.Entity{
-			ID:    currID,
-			Type:  currType,
-			Attrs: make(map[string]json.RawMessage),
+			ID:        currID,
+			Type:      currType,
+			Attrs:     make(map[string]json.RawMessage),
+			MetaDatas: make(map[string]json.RawMessage),
 		}
 		for attr, val := range currAttrs {
+			// Make sure to skip commands, so we won't ever POST them
+			if strings.EqualFold(val.Type, "command") {
+				continue
+			}
 			newEntity.Attrs[attr] = val.Value
+			if val.Metadata != nil && !bytes.Equal(val.Metadata, []byte("\"\"")) && !bytes.Equal(val.Metadata, []byte("{}")) {
+				newEntity.MetaDatas[attr] = val.Metadata
+			} else {
+				val.Metadata = nil
+			}
 			// Check all attributes are defined for the EntityType
 			found := false
 			index := -1
@@ -357,9 +369,13 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 					Name:      attr,
 					Type:      val.Type,
 					Value:     val.Value,
-					Metadatas: val.Metadatas,
+					Metadatas: val.Metadata,
 				})
 				index = len(newType.Attrs) - 1
+			}
+			if found && val.Metadata != nil && newType.Attrs[index].Metadatas == nil {
+				// inherit metadatas first time they appear
+				newType.Attrs[index].Metadatas = val.Metadata
 			}
 			if val.Type == "TextUnrestricted" {
 				newType.Attrs[index].Type = "TextUnrestricted"
@@ -430,7 +446,7 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, ents []Entity) error {
 	for base := 0; base < len(ents); base += batchSize {
 		if base > 0 {
-			// Wait for a timeout, the CB is this slow.
+			// Wait for a timeout, for safety's sake
 			<-time.After(3 * time.Second)
 		}
 		req := struct {
