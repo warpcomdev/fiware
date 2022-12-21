@@ -1,0 +1,91 @@
+{{- $municipality_attrs := list "zip" "zone" "district" "municipality" "region" "province" "community" "country" "streetAddress" "postalCode" "addressLocality" "addressRegion" "addressCommunity" "addressCountry" }}
+{
+  {{- $entityType_sep := "" }}
+  {{- range .entityTypes }}
+  {{ $entityType_sep }}{{ .entityType | quote }}: {
+
+    "namespace": {{ $.name | lower | quote }},
+    "description": {{ printf "Entidad %s" .entityType | quote }},
+
+    {{- $municipality := list }}
+    {{- $singleton := list }}
+    "model": {
+      {{- $attr_sep := "" }}
+      {{- range $attr_value := .attrs }}
+      {{- $attr_name := .name }}
+      {{- if .singletonKey }}
+      {{- $singleton = append $singleton (quote $attr_name) }}
+      {{- end }}
+      {{- if has $attr_name $municipality_attrs }}
+      {{- $municipality = append $municipality (quote $attr_name) }}
+      {{- else }}
+      {{ $attr_sep }}{{ $attr_name | quote }}: {
+        "ngsiType": {{ .type | quote }},
+        {{- $dbType := list }}
+        {{- $lowerType := lower .type }}
+        {{- $lowerName := lower $attr_name }}
+        {{- if eq $lowerName "timeinstant" }}
+            {{- $dbType = append $dbType "timestamp with time zone NOT NULL" }}
+        {{- end }}
+        {{- if eq $lowerType "number" }}
+            {{- $dbType = append $dbType "double precision" }}
+        {{- end }}
+        {{- if eq $lowerType "datetime" }}
+            {{- $dbType = append $dbType "timestamp with time zone" }}
+        {{- end }}
+        {{- if eq $lowerName "location" }}
+            {{- $dbType = append $dbType "geometry(Point)" }}
+        {{- end }}
+        {{- if hasPrefix "geo" $lowerType }}
+            {{- $dbType = append $dbType "geometry" }}
+        {{- end }}
+        {{- if hasPrefix "bool" $lowerType }}
+            {{- $dbType = append $dbType "bool" }}
+        {{- end }}
+        {{- if contains "json" $lowerType }}
+            {{- $dbType = append $dbType "json" }}
+        {{- end }}
+        {{- if hasPrefix "list" $lowerType }}
+            {{- $dbType = append $dbType "json" }}
+        {{- end }}
+        {{- $dbType = append $dbType "text" }}
+        "dbType": {{ index $dbType 0 | quote  }},
+        "description": {{ index .description 0 | quote }},
+        "extra":       {{ if gt (len .description) 1 }}{{ index .description 1 | quote }}{{ else }}"-"{{ end }},
+        "unit":        {{ if gt (len .description) 2 }}{{ index .description 2 | quote }}{{ else }}"-"{{ end }},
+        "range":       {{ if gt (len .description) 3 }}{{ index .description 3 | quote }}{{ else }}"-"{{ end }},
+        "example":     {{ if .value }}{{ .value | toJson }}{{ else }}""{{ end }},
+        "flows": ["historic", "lastdata"]
+      }
+      {{- $attr_sep = ", " }}
+      {{- end }}
+      {{- end }}
+    },
+
+    {{- if gt (len $municipality) 0 }}
+    "aspects": [
+      {
+        "class": "ASPECT_MUNICIPALITY",
+        "attrs": [{{ join ", " $municipality }}]
+      }
+    ],
+    {{- end }}
+
+    "flows": {
+      "historic": {
+        "class": "FLOW_HISTORIC"
+        {{- if gt (len $singleton) 0 }}
+        , "replaceId": [{{ join ", " $singleton }}]
+        {{- end }}
+      },
+      "lastdata": {
+        "class": "FLOW_LASTDATA"
+        {{- if gt (len $singleton) 0 }}
+        , "replaceId": [{{ join ", " $singleton }}]
+        {{- end }}
+      }
+    }
+  }
+  {{- $entityType_sep = ", " }}
+  {{- end }}
+}
