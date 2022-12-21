@@ -91,19 +91,19 @@ import (
     }
 
     subscriptions: {for entityType in entityTypes {
-        "\(entityType):CYGNUS": #subscription & {
+        "\(entityType.entityType):CYGNUS": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES para " + entityType.entityType
             notification: http: url: "CYGNUS"
         }
     }}
-    subscription: {for entityType in entityTypes {
-        "\(entityType):LASTDATA": #subscription & {
+    subscriptions: {for entityType in entityTypes {
+        "\(entityType.entityType):LASTDATA": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES lastdata para " + entityType.entityType
             notification: http: url: "LASTDATA"
         }
-    }]
+    }}
 
     tables: [for entityType in entityTypes {{
         name: _verticalName + "_" + strings.ToLower(entityType.entityType)
