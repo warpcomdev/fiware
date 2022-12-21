@@ -2,7 +2,7 @@ Las subscripciones que son necesarias para el funcionamiento del vertical son la
 
 Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que crear este mismo juego de subscripciones en cada uno de los subservicios correspondientes.
 
-{{- range $label, $subscription := .suscriptions }}
+{{- range $label, $subscription := .subscriptions }}
 {{- with $subscription }}
 {{- $entity := index .subject.entities 0 }}
 
