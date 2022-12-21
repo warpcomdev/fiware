@@ -2,7 +2,8 @@ Las subscripciones que son necesarias para el funcionamiento del vertical son la
 
 Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que crear este mismo juego de subscripciones en cada uno de los subservicios correspondientes.
 
-{{- range .suscriptions }}
+{{- range $label, $subscription := .subscriptions }}
+{{- with  $subscription }}
 {{- $entity := index .subject.entities 0 }}
 
 ### {{.description}}
@@ -25,4 +26,5 @@ Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que cre
 * **Entidades**:
     * ID: `{{ $entity.idPattern }}` (con checkbox de patrón de búsqueda marcado)
     * Type: {{ $entity.type }}
+{{- end }}
 {{- end }}
