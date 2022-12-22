@@ -12,6 +12,7 @@ Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que cre
 * **Fecha y hora de expiración**: en blanco
 * **Segundos entre notificaciones**: en blanco
 * **Protocolo**: HTTP
+{{- if .notification.http }}
 * **URL de notificación**:
     {{- if (contains "lastdata" (lower .description)) }}
     * Entorno Onpremise: http://iot-cygnus:5059/notify
@@ -20,6 +21,18 @@ Obsérvese que en el caso de usar el vertical en modo mancomunado habrá que cre
     * Entorno Onpremise: http://iot-cygnus:5057/notify
     * Entorno SaaS: http://pro-core-smc-cygnus:5080/notify
     {{- end }}
+{{- end }}
+{{- if .notification.httpCustom }}
+* **URL de notificación**: (dejar en blanco)
+* **Notificación personalizada (custom)**:
+    {{- if (contains "lastdata" (lower .description)) }}
+    * Entorno Onpremise: { "url": "http://iot-cygnus:5059/notify", "ngsi": {{ .notification.httpCustom.ngsi | toJson }} }
+    * Entorno SaaS: { "url": "http://pro-core-smc-cygnus:5082/notify", "ngsi": {{ .notification.httpCustom.ngsi | toJson }} }
+    {{- else }}
+    * Entorno Onpremise: { "url": "http://iot-cygnus:5057/notify", "ngsi": {{ .notification.httpCustom.ngsi | toJson }} }
+    * Entorno SaaS: { "url": "http://pro-core-smc-cygnus:5080/notify", "ngsi": {{ .notification.httpCustom.ngsi | toJson }} }
+    {{- end }}
+{{- end }}
 * **Formato de atributos**: normalized
 * **Atributos a notificar**: {{ .notification.attrs | join ", " }}
 * **Condición**: {{ .subject.condition.attrs | join "," }}

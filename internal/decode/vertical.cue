@@ -35,6 +35,13 @@ import (
     // Será reemplazada por los datos reales extraidos de la vertical.
     // END REPLACE
 
+    #replaceId: {for et in entityTypes {
+        (et.entityType): {
+            attrs: [for attr in et.attrs if attr.singletonKey { attr.name }]
+            text: strings.Join(attrs, "}_${")
+        }
+    }}
+
     let _subservice = subservice
     serviceMappings: [{
         servicePathMappings: [{
@@ -81,7 +88,11 @@ import (
             if !strings.HasPrefix(attr.type, "command") {
                 attr.name
             }]
-            http: url: string
+            http?: url: string
+            httpCustom?: {
+                url: string
+                ngsi?: {...}
+            }
         }
     }
     
@@ -94,14 +105,26 @@ import (
         "\(entityType.entityType):CYGNUS": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES para " + entityType.entityType
-            notification: http: url: "CYGNUS"
+            if len(#replaceId[entityType.entityType].attrs) == 0 {
+                notification: http: url: "CYGNUS"
+            }
+            if len(#replaceId[entityType.entityType].attrs) > 0 {
+                notification: httpCustom: url: "CYGNUS"
+                notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
+            }
         }
     }}
     subscriptions: {for entityType in entityTypes {
         "\(entityType.entityType):LASTDATA": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES lastdata para " + entityType.entityType
-            notification: http: url: "LASTDATA"
+            if len(#replaceId[entityType.entityType].attrs) == 0 {
+                notification: http: url: "LASTDATA"
+            }
+            if len(#replaceId[entityType.entityType].attrs) > 0 {
+                notification: httpCustom: url: "LASTDATA"
+                notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
+            }
         }
     }}
 
@@ -110,7 +133,9 @@ import (
         lastdata: true // Añadir tabla de lastdata
         columns: [...#column]
         indexes: [...#index]
-        singleton: [for _attr in entityType.attrs if _attr.singletonKey { strings.ToLower(_attr.name) }]
+        //deprecated: use custom suscription instead
+        //singleton: [for _attr in entityType.attrs if _attr.singletonKey { strings.ToLower(_attr.name) }]
+        singleton: []
         primaryKey: [ "timeinstant", "entityid" ] + singleton
 
         columns: [
