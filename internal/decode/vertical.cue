@@ -41,7 +41,7 @@ import (
             text: strings.Join(attrs, "}_${")
         }
     }}
-
+    
     let _subservice = subservice
     serviceMappings: [{
         servicePathMappings: [{
@@ -105,26 +105,30 @@ import (
         "\(entityType.entityType):CYGNUS": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES para " + entityType.entityType
-            if len(#replaceId[entityType.entityType].attrs) == 0 {
+            // PREVIEW FEATURE: Cuando se soporte el parámetro "ngsi"
+            // en las suscripciones, se podrá volver a habilitar replaceId
+            // if len(#replaceId[entityType.entityType].attrs) == 0 {
                 notification: http: url: "CYGNUS"
-            }
-            if len(#replaceId[entityType.entityType].attrs) > 0 {
-                notification: httpCustom: url: "CYGNUS"
-                notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
-            }
+            //}
+            //if len(#replaceId[entityType.entityType].attrs) > 0 {
+            //    notification: httpCustom: url: "CYGNUS"
+            //    notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
+            //}
         }
     }}
     subscriptions: {for entityType in entityTypes {
         "\(entityType.entityType):LASTDATA": #subscription & {
             _entityType: entityType,
             description: "Suscripción a POSTGRES lastdata para " + entityType.entityType
-            if len(#replaceId[entityType.entityType].attrs) == 0 {
+            // PREVIEW FEATURE: Cuando se soporte el parámetro "ngsi"
+            // en las suscripciones, se podrá volver a habilitar replaceId
+            //if len(#replaceId[entityType.entityType].attrs) == 0 {
                 notification: http: url: "LASTDATA"
-            }
-            if len(#replaceId[entityType.entityType].attrs) > 0 {
-                notification: httpCustom: url: "LASTDATA"
-                notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
-            }
+            //}
+            //if len(#replaceId[entityType.entityType].attrs) > 0 {
+            //    notification: httpCustom: url: "LASTDATA"
+            //    notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
+            //}
         }
     }}
 
@@ -133,9 +137,8 @@ import (
         lastdata: true // Añadir tabla de lastdata
         columns: [...#column]
         indexes: [...#index]
-        //deprecated: use custom suscription instead
-        //singleton: [for _attr in entityType.attrs if _attr.singletonKey { strings.ToLower(_attr.name) }]
-        singleton: []
+        // not deprecated yet: ngsi custom suscription does not work
+        singleton: [for _attr in entityType.attrs if _attr.singletonKey { strings.ToLower(_attr.name) }]
         primaryKey: [ "timeinstant", "entityid" ] + singleton
 
         columns: [

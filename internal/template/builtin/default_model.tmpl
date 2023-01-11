@@ -6,6 +6,7 @@
 
     "namespace": {{ $.name | lower | quote }},
     "description": {{ printf "Entidad %s" .entityType | quote }},
+    "exampleId": {{ .entityID | quote }},
 
     {{- $municipality := list }}
     {{- $singleton := list }}
@@ -34,7 +35,7 @@
             {{- $dbType = append $dbType "timestamp with time zone" }}
         {{- end }}
         {{- if eq $lowerName "location" }}
-            {{- $dbType = append $dbType "geometry(Point)" }}
+            {{- $dbType = append $dbType "geometry" }}
         {{- end }}
         {{- if hasPrefix "geo" $lowerType }}
             {{- $dbType = append $dbType "geometry" }}
