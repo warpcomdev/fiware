@@ -178,6 +178,11 @@ Una vez clonado, podemos modificar los parámetros que sean distintos en este en
 
 ```
 $ fiware ctx set service alcobendas_pre username pre_admin_alcobendas
+using context pre_alcobendas
+updated fields: {
+  service: alcobendas_pre
+  username: pre_admin_alcobendas
+}
 ```
 
 ### Cambiar de contexto
@@ -269,7 +274,7 @@ Una vez conectados a la plataforma, con los tokens en caché, ya podemos hacer c
 Para poder hacer esta consulta, el contexto necesita tener al menos los siguientes datos:
 
 - keystone: URL de keystone
-- orion: URL de orionç
+- orion: URL de orion
 - service: nombre de servicio
 - username: nombre de usuario
 
@@ -279,7 +284,9 @@ También debe tener cacheado un token reciente, generado con `fiware auth --save
 # Nos aseguramos de que el contexto apunta al subservicio de riego
 $ fiware ctx set subservice /riego
 using context lab_alcobendas
+updated fields: {
   subservice: /riego
+}
 
 # Y pedimos las suscripciones
 $ fiware get subscriptions
