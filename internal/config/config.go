@@ -4,11 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
+	"sort"
+	"strings"
 )
 
 type stringError string
@@ -115,6 +118,15 @@ func (c *Config) pairs() map[string]*string {
 	return p
 }
 
+func sortedKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Sort(sort.StringSlice(keys))
+	return keys
+}
+
 func (c *Config) String() string {
 	var buffer bytes.Buffer
 	w := bufio.NewWriter(&buffer)
@@ -130,7 +142,9 @@ func (c *Config) String() string {
 	}
 	w.WriteString("{")
 	sep := "\n  \""
-	for label, value := range pairs {
+	sortedPairs := sortedKeys(pairs)
+	for _, label := range sortedPairs {
+		value := pairs[label]
 		writePair(w, sep, label, "\": ", *value)
 		sep = ",\n  \""
 	}
@@ -144,12 +158,15 @@ func (c *Config) String() string {
 		// Encode adds a "\n", we don't need to add another
 		w.WriteString("}\n> fiware context set")
 	}
-	for label, value := range pairs {
+	for _, label := range sortedPairs {
+		value := pairs[label]
 		writePair(w, " ", label, " ", *value)
 	}
 	if len(c.Params) > 0 {
 		w.WriteString("\n> fiware context params")
-		for k, v := range c.Params {
+		sortedParams := sortedKeys(c.Params)
+		for _, k := range sortedParams {
+			v := c.Params[k]
 			writePair(w, " ", k, " ", v)
 		}
 	}
@@ -174,185 +191,273 @@ func (c *Config) HasUrboToken() string {
 
 // Store can manage several configs
 type Store struct {
-	Path    string
+	Path    string // It no longer contains full contexts, only context selector.
+	DirPath string // his holds the actual contexts now
 	Current Config
 }
 
-// Read the config file
-func (s *Store) Read(contextName string) error {
-	configs, err := s.read()
+// get the proper paths in the new config model
+func (s *Store) getPaths() (selectPath, dirPath string, err error) {
+	if s.DirPath != "" {
+		return s.Path, s.DirPath, nil
+	}
+	if s.Path == "" {
+		return "", "", errors.New("No path configured in store")
+	}
+	s.DirPath = strings.TrimSuffix(s.Path, filepath.Ext(s.Path)) + ".d"
+	return s.Path, s.DirPath, nil
+}
+
+// save some file atomically
+func (s *Store) atomicSave(fullPath string, tmpPrefix string, data interface{}) error {
+	byteData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return err
 	}
-	if len(configs) > 0 {
-		selected, err := findByName(configs, contextName)
-		if err != nil {
+	folder, _ := filepath.Split(fullPath)
+	if err := os.MkdirAll(folder, 0750); err != nil {
+		// Ignore error if the folder exists
+		if !os.IsExist(err) {
 			return err
 		}
-		s.Current = configs[selected]
 	}
-	return nil
-}
-
-func (s *Store) read() ([]Config, error) {
-	infile, err := os.Open(s.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return []Config{}, nil
-		}
-		return nil, err
-	}
-	defer infile.Close()
-	decoder := json.NewDecoder(infile)
-	var result []Config
-	if err := decoder.Decode(&result); err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-// save the config file
-func (s Store) save(c []Config) error {
-	file, err := ioutil.TempFile(path.Dir(s.Path), "fiware")
+	file, err := ioutil.TempFile(folder, tmpPrefix)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(file.Name())
-	encoder := json.NewEncoder(file)
-	err = encoder.Encode(c)
-	file.Close() // Close before returning an renaming, for windows.
+	defer os.Remove(file.Name()) // just in case
+	_, err = file.Write(byteData)
+	closeErr := file.Close() // Close before returning and renaming, for windows.
 	if err != nil {
 		return err
+	}
+	if closeErr != nil {
+		return closeErr
 	}
 	if runtime.GOOS == "windows" {
-		os.Chmod(s.Path, 0644) // So that os.Rename works. See https://github.com/golang/go/issues/38287
+		os.Chmod(fullPath, 0644) // So that os.Rename works. See https://github.com/golang/go/issues/38287
 	}
-	return os.Rename(file.Name(), s.Path)
+	return os.Rename(file.Name(), fullPath)
 }
 
-// Create a named Cotext
-func (s *Store) Create(name string) error {
-	ctx, err := s.read()
+// Atomically save a config
+func (s *Store) atomicSaveConfig(cfg Config) error {
+	_, dirPath, err := s.getPaths()
 	if err != nil {
 		return err
 	}
-	for _, curr := range ctx {
-		if curr.Name == name {
-			return fmt.Errorf("config %s already exists", name)
-		}
-	}
-	newCtx := make([]Config, 0, len(ctx)+1)
-	newCtx = append(append(newCtx, Config{Name: name}), ctx...)
-	if err := s.save(newCtx); err != nil {
-		return err
-	}
-	s.Current = newCtx[0]
-	return nil
+	fullPath := filepath.Join(dirPath, cfg.Name+".json")
+	return s.atomicSave(fullPath, "fiware-context", cfg)
 }
 
-// Delete the named config, return the current one
-func (s *Store) Delete(name string) error {
-	ctx, err := s.read()
+// Migrate the selection file
+func (s *Store) migrate(selectPath, dirPath string) (string, error) {
+	file, err := os.Open(selectPath)
 	if err != nil {
-		return err
+		// If the file does not exist, return empty selection
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
 	}
-	for index, curr := range ctx {
-		if curr.Name == name {
-			ctx = append(ctx[:index], ctx[index+1:]...)
-			break
+	// If the file does exist, try to read as string
+	var selection string
+	byteData, err := ioutil.ReadAll(file)
+	closeErr := file.Close()
+	if err != nil {
+		return "", err
+	}
+	if closeErr != nil {
+		return "", closeErr
+	}
+	if err := json.Unmarshal(byteData, &selection); err == nil {
+		// file is already migrated, just return selection
+		return selection, nil
+	}
+	// If the file content is not a string, assume we must migrate it
+	var configList []Config
+	if err := json.Unmarshal(byteData, &configList); err != nil {
+		return "", fmt.Errorf("failed to get selected or migrated contexts: %w", err)
+	}
+	for _, cfg := range configList {
+		if err := s.atomicSaveConfig(cfg); err != nil {
+			return "", fmt.Errorf("failed to migrate context %s: %w", cfg.Name, err)
 		}
 	}
-	if err := s.save(ctx); err != nil {
-		return err
+	// Backup old selection format
+	selectBkp := selectPath + ".old"
+	if runtime.GOOS == "windows" {
+		os.Chmod(selectBkp, 0644) // So that os.Rename works. See https://github.com/golang/go/issues/38287
 	}
-	if len(ctx) > 0 {
-		s.Current = ctx[0]
+	if err := os.Rename(selectPath, selectBkp); err != nil {
+		return "", fmt.Errorf("failed to backup old contexts: %w", err)
 	}
-	return nil
+	// And replace it
+	var selected string
+	if len(configList) > 0 {
+		selected = configList[0].Name
+	}
+	return selected, s.atomicSave(selectPath, "fiware-select", selected)
 }
 
 // List available Configs
 func (s *Store) List() ([]string, error) {
-	ctx, err := s.read()
+	selectPath, dirPath, err := s.getPaths()
 	if err != nil {
 		return nil, err
 	}
-	if len(ctx) <= 0 {
-		return nil, nil
+	// Migrate if needed
+	if _, err := s.migrate(selectPath, dirPath); err != nil {
+		return nil, err
 	}
-	result := make([]string, 0, len(ctx))
-	for _, curr := range ctx {
-		result = append(result, curr.Name)
+	files, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return nil, err
 	}
-	return result, nil
+	names := make([]string, 0, len(files))
+	for _, entry := range files {
+		if entry.Type().IsRegular() && strings.HasSuffix(entry.Name(), ".json") {
+			names = append(names, strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name())))
+		}
+	}
+	return names, nil
+}
+
+// Create a named Context
+func (s *Store) Create(name string) error {
+	if err := s.atomicSaveConfig(Config{Name: name}); err != nil {
+		return err
+	}
+	return s.Read(name)
+}
+
+// Delete the named config, return the current one
+func (s *Store) Delete(name string) error {
+	selectPath, dirPath, err := s.getPaths()
+	if err != nil {
+		return err
+	}
+	selected, err := s.migrate(selectPath, dirPath)
+	if err != nil {
+		return err
+	}
+	// Remove context
+	fullPath := filepath.Join(dirPath, name+".json")
+	if err := os.Remove(fullPath); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+	// If the context was selected, replace it by any other
+	if selected == name {
+		remain, err := s.List()
+		if err != nil {
+			return err
+		}
+		if len(remain) > 0 {
+			selected = remain[0]
+		}
+	}
+	s.Read(selected) // we must populate s.Current after each call...
+	return nil
 }
 
 // Use the named Config
 func (s *Store) Use(name string) error {
-	ctx, err := s.read()
+	// Read the context if available
+	if err := s.Read(name); err != nil {
+		return err
+	}
+	selectPath, _, err := s.getPaths()
 	if err != nil {
 		return err
 	}
-	if name != "" {
-		for index, curr := range ctx {
-			if curr.Name == name {
-				if index > 0 {
-					ctx = append(append([]Config{ctx[index]}, ctx[:index]...), ctx[index+1:]...)
-					if err := s.save(ctx); err != nil {
-						return err
-					}
-				}
-				break
-			}
-		}
-	}
-	if len(ctx) > 0 {
-		s.Current = ctx[0]
-		s.Current.defaults()
-	}
-	return nil
+	// And update the marker
+	return s.atomicSave(selectPath, "fiware-select", s.Current.Name)
 }
 
 // Info about a particular Config
 func (s *Store) Info(name string) (Config, error) {
-	ctx, err := s.read()
+	var cfg Config
+	selectPath, dirPath, err := s.getPaths()
 	if err != nil {
-		return Config{}, err
+		return cfg, err
 	}
-	var selectedIndex int
-	if name != "" {
-		for index, curr := range ctx {
-			if curr.Name == name {
-				selectedIndex = index
-				break
-			}
+	// support empty name, meaning whatever context is in use
+	if name == "" {
+		selection, err := s.migrate(selectPath, dirPath)
+		if err != nil {
+			return cfg, err
 		}
+		if selection == "" {
+			return cfg, ErrNoContext
+		}
+		name = selection
 	}
-	if len(ctx) <= selectedIndex {
-		return Config{}, nil
+	cfgPath := filepath.Join(dirPath, name+".json")
+	file, err := os.Open(cfgPath)
+	if err != nil {
+		return cfg, fmt.Errorf("context %s could not be read: %w", name, err)
 	}
-	return ctx[selectedIndex], nil
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	if err = decoder.Decode(&cfg); err != nil {
+		return cfg, err
+	}
+	cfg.Name = name
+	return cfg, err
+}
+
+// Read the config file
+func (s *Store) Read(contextName string) error {
+	cfg, err := s.Info(contextName)
+	if err != nil {
+		return err
+	}
+	s.Current = cfg
+	return nil
 }
 
 // Dup the current config with a new name
 func (s *Store) Dup(name string) error {
-	ctx, err := s.read()
+	cfg, err := s.Info("")
 	if err != nil {
 		return err
 	}
-	if len(ctx) <= 0 {
-		return ErrNoContext
-	}
-	newCtx := ctx[0]
-	newCtx.Name = name
-	if err := s.save(append([]Config{newCtx}, ctx...)); err != nil {
+	selectPath, dirPath, err := s.getPaths()
+	if err != nil {
 		return err
 	}
-	s.Current = newCtx
+	// Migrate first
+	if _, err := s.migrate(selectPath, dirPath); err != nil {
+		return err
+	}
+	// Check if the context already exists
+	targetPath := filepath.Join(dirPath, name+".json")
+	if _, err := os.Stat(targetPath); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	} else {
+		return fmt.Errorf("target context %s already exists", name)
+	}
+	// Otherwise, save it
+	cfg.Name = name
+	if err := s.atomicSaveConfig(cfg); err != nil {
+		return err
+	}
+	if err := s.atomicSave(selectPath, "fiware-select", cfg.Name); err != nil {
+		return err
+	}
+	// And set it as current
+	s.Current = cfg
 	return nil
 }
 
-// CanConfig returns a list of parameter names recoginzed by `Set`
+// CanConfig returns a list of parameter names recognized by `Set`
 func (s *Store) CanConfig() []string {
 	result := []string{
 		"name",
@@ -368,53 +473,60 @@ func (s *Store) CanConfig() []string {
 }
 
 func (s *Store) Set(contextName string, strPairs []string) error {
-	ctx, err := s.read()
+	selectPath, dirPath, err := s.getPaths()
 	if err != nil {
 		return err
 	}
-	if len(ctx) <= 0 {
-		return ErrNoContext
-	}
-	selectedIndex, err := findByName(ctx, contextName)
+	selectName, err := s.migrate(selectPath, dirPath)
 	if err != nil {
 		return err
 	}
-	selected := ctx[selectedIndex]
+	cfg, err := s.Info(contextName)
+	if err != nil {
+		return err
+	}
 	if len(strPairs)%2 != 0 {
 		return ErrParametersNumber
 	}
-	pairs := selected.pairs()
+	formerName := ""
+	pairs := cfg.pairs()
 	for i := 0; i < len(strPairs); i += 2 {
 		param, value := strPairs[i], strPairs[i+1]
 		switch param {
 		// aliases
 		case "user":
-			selected.Username = value
+			cfg.Username = value
 		case "ss":
-			selected.Subservice = value
+			cfg.Subservice = value
 		case "manager":
-			selected.IotamURL = value
+			cfg.IotamURL = value
 		case "cep":
-			selected.PerseoURL = value
+			cfg.PerseoURL = value
 		case "name":
-			for _, curr := range ctx {
-				if curr.Name == value {
+			if cfg.Name != value {
+				_, err = os.Stat(filepath.Join(dirPath, value+".json"))
+				if err != nil {
+					if !os.IsNotExist(err) {
+						return err
+					}
+				} else {
 					return fmt.Errorf("context %s already exists", value)
 				}
+				formerName = cfg.Name
+				cfg.Name = value
 			}
-			selected.Name = value
 		case "token":
 			if value == HiddenToken {
 				value = ""
 			}
-			selected.Token = value
+			cfg.Token = value
 		case "urbotoken":
 			fallthrough
 		case "urboToken":
 			if value == HiddenToken {
 				value = ""
 			}
-			selected.UrboToken = value
+			cfg.UrboToken = value
 		default:
 			if v, ok := pairs[param]; ok {
 				*v = value
@@ -423,33 +535,34 @@ func (s *Store) Set(contextName string, strPairs []string) error {
 			}
 		}
 	}
-	selected.defaults()
-	ctx[selectedIndex] = selected
-	if err := s.save(ctx); err != nil {
+	cfg.defaults()
+	if err := s.atomicSaveConfig(cfg); err != nil {
 		return err
 	}
-	s.Current = ctx[selectedIndex]
+	// if renamed, remove older file
+	if formerName != "" {
+		os.Remove(filepath.Join(dirPath, formerName+".json"))
+		if selectName == formerName {
+			// If the renamed vertical is the active one, change name
+			if err := s.atomicSave(selectPath, "fiware-select", cfg.Name); err != nil {
+				return err
+			}
+		}
+	}
+	s.Current = cfg
 	return nil
 }
 
 func (s *Store) SetParams(contextName string, pairs []string) error {
-	ctx, err := s.read()
+	cfg, err := s.Info(contextName)
 	if err != nil {
 		return err
 	}
-	if len(ctx) <= 0 {
-		return ErrNoContext
-	}
-	selectedIndex, err := findByName(ctx, contextName)
-	if err != nil {
-		return err
-	}
-	selected := ctx[selectedIndex]
 	if len(pairs)%2 != 0 {
 		return ErrParametersNumber
 	}
 	if len(pairs) > 0 {
-		params := selected.Params
+		params := cfg.Params
 		if params == nil {
 			params = make(map[string]string)
 		}
@@ -461,24 +574,11 @@ func (s *Store) SetParams(contextName string, pairs []string) error {
 				params[key] = val
 			}
 		}
-		selected.Params = params
-		ctx[selectedIndex] = selected
-		if err := s.save(ctx); err != nil {
+		cfg.Params = params
+		if err := s.atomicSaveConfig(cfg); err != nil {
 			return err
 		}
 	}
-	s.Current = selected
+	s.Current = cfg
 	return nil
-}
-
-func findByName(ctx []Config, contextName string) (int, error) {
-	if contextName == "" {
-		return 0, nil
-	}
-	for index, current := range ctx {
-		if current.Name == contextName {
-			return index, nil
-		}
-	}
-	return -1, fmt.Errorf("context %s not found", contextName)
 }
