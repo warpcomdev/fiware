@@ -532,6 +532,13 @@ func (x SubjectCondition) Serialize(s serialize.Serializer) {
 		x.Expression.Serialize(s)
 		s.EndBlock()
 	}
+	if len(x.AlterationTypes) > 0 {
+		s.BeginList("alterationTypes")
+		for _, y := range x.AlterationTypes {
+			s.String(y, false)
+		}
+		s.EndList()
+	}
 }
 
 func (x SubjectExpression) MarshalJSON() ([]byte, error) {
@@ -549,6 +556,9 @@ func (x SubjectEntity) MarshalJSON() ([]byte, error) {
 }
 
 func (x SubjectEntity) Serialize(s serialize.Serializer) {
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
 	if x.IdPattern != "" {
 		s.KeyString("idPattern", string(x.IdPattern))
 	}

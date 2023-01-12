@@ -52,6 +52,8 @@ func main() {
 
 	app := &cli.App{
 
+		Name:        "FIWARE CLI client",
+		Usage:       "manage fiware environments",
 		Description: "Manage fiware verticals and environments",
 		Flags: []cli.Flag{
 			&cli.StringFlag{

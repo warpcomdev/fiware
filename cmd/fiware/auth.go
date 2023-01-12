@@ -68,17 +68,24 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	if urboError != nil {
 		return urboError
 	}
-	if c.Bool(saveFlag.Name) {
-		if err := store.Set(selectedContext, []string{
-			"token", fiwareToken, "urbotoken", urboToken,
+	save := c.Bool(saveFlag.Name)
+	if save {
+		if err := store.Set(selectedContext, map[string]string{
+			"token":     fiwareToken,
+			"urbotoken": urboToken,
 		}); err != nil {
 			return err
 		}
 	}
-	if runtime.GOOS == "windows" {
-		fmt.Printf("SET FIWARE_TOKEN=%s\nSET URBO_TOKEN=%s\n", fiwareToken, urboToken)
+	verbose := c.Bool(verboseFlag.Name)
+	if save && !verbose {
+		fmt.Printf("tokens for context %s cached\n", selected.Name)
 	} else {
-		fmt.Printf("export FIWARE_TOKEN=%s\nexport URBO_TOKEN=%s\n", fiwareToken, urboToken)
+		if runtime.GOOS == "windows" {
+			fmt.Printf("SET FIWARE_TOKEN=%s\nSET URBO_TOKEN=%s\n", fiwareToken, urboToken)
+		} else {
+			fmt.Printf("export FIWARE_TOKEN=%s\nexport URBO_TOKEN=%s\n", fiwareToken, urboToken)
+		}
 	}
 	return nil
 }

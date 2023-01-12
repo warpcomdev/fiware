@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 	"time"
 
@@ -36,42 +35,6 @@ func New(orionURL string) (*Orion, error) {
 	}, nil
 }
 
-type suscriptionPaginator struct {
-	response []fiware.Subscription
-}
-
-// GetBuffer implements Paginator
-func (p *suscriptionPaginator) GetBuffer() interface{} {
-	var buffer []fiware.Subscription
-	return &buffer
-}
-
-// PutBuffer implements Paginator
-func (p *suscriptionPaginator) PutBuffer(buf interface{}) int {
-	buffer := buf.(*[]fiware.Subscription)
-	p.response = append(p.response, *buffer...)
-	count := len(*buffer)
-	return count
-}
-
-type registrationPaginator struct {
-	response []fiware.Registration
-}
-
-// GetBuffer implements Paginator
-func (p *registrationPaginator) GetBuffer() interface{} {
-	var buffer []fiware.Registration
-	return &buffer
-}
-
-// PutBuffer implements Paginator
-func (p *registrationPaginator) PutBuffer(buf interface{}) int {
-	buffer := buf.(*[]fiware.Registration)
-	p.response = append(p.response, *buffer...)
-	count := len(*buffer)
-	return count
-}
-
 func simplifyEndpoint(ep string) string {
 	var buf strings.Builder
 	var last rune
@@ -93,8 +56,8 @@ func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, n
 	if err != nil {
 		return nil, err
 	}
-	var pages suscriptionPaginator
-	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
+	pages := keystone.NewPaginator(make([]fiware.Subscription, 0, 50))
+	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields); err != nil {
 		return nil, err
 	}
 	reverseEndpoints := make(map[string]string, len(notifEndpoints))
@@ -115,14 +78,14 @@ func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, n
 			*url = simplified
 		}
 	}
-	for idx, sub := range pages.response {
+	for idx, sub := range pages.Slice {
 		simplify(sub.Notification.HTTP.IsEmpty(), &sub.Notification.HTTP.URL)
 		simplify(sub.Notification.HTTPCustom.IsEmpty(), &sub.Notification.HTTPCustom.URL)
 		simplify(sub.Notification.MQTT.IsEmpty(), &sub.Notification.MQTT.URL)
 		simplify(sub.Notification.MQTTCustom.IsEmpty(), &sub.Notification.MQTTCustom.URL)
-		pages.response[idx] = sub
+		pages.Slice[idx] = sub
 	}
-	return pages.response, nil
+	return pages.Slice, nil
 }
 
 // Suscriptions reads the list of suscriptions from the Context Broker
@@ -131,11 +94,11 @@ func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) (
 	if err != nil {
 		return nil, err
 	}
-	var pages registrationPaginator
-	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
+	pages := keystone.NewPaginator(make([]fiware.Registration, 0, 50))
+	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields); err != nil {
 		return nil, err
 	}
-	return pages.response, nil
+	return pages.Slice, nil
 }
 
 // PostSuscriptions posts a list of suscriptions to orion
@@ -396,22 +359,13 @@ type entityPaginator struct {
 }
 
 // GetBuffer implements Paginator
-func (p *entityPaginator) GetBuffer() interface{} {
-	buffer := make([]Entity, 0, batchSize)
-	return &buffer
-}
-
-// PutBuffer implements Paginator
-func (p *entityPaginator) PutBuffer(buf interface{}) int {
-	buffer := buf.(*[]Entity)
-	p.response = append(p.response, *buffer...)
-	count := len(*buffer)
-	ids := sort.StringSlice(make([]string, 0, len(*buffer)))
-	for _, entity := range *buffer {
-		ids = append(ids, entity.ID())
+func (p *entityPaginator) Append(raw json.RawMessage) error {
+	var ent Entity
+	if err := json.Unmarshal(raw, &ent); err != nil {
+		return err
 	}
-	ids.Sort()
-	return count
+	p.response = append(p.response, ent)
+	return nil
 }
 
 // Entities reads the list of entities from the Context Broker
@@ -434,11 +388,11 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 		}
 		path.RawQuery = values.Encode()
 	}
-	var pages entityPaginator
-	if err := keystone.GetPaginatedJSON(client, headers, path, &pages, o.AllowUnknownFields); err != nil {
+	pages := keystone.NewPaginator(make([]Entity, 0, 50))
+	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields); err != nil {
 		return nil, nil, err
 	}
-	t, e := Split(pages.response)
+	t, e := Split(pages.Slice)
 	return t, e, nil
 }
 

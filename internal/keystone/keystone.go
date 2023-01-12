@@ -218,8 +218,33 @@ func GetJSON(client HTTPClient, headers http.Header, path *url.URL, data interfa
 }
 
 type Paginator interface {
-	GetBuffer() interface{}
-	PutBuffer(interface{}) (count int)
+	Append(item json.RawMessage, allowUnknownFields bool) error
+}
+
+// SlicePaginator is a generic type of Paginator based on a slice
+type SlicePaginator[T any] struct {
+	Slice []T
+}
+
+// Append implements Paginator
+func (s *SlicePaginator[T]) Append(raw json.RawMessage, allowUnknownFields bool) error {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	if !allowUnknownFields {
+		decoder.DisallowUnknownFields()
+	}
+	var subs T
+	if err := decoder.Decode(&subs); err != nil {
+		return fmt.Errorf("Failed to decode %T from %s: %w", s.Slice, string(raw), err)
+	}
+	s.Slice = append(s.Slice, subs)
+	return nil
+}
+
+// NewPaginator creates a new paginator backed by the given slice
+func NewPaginator[T any](slice []T) *SlicePaginator[T] {
+	return &SlicePaginator[T]{
+		Slice: slice,
+	}
 }
 
 // GetPaginatedJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
@@ -240,8 +265,8 @@ func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p P
 		values.Add("limit", strconv.Itoa(remain))
 		values.Add("options", "count")
 		limitedURL.RawQuery = values.Encode()
-		data := p.GetBuffer()
-		header, err := Query(client, http.MethodGet, headers, &limitedURL, data, allowUnknownFields)
+		var data []json.RawMessage
+		header, err := Query(client, http.MethodGet, headers, &limitedURL, &data, allowUnknownFields)
 		if err != nil {
 			return err
 		}
@@ -249,7 +274,12 @@ func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p P
 		if err != nil {
 			return err
 		}
-		offset += p.PutBuffer(data)
+		for _, raw := range data {
+			if err := p.Append(raw, allowUnknownFields); err != nil {
+				return err
+			}
+		}
+		offset += len(data)
 	}
 	return nil
 }

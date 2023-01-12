@@ -19,7 +19,7 @@ func createContext(s *config.Store, c *cli.Context) error {
 	if err := s.Create(cname); err != nil {
 		return err
 	}
-	fmt.Printf("Using context %s", s.Current.Name)
+	fmt.Printf("Using context %s\n", s.Current.Name)
 	return nil
 }
 
@@ -43,8 +43,8 @@ func listContext(s *config.Store, c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	for index, curr := range names {
-		if index == 0 {
+	for _, curr := range names {
+		if curr == s.Current.Name {
 			fmt.Printf("* %s\n", curr)
 		} else {
 			fmt.Println(curr)
@@ -122,20 +122,53 @@ func envContext(s *config.Store, c *cli.Context) error {
 	return nil
 }
 
+func makePairs(pairs []string) (map[string]string, error) {
+	result := make(map[string]string)
+	if len(pairs)%2 != 0 {
+		return nil, config.ErrParametersNumber
+	}
+	for i := 0; i < len(pairs); i += 2 {
+		result[pairs[i]] = pairs[i+1]
+	}
+	return result, nil
+}
+
 func setContext(s *config.Store, c *cli.Context, contextName string, pairs []string) error {
-	if err := s.Set(contextName, pairs); err != nil {
+	pairMap, err := makePairs(pairs)
+	if err != nil {
 		return err
 	}
-	fmt.Printf("using context %s\n", s.Current.Name)
-	fmt.Println(s.Current.String())
+	if err := s.Set(contextName, pairMap); err != nil {
+		return err
+	}
+	fmt.Printf("using context %s\nupdated fields: {\n", s.Current.Name)
+	finalPairs := s.Current.Pairs()
+	keys := config.SortedKeys(finalPairs)
+	for _, k := range keys {
+		if _, found := pairMap[k]; found {
+			fmt.Printf("  %s: %s\n", k, finalPairs[k])
+		}
+	}
+	fmt.Println("}")
 	return nil
 }
 
 func setParamsContext(s *config.Store, c *cli.Context, contextName string, pairs []string) error {
-	if err := s.SetParams(contextName, pairs); err != nil {
+	pairMap, err := makePairs(pairs)
+	if err != nil {
 		return err
 	}
-	fmt.Printf("using context %s\n", s.Current.Name)
-	fmt.Println(s.Current.String())
+	if err := s.SetParams(contextName, pairMap); err != nil {
+		return err
+	}
+	fmt.Printf("using context %s\nupdated params: {\n", s.Current.Name)
+	finalPairs := s.Current.Params
+	keys := config.SortedKeys(finalPairs)
+	for _, k := range keys {
+		if _, found := pairMap[k]; found {
+			fmt.Printf("    %s: %s\n", k, finalPairs[k])
+		}
+	}
+	fmt.Println("}")
 	return nil
 }

@@ -135,6 +135,7 @@ views?: [...#View]
 #SubjectCondition: {
 	attrs: [...string]
 	expression?: #SubjectExpression
+	alterationTypes?: [...string]
 }
 
 #SubjectExpression: {
@@ -142,6 +143,7 @@ views?: [...#View]
 }
 
 #SubjectEntity: {
+	id?:        string
 	idPattern?: string
 	type:       string
 }
