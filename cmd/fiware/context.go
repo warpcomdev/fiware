@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/urfave/cli/v2"
 
@@ -138,16 +139,15 @@ func setContext(s *config.Store, c *cli.Context, contextName string, pairs []str
 	if err != nil {
 		return err
 	}
-	if err := s.Set(contextName, pairMap); err != nil {
+	keys, err := s.Set(contextName, pairMap)
+	if err != nil {
 		return err
 	}
 	fmt.Printf("using context %s\nupdated fields: {\n", s.Current.Name)
+	sort.Sort(sort.StringSlice(keys))
 	finalPairs := s.Current.Pairs()
-	keys := config.SortedKeys(finalPairs)
 	for _, k := range keys {
-		if _, found := pairMap[k]; found {
-			fmt.Printf("  %s: %s\n", k, finalPairs[k])
-		}
+		fmt.Printf("  %s: %s\n", k, finalPairs[k])
 	}
 	fmt.Println("}")
 	return nil

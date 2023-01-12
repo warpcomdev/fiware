@@ -27,7 +27,7 @@ var (
 
 	urboTokenFlag = &cli.StringFlag{
 		Name:        "urbotoken",
-		Aliases:     []string{"urboToken", "ut", "T"},
+		Aliases:     []string{"urbo-token", "ut", "T"},
 		Usage:       "Urbo authentication token",
 		DefaultText: "<empty>",
 		EnvVars:     []string{"URBO_TOKEN", "AUTHORIZATION_TOKEN"},
@@ -47,19 +47,19 @@ var (
 	}
 
 	filterIdFlag = &cli.StringFlag{
-		Name:    "filterId",
+		Name:    "filter-id",
 		Aliases: []string{"fi"},
 		Usage:   "Filter by entity ID",
 	}
 
 	filterTypeFlag = &cli.StringFlag{
-		Name:    "filterType",
+		Name:    "filter-type",
 		Aliases: []string{"ft"},
 		Usage:   "Filter by entity Type",
 	}
 
 	simpleQueryFlag = &cli.StringFlag{
-		Name:    "simpleQuery",
+		Name:    "simple-query",
 		Aliases: []string{"q"},
 		Usage:   "Filter by entity ID",
 	}

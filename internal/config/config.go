@@ -485,14 +485,18 @@ func (s *Store) Dup(name string) error {
 	return nil
 }
 
+var aliases = map[string]string{
+	"user":    "username",   // alias for username
+	"ss":      "subservice", // alias for subservice
+	"manager": "iotam",      // alias for iotam
+	"cep":     "perseo",     // alias for perseo
+}
+
 // CanConfig returns a list of parameter names recognized by `Set`
 func (s *Store) CanConfig() []string {
-	result := []string{
-		"name",
-		"user",    // alias for username
-		"ss",      // alias for subservice
-		"manager", // alias for iotam
-		"cep",     // alias for perseo
+	result := []string{"name"}
+	for k := range aliases {
+		result = append(result, k)
 	}
 	for label := range s.Current.pairs() {
 		result = append(result, label)
@@ -500,41 +504,36 @@ func (s *Store) CanConfig() []string {
 	return result
 }
 
-func (s *Store) Set(contextName string, strPairs map[string]string) error {
+func (s *Store) Set(contextName string, strPairs map[string]string) ([]string, error) {
+	updated := make([]string, 0, len(strPairs))
 	dirPath, err := s.getConfigDir()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	selectName, err := s.migrate(dirPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cfg, err := s.Info(contextName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	formerName := ""
 	pairs := cfg.pairs()
 	for param, value := range strPairs {
+		if alias, found := aliases[param]; found {
+			param = alias
+		}
 		switch param {
-		// aliases
-		case "user":
-			cfg.Username = value
-		case "ss":
-			cfg.Subservice = value
-		case "manager":
-			cfg.IotamURL = value
-		case "cep":
-			cfg.PerseoURL = value
 		case "name":
 			if cfg.Name != value {
 				_, err = os.Stat(filepath.Join(dirPath, value+".json"))
 				if err != nil {
 					if !os.IsNotExist(err) {
-						return err
+						return nil, err
 					}
 				} else {
-					return fmt.Errorf("context %s already exists", value)
+					return nil, fmt.Errorf("context %s already exists", value)
 				}
 				formerName = cfg.Name
 				cfg.Name = value
@@ -554,14 +553,15 @@ func (s *Store) Set(contextName string, strPairs map[string]string) error {
 		default:
 			if v, ok := pairs[param]; ok {
 				*v = value
+				updated = append(updated, param)
 			} else {
-				return fmt.Errorf("unknown config parameter %s", param)
+				return nil, fmt.Errorf("unknown config parameter %s", param)
 			}
 		}
 	}
 	cfg.defaults()
 	if err := s.Save(cfg); err != nil {
-		return err
+		return nil, err
 	}
 	// if renamed, remove older file
 	if formerName != "" {
@@ -569,12 +569,12 @@ func (s *Store) Set(contextName string, strPairs map[string]string) error {
 		if selectName == formerName {
 			// If the renamed vertical is the active one, change name
 			if err := s.atomicSave(s.Path, tmpSelectPrefix, cfg.Name); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 	s.Current = cfg
-	return nil
+	return updated, nil
 }
 
 func (s *Store) SetParams(contextName string, pairs map[string]string) error {

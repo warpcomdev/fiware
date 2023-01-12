@@ -70,7 +70,7 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	}
 	save := c.Bool(saveFlag.Name)
 	if save {
-		if err := store.Set(selectedContext, map[string]string{
+		if _, err := store.Set(selectedContext, map[string]string{
 			"token":     fiwareToken,
 			"urbotoken": urboToken,
 		}); err != nil {

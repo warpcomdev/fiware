@@ -204,6 +204,11 @@ func getResource(c *cli.Context, store *config.Store) error {
 		}
 	}
 
+	// This is mostly cosmetic, but ir may indice to error if an user
+	// specifies --subservice X and doesn't bet the subservice in return
+	if subservice := c.String(subServiceFlag.Name); subservice != "" {
+		vertical.Subservice = subservice
+	}
 	return output.Encode(outfile, vertical, selected.Params)
 }
 
