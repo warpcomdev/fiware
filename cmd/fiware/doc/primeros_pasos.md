@@ -19,7 +19,7 @@ Para poder empezar a utilizar la aplicación, lo primero es definir un **context
 Los contextos se almacenan en el directorio `~/.config/fiware.d` del usuario. Inicialmente, la lista de contextos estará vacía:
 
 ```
-$ fiware ctx ls
+$ fiware context list
 
 ```
 
@@ -28,13 +28,14 @@ $ fiware ctx ls
 Crearemos un contexto nuevo con `fiware context create <nombre del contexto>`
 
 ```
-fiware context create lab_alcobendas
+$ fiware context create lab_alcobendas
 Using context lab_alcobendas
 ```
 
 El contexto inicialmente está vacío, y es necesario rellenarlo con todos sus parámetros de conexión. Los parámetros que utiliza el contexto pueden verse con `fiware context info`:
 
 ```
+# La aplicación reconoce "ctx" como abreviatura de "context"
 $ fiware ctx info
 {
   "biConnection": "",
@@ -74,7 +75,7 @@ Es necesario configurar el contexto para que sea útil. Los parámetros no son o
 Podemos configurar todos estos parámetros con un solo comando:
 
 ```
-$ fiware context set keystone "http://keystone.url.com:5000" orion "http://orion.url.com:2026" service testservice subservice /riego username lab_admin
+$ fiware ctx set keystone "http://keystone.url.com:5000" orion "http://orion.url.com:2026" service testservice subservice /riego username lab_admin
 using context lab_alcobendas
 ```
 
@@ -83,7 +84,7 @@ using context lab_alcobendas
   - perseo: url del pep perseo-fe
 
 ```
-$ fiware context set perseo "http://pep-perseo-fe.url.com:9090"
+$ fiware ctx set perseo "http://pep-perseo-fe.url.com:9090"
 ```
 
 - Si queremos también trabaajr con grupos y dispositivos del IoT agent, necesitaremos la URL del IoTA Manager:
@@ -91,7 +92,7 @@ $ fiware context set perseo "http://pep-perseo-fe.url.com:9090"
   - iotam: url del iota-manager
 
 ```
-$ fiware context set iotam "http://iotam.url.com:8082"
+$ fiware ctx set iotam "http://iotam.url.com:8082"
 ```
 
 - Para trabajar con los dashboards de urbo. necesiaremos la URL del servidor:
@@ -99,7 +100,7 @@ $ fiware context set iotam "http://iotam.url.com:8082"
   - urbo: url de urbo
 
 ```
-$ fiware context set urbo "http://urbo.url.com:8082"
+$ fiware ctx set urbo "http://urbo.url.com:8082"
 ```
 
 Podemos ver el estado en que ha quedado nuestro contexto con `fiware ctx info`:
@@ -145,9 +146,10 @@ fiware ctx dup pre_alcobendas
 Using context pre_alcobendas
 ```
 
-Podemos ver los contextos que tenemos creados con `fiware context ls`. El contexto activo aparecerá marcado con un asterisco:
+Podemos ver los contextos que tenemos creados con `fiware context list`. El contexto activo aparecerá marcado con un asterisco:
 
 ```
+# La aplicación renoce ls como abreviatura de list
 $ fiware ctx ls
 lab_alcobendas
 * pre_alcobendas
@@ -256,7 +258,7 @@ También debe tener cacheado un token reciente, generado con `fiware auth --save
 
 ```
 # Nos aseguramos de que el contexto apunta al subservicio de riego
-$ fiware context set subservice /riego
+$ fiware ctx set subservice /riego
 using context lab_alcobendas
   subservice: /riego
 
@@ -317,7 +319,7 @@ En vez de volcar por pantalla el resultado, se le puede pedir a la aplicación q
 ```
 # La aplicación reconoce "subs" como abreviatura de "subscriptions"
 # también reconoce el parámetro `--subservice`, `--ss`
-$ fiware get -ss /riego -o subs_lab_alcobendas.json subs
+$ fiware get --ss /riego -o subs_lab_alcobendas.json subs
 writing output to file subs_lab_alcobendas.json
 ```
 
@@ -355,7 +357,7 @@ También debe tener cacheado un token reciente, generado con `fiware auth --save
 
 ```
 $ fiware get -ss /medioambiente -o registros_medioambiente.json registrations
-writing output to file rules_alumbrado.json
+writing output to file registros_medioambiente.json
 
 $ cat registros_medioambiente.json
 ...
