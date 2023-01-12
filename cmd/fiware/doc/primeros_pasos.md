@@ -77,6 +77,13 @@ Podemos configurar todos estos parámetros con un solo comando:
 ```
 $ fiware ctx set keystone "http://keystone.url.com:5000" orion "http://orion.url.com:2026" service testservice subservice /riego username lab_admin
 using context lab_alcobendas
+updated fields: {
+  keystone: http://keystone.url.com:5000
+  orion: http://orion.url.com:2026
+  service: testservice
+  subservice: /riego
+  username: lab_admin
+}
 ```
 
 - Si además queremos trabajar con reglas de CEP, necesitaremos añadir:
@@ -85,6 +92,10 @@ using context lab_alcobendas
 
 ```
 $ fiware ctx set perseo "http://pep-perseo-fe.url.com:9090"
+using context lab_alcobendas
+updated fields: {
+  perseo: http://pep-perseo-fe.url.com:9090
+}
 ```
 
 - Si queremos también trabaajr con grupos y dispositivos del IoT agent, necesitaremos la URL del IoTA Manager:
@@ -93,6 +104,10 @@ $ fiware ctx set perseo "http://pep-perseo-fe.url.com:9090"
 
 ```
 $ fiware ctx set iotam "http://iotam.url.com:8082"
+using context lab_alcobendas
+updated fields: {
+  iotam: http://iotam.url.com:8082
+}
 ```
 
 - Para trabajar con los dashboards de urbo. necesiaremos la URL del servidor:
@@ -101,6 +116,10 @@ $ fiware ctx set iotam "http://iotam.url.com:8082"
 
 ```
 $ fiware ctx set urbo "http://urbo.url.com:8082"
+using context lab_alcobendas
+updated fields: {
+  urbo: http://urbo.url.com:8082
+}
 ```
 
 Podemos ver el estado en que ha quedado nuestro contexto con `fiware ctx info`:
@@ -381,7 +400,6 @@ writing output to file rules_alumbrado.json
 $ cat registros_medioambiente.json
 ...
 ```
-
 
 ### ¿Qué entidades hay en el subservicio tráfico con ID que empiece por `Cam`?
 
