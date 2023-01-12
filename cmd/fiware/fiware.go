@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"sort"
@@ -412,6 +413,25 @@ func main() {
 							return errors.New("please introduce variable - value pairs")
 						},
 					},
+				},
+			},
+			{
+				Name:     "serve",
+				Category: "platform",
+				Usage:    fmt.Sprintf("Turn on http server"),
+				Action: func(c *cli.Context) error {
+					contextPrefix := "/contexts/"
+					storeServer := http.StripPrefix(contextPrefix, currentStore.Server())
+					mux := &http.ServeMux{}
+					mux.Handle(contextPrefix, storeServer)
+					port := c.Int(portFlag.Name)
+					fmt.Printf("Listening at port %d\n", port)
+					addr := fmt.Sprintf(":%d", port)
+					http.ListenAndServe(addr, mux)
+					return nil
+				},
+				Flags: []cli.Flag{
+					portFlag,
 				},
 			},
 		},

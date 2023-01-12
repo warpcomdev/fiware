@@ -116,4 +116,11 @@ var (
 		Aliases: []string{"c"},
 		Usage:   "Use an alternative context (instead of the one in use)",
 	}
+
+	portFlag = &cli.IntFlag{
+		Name:    "port",
+		Aliases: []string{"p"},
+		Usage:   "TCP port for server mode",
+		Value:   9081,
+	}
 )

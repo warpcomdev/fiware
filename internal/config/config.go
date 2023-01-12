@@ -240,8 +240,8 @@ func (s *Store) atomicSave(fullPath string, tmpPrefix string, data interface{}) 
 	return os.Rename(file.Name(), fullPath)
 }
 
-// Atomically save a config
-func (s *Store) atomicSaveConfig(cfg Config) error {
+// Atomically save a config. Does not change current selection.
+func (s *Store) Save(cfg Config) error {
 	_, dirPath, err := s.getPaths()
 	if err != nil {
 		return err
@@ -280,7 +280,7 @@ func (s *Store) migrate(selectPath, dirPath string) (string, error) {
 		return "", fmt.Errorf("failed to get selected or migrated contexts: %w", err)
 	}
 	for _, cfg := range configList {
-		if err := s.atomicSaveConfig(cfg); err != nil {
+		if err := s.Save(cfg); err != nil {
 			return "", fmt.Errorf("failed to migrate context %s: %w", cfg.Name, err)
 		}
 	}
@@ -328,7 +328,7 @@ func (s *Store) List() ([]string, error) {
 
 // Create a named Context
 func (s *Store) Create(name string) error {
-	if err := s.atomicSaveConfig(Config{Name: name}); err != nil {
+	if err := s.Save(Config{Name: name}); err != nil {
 		return err
 	}
 	return s.Read(name)
@@ -446,7 +446,7 @@ func (s *Store) Dup(name string) error {
 	}
 	// Otherwise, save it
 	cfg.Name = name
-	if err := s.atomicSaveConfig(cfg); err != nil {
+	if err := s.Save(cfg); err != nil {
 		return err
 	}
 	if err := s.atomicSave(selectPath, "fiware-select", cfg.Name); err != nil {
@@ -536,7 +536,7 @@ func (s *Store) Set(contextName string, strPairs []string) error {
 		}
 	}
 	cfg.defaults()
-	if err := s.atomicSaveConfig(cfg); err != nil {
+	if err := s.Save(cfg); err != nil {
 		return err
 	}
 	// if renamed, remove older file
@@ -575,7 +575,7 @@ func (s *Store) SetParams(contextName string, pairs []string) error {
 			}
 		}
 		cfg.Params = params
-		if err := s.atomicSaveConfig(cfg); err != nil {
+		if err := s.Save(cfg); err != nil {
 			return err
 		}
 	}
