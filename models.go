@@ -351,8 +351,9 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs      []string          `json:"attrs" sort:"true"`
-	Expression SubjectExpression `json:"expression,omitempty"`
+	Attrs           []string          `json:"attrs" sort:"true"`
+	Expression      SubjectExpression `json:"expression,omitempty"`
+	AlterationTypes []string          `json:"alterationTypes,omitempty"`
 }
 
 // SubjectExpression es la expresion en la condicion
@@ -366,6 +367,7 @@ func (s SubjectExpression) IsEmpty() bool {
 
 // SubjectEntity es la entidad sujeto de la suscripcion
 type SubjectEntity struct {
+	ID        string `json:"id,omitempty"`
 	IdPattern string `json:"idPattern,omitempty"`
 	Type      string `json:"type"`
 }

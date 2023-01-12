@@ -1,6 +1,17 @@
 # FIWARE toolkit
 
-Este repositorio contiene el módulo golang [github.com/warpcomdev/fiware](./models.go), que define un modelo de datos para describir los recursos relacionados con una vertical:
+## Herramienta de línea de comandos
+
+Este repositorio es el hogar de la aplicación [warpcom-fiware](cmd/fiware/README.md), que simplifica la operación de los recursos gestionados por un entorno de Thiking Cities basado en plataforma FIWARE. La aplicación permite:
+
+- Mantener un inventario de entornos FIWARE (SaaS, on premise, IaaS), con diferentes servicios y usuarios.
+- Descargar recursos (entidades, suscripciones, reglas de CEP, etc) de un entorno FIWARE.
+- Subir recursos a un entorno FIWARE.
+- Borrar recursos de un entorno FIWARE.
+
+## Modelo de datos
+
+La apicación utiliza las APIs públicas de la plataforma FIWARE para implementar sus funcionalidades. Cada recurso de la plataforma se modela como un objeto son, descrito por el módulo golang [github.com/warpcomdev/fiware](./models.go). Este modelo está representa reecursos como:
 
 - Name-mappings de cygnus
 - Suscripciones de Context-Broker
@@ -8,7 +19,7 @@ Este repositorio contiene el módulo golang [github.com/warpcomdev/fiware](./mod
 - Reglas CEP de Perseo
 - Tablas de la base de datos
 
-Este modelo se ha construido con tres premisas:
+El modelo se ha construido con cuatro premisas:
 
 - El modelo global debe ser serializable a json.
 
@@ -20,6 +31,7 @@ Este modelo se ha construido con tres premisas:
 
   Los atributos de cada modelo que sólo son relevantes para lectura (por ejemplo, la fecha de último disparo de una suscripción, que puede leerse pero no escribirse) se modelan como una sub-estructura opcional dentro de la estructura que define el recurso.
 
+- El modelo debe ser compatible con urbo-deployer.
+
 El schema del modelo resultante se ha documentado formalmente en el fichero [serializations.cue](./serializations.cue). La especificación utiliza el lenguaje [cue](https://cuelang.org/). La versión actual del schema se ha generado automáticamente a partir del código, aunque a futuro podría ser alrevés y ser el código el que se autogenerase en función del schema.
 
-A partir de este modelo, se proporciona una herramienta de línea de comandos [fiware](cmd/fiware/README.md) que permite consumir el modelo y operar con él en instancias de la plataforma Fiware que implementen las APIs de Orion, Perseo, Keystone, IoTA, etc.
