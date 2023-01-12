@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/google/go-jsonnet v0.19.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/mattn/go-ieproxy v0.0.9
+	github.com/mattn/go-ieproxy v0.0.7
 	github.com/urfave/cli/v2 v2.4.0
 	go.starlark.net v0.0.0-20230110155749-dcdc0f0598e3
 	golang.org/x/term v0.4.0
