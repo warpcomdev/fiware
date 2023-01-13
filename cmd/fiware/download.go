@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -18,12 +19,12 @@ import (
 )
 
 type verticalDownloader struct {
-	Selected      config.Config
-	Manifest      fiware.Manifest
-	Client        keystone.HTTPClient
-	Urbo          *urbo.Urbo
-	Headers       http.Header
-	VerticalNames []string
+	Selected  config.Config
+	Manifest  fiware.Manifest
+	Client    keystone.HTTPClient
+	Urbo      *urbo.Urbo
+	Headers   http.Header
+	Verticals map[string]string
 }
 
 func newVerticalDownloader(c *cli.Context, store *config.Store) (*verticalDownloader, error) {
@@ -44,11 +45,21 @@ func newVerticalDownloader(c *cli.Context, store *config.Store) (*verticalDownlo
 	if err := getVerticals(downloader.Selected, downloader.Client, downloader.Urbo, downloader.Headers, &downloader.Manifest); err != nil {
 		return nil, err
 	}
-	downloader.VerticalNames = make([]string, 0, len(downloader.Manifest.Verticals))
+	downloader.Verticals = make(map[string]string)
 	for _, item := range downloader.Manifest.Verticals {
-		downloader.VerticalNames = append(downloader.VerticalNames, item.Slug)
+		downloader.Verticals[item.Slug] = item.Name
 	}
 	return &downloader, nil
+}
+
+// List all available verticals as strings "name (slug)"
+func (v *verticalDownloader) List() ([]string, error) {
+	names := make([]string, 0, len(v.Verticals))
+	for slug, name := range v.Verticals {
+		names = append(names, fmt.Sprintf("%s (%s)", name, slug))
+	}
+	sort.Sort(sort.StringSlice(names))
+	return names, nil
 }
 
 // Dowload all panels in vertical, return file name of manifest written
@@ -107,7 +118,7 @@ func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return downloader.VerticalNames, nil
+	return downloader.List()
 }
 
 type projectDownloader struct {
@@ -258,11 +269,45 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 
 	allTargets := c.Bool(allFlag.Name)
 	if c.NArg() <= 0 && !allTargets {
-		return fmt.Errorf("select a resource from: %s", strings.Join(downloader.VerticalNames, ", "))
+		names, err := downloader.List()
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("select from: %s", strings.Join(names, "\n"))
 	}
+
+	// build a mapping from name to slug(s)
+	nameToSlug := make(map[string][]string)
+	for slug, name := range downloader.Verticals {
+		slugs, ok := nameToSlug[name]
+		if !ok {
+			slugs = make([]string, 0, 1)
+		}
+		slugs = append(slugs, slug)
+		nameToSlug[name] = slugs
+	}
+
+	// Match all arguments against names or slugs
 	targetSlugs := make(map[string]bool)
 	for _, target := range c.Args().Slice() {
-		targetSlugs[target] = false
+		var matchingSlugs []string
+		if _, found := downloader.Verticals[target]; found {
+			matchingSlugs = []string{target}
+		} else {
+			if slugs, found := nameToSlug[target]; found {
+				matchingSlugs = slugs
+			}
+		}
+		if len(matchingSlugs) <= 0 {
+			names, err := downloader.List()
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("No matching slug or vertical for '%s'. Select from: %s", target, strings.Join(names, "\n"))
+		}
+		for _, slug := range matchingSlugs {
+			targetSlugs[slug] = false
+		}
 	}
 
 	manifest := fiware.Manifest{
