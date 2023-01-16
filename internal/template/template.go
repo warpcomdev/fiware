@@ -3,16 +3,48 @@ package template
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"path"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/warpcomdev/fiware"
 )
 
 //go:embed builtin/*.tmpl
 var builtin embed.FS
+
+type verticalWithParams struct {
+	fiware.Manifest
+	Params map[string]string `json:"params,omitempty"`
+}
+
+// Turn a manifest into a json dict to use in a template
+func ManifestForTemplate(manifest fiware.Manifest, params map[string]string) (interface{}, error) {
+	var (
+		data       interface{}
+		strictData verticalWithParams
+	)
+	strictData.Manifest = manifest
+	if len(params) > 0 {
+		strictData.Params = params
+	}
+	// Convierto a map[string]interface{} pasando por json,
+	// porque no quiero que los diseñadores de los templates
+	// necesiten conocer el formato de los objetos golang.
+	// Mejor que puedan trabajar con la misma estructura de atributos
+	// que en el fichero de datos.
+	text, err := json.Marshal(strictData)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(text, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
 
 func newTemplate() (*template.Template, error) {
 	// Add 'include' function to be able to indent templates

@@ -57,7 +57,7 @@ func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, n
 		return nil, err
 	}
 	pages := keystone.NewPaginator(make([]fiware.Subscription, 0, 50))
-	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields); err != nil {
+	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields, 0); err != nil {
 		return nil, err
 	}
 	reverseEndpoints := make(map[string]string, len(notifEndpoints))
@@ -88,6 +88,28 @@ func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, n
 	return pages.Slice, nil
 }
 
+// Turns a list of subscriptions into a map indexed by description
+func SubsMap(subs []fiware.Subscription) map[string]fiware.Subscription {
+	result := make(map[string]fiware.Subscription)
+	for _, sub := range subs {
+		description := sub.Description
+		if description == "" {
+			description = sub.ID
+		}
+		label := description
+		count := 1
+		for {
+			if _, match := result[label]; !match {
+				break
+			}
+			label = fmt.Sprintf("%s_%d", description, count)
+			count += 1
+		}
+		result[label] = sub
+	}
+	return result
+}
+
 // Suscriptions reads the list of suscriptions from the Context Broker
 func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) ([]fiware.Registration, error) {
 	path, err := o.URL.Parse("v2/registrations")
@@ -95,7 +117,7 @@ func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) (
 		return nil, err
 	}
 	pages := keystone.NewPaginator(make([]fiware.Registration, 0, 50))
-	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields); err != nil {
+	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields, 0); err != nil {
 		return nil, err
 	}
 	return pages.Slice, nil
@@ -369,7 +391,7 @@ func (p *entityPaginator) Append(raw json.RawMessage) error {
 }
 
 // Entities reads the list of entities from the Context Broker
-func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string, simpleQuery string) ([]fiware.EntityType, []fiware.Entity, error) {
+func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string, simpleQuery string, maximum int) ([]fiware.EntityType, []fiware.Entity, error) {
 	path, err := o.URL.Parse("v2/entities")
 	if err != nil {
 		return nil, nil, err
@@ -389,7 +411,7 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 		path.RawQuery = values.Encode()
 	}
 	pages := keystone.NewPaginator(make([]Entity, 0, 50))
-	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields); err != nil {
+	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields, maximum); err != nil {
 		return nil, nil, err
 	}
 	t, e := Split(pages.Slice)

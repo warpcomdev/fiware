@@ -209,6 +209,7 @@ func main() {
 					filterIdFlag,
 					filterTypeFlag,
 					simpleQueryFlag,
+					maxFlag,
 				},
 			},
 
@@ -239,6 +240,7 @@ func main() {
 							outdirFlag,
 							urboTokenFlag,
 							allFlag,
+							maxFlag,
 						},
 					}),
 

@@ -123,4 +123,11 @@ var (
 		Usage:   "TCP port for server mode",
 		Value:   9081,
 	}
+
+	maxFlag = &cli.IntFlag{
+		Name:    "maximum",
+		Aliases: []string{"M", "max"},
+		Usage:   "Maximum number of assets to get",
+		Value:   0,
+	}
 )

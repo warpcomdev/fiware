@@ -248,11 +248,11 @@ func NewPaginator[T any](slice []T) *SlicePaginator[T] {
 }
 
 // GetPaginatedJSON is a convenience wrapper for Query(client, http.MethodGet, ...)
-func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool) error {
+func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p Paginator, allowUnknownFields bool, maximum int) error {
 	offset, limit, total := 0, 50, 50
 	for offset < total {
 		if total > 2*limit {
-			// If it's going to tke long, then print a progress indicator
+			// If it's going to tske long, then print a progress indicator
 			log.Printf("Getting %d items of %d at offset %d", limit, total, offset)
 		}
 		limitedURL := *path // make a copy
@@ -275,11 +275,15 @@ func GetPaginatedJSON(client HTTPClient, headers http.Header, path *url.URL, p P
 			return err
 		}
 		for _, raw := range data {
-			if err := p.Append(raw, allowUnknownFields); err != nil {
+			err := p.Append(raw, allowUnknownFields)
+			if err != nil {
 				return err
 			}
 		}
 		offset += len(data)
+		if maximum > 0 && total > maximum {
+			total = maximum
+		}
 	}
 	return nil
 }

@@ -121,6 +121,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			NotificationEndpoints: config.FromConfig(selected).NotificationEndpoints,
 		},
 	}
+	maximum := c.Int(maxFlag.Name)
 	client := httpClient(c.Bool(verboseFlag.Name))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
@@ -168,7 +169,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			filterId := c.String(filterIdFlag.Name)
 			filterType := c.String(filterTypeFlag.Name)
 			simpleQuery := c.String(simpleQueryFlag.Name)
-			if err := getEntities(selected, client, header, filterId, filterType, simpleQuery, vertical); err != nil {
+			if err := getEntities(selected, client, header, filterId, filterType, simpleQuery, maximum, vertical); err != nil {
 				return err
 			}
 		case "rules":
@@ -250,19 +251,7 @@ func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Heade
 	if err != nil {
 		return err
 	}
-	subsMap := make(map[string]fiware.Subscription, len(suscriptions))
-	for _, subs := range suscriptions {
-		desc := subs.Description
-		if desc == "" {
-			desc = subs.ID
-		} else {
-			if _, dup := subsMap[desc]; dup {
-				desc = fmt.Sprintf("%s-%s", desc, subs.ID)
-			}
-		}
-		subsMap[desc] = subs
-	}
-	vertical.Subscriptions = subsMap
+	vertical.Subscriptions = orion.SubsMap(suscriptions)
 	return nil
 }
 
@@ -279,12 +268,12 @@ func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Head
 	return nil
 }
 
-func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType, simpleQuery string, vertical *fiware.Manifest) error {
+func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType, simpleQuery string, maximum int, vertical *fiware.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
-	types, values, err := api.Entities(c, header, filterId, filterType, simpleQuery)
+	types, values, err := api.Entities(c, header, filterId, filterType, simpleQuery, maximum)
 	if err != nil {
 		return err
 	}

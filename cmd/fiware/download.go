@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/serialize"
-	"github.com/warpcomdev/fiware/internal/template"
+	"github.com/warpcomdev/fiware/internal/snapshots"
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
@@ -121,45 +122,17 @@ func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
 	return downloader.List()
 }
 
-type projectDownloader struct {
-	Selected     config.Config
-	Manifest     fiware.Manifest
-	Client       keystone.HTTPClient
-	Keystone     *keystone.Keystone
-	Headers      http.Header
-	ProjectNames []string
-}
-
-func newProjectDownloader(c *cli.Context, store *config.Store) (*projectDownloader, error) {
-	var (
-		downloader projectDownloader
-		err        error
-	)
-	downloader.Selected, err = getConfig(c, store)
+func newProjectDownloader(c *cli.Context, store *config.Store) (*snapshots.Project, error) {
+	selected, err := getConfig(c, store)
 	if err != nil {
 		return nil, err
 	}
-	downloader.Manifest.Subservice = downloader.Selected.Subservice
-	downloader.Client = httpClient(c.Bool(verboseFlag.Name))
-	downloader.Keystone, downloader.Headers, err = getKeystoneHeaders(c, downloader.Selected)
+	client := httpClient(c.Bool(verboseFlag.Name))
+	keystone, headers, err := getKeystoneHeaders(c, selected)
 	if err != nil {
 		return nil, err
 	}
-	if err := getProjects(downloader.Selected, downloader.Client, downloader.Keystone, downloader.Headers, &downloader.Manifest); err != nil {
-		return nil, err
-	}
-	downloader.ProjectNames = make([]string, 0, len(downloader.Manifest.Verticals))
-	cursor := 0
-	for _, item := range downloader.Manifest.Projects {
-		if strings.HasPrefix(item.Name, "/") {
-			downloader.ProjectNames = append(downloader.ProjectNames, item.Name)
-			downloader.Manifest.Projects[cursor] = item
-			cursor += 1
-		}
-	}
-	// Skip - ignore projects with names not starting with "/"
-	downloader.Manifest.Projects = downloader.Manifest.Projects[0:cursor]
-	return &downloader, nil
+	return snapshots.NewProject(selected, client, keystone, headers)
 }
 
 func listProjects(c *cli.Context, store *config.Store, manifest *fiware.Manifest) ([]string, error) {
@@ -167,81 +140,7 @@ func listProjects(c *cli.Context, store *config.Store, manifest *fiware.Manifest
 	if err != nil {
 		return nil, err
 	}
-	return downloader.ProjectNames, nil
-}
-
-// Dowload all panels in vertical, return file name of manifest written
-func (d *projectDownloader) Download(v fiware.Project, outdir string) (string, error) {
-	// IMPORTANT! must set selected subservice!
-	d.Selected.Subservice = v.Name
-	d.Headers.Set("Fiware-Servicepath", v.Name)
-	manifestPrefixed := "orion-" + strings.TrimLeft(v.Name, "/")
-	manifestFilename := manifestPrefixed + ".json"
-	manifestFullname := outputFile(filepath.Join(outdir, manifestFilename))
-	manifestFile, err := manifestFullname.Create()
-	if err != nil {
-		return "", err
-	}
-	defer manifestFile.Close()
-	assetdir := filepath.Join(outdir, manifestPrefixed)
-	if err := ensureDir(assetdir); err != nil {
-		return "", err
-	}
-	resources := map[string]func(config.Config, keystone.HTTPClient, http.Header, *fiware.Manifest) error{
-		"rules":         getRules,
-		"subscriptions": getSuscriptions,
-		"groups":        getServices,
-		"devices":       getDevices,
-		"registrations": getRegistrations,
-	}
-	assetSource := fiware.ManifestSource{
-		Path:  manifestPrefixed,
-		Files: make([]string, 0, len(resources)),
-	}
-	for label, getter := range resources {
-		var assetManifest fiware.Manifest
-		if err := getter(d.Selected, d.Client, d.Headers, &assetManifest); err != nil {
-			return "", err
-		}
-		assetManifest.ClearStatus()
-		// Save the resources in a separate manifest file
-		assetFilename := fmt.Sprintf("%s.json", label)
-		assetFullname := outputFile(filepath.Join(outdir, manifestPrefixed, assetFilename))
-		assetFile, err := assetFullname.Create()
-		if err != nil {
-			return "", err
-		}
-		assetFullname.Encode(assetFile, assetManifest, nil)
-		assetFile.Close()
-		// And add the manifest file as a source
-		assetSource.Files = append(assetSource.Files, assetFilename)
-	}
-	// Also save entities
-	csvFilename := "entities.csv"
-	csvFullname := outputFile(filepath.Join(outdir, manifestPrefixed, csvFilename))
-	csvFile, err := csvFullname.Create()
-	defer csvFile.Close()
-	entityManifest := fiware.Manifest{}
-	if err := getEntities(d.Selected, d.Client, d.Headers, "", "", "", &entityManifest); err != nil {
-		return "", err
-	}
-	plain, err := manifestForTemplate(entityManifest, nil)
-	if err != nil {
-		return "", err
-	}
-	if err := template.Render([]string{"default_csv.tmpl"}, plain, csvFile); err != nil {
-		return "", err
-	}
-	// And finally, write manifest
-	manifest := fiware.Manifest{
-		Deployment: fiware.DeploymentManifest{
-			Sources: map[string]fiware.ManifestSource{
-				fmt.Sprintf("subservice:%s:assets", manifestPrefixed): assetSource,
-			},
-		},
-	}
-	manifestFullname.Encode(manifestFile, manifest, nil)
-	return manifestFilename, nil
+	return downloader.Names(), nil
 }
 
 func ensureDir(outdir string) error {
@@ -273,7 +172,10 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("select from: %s", strings.Join(names, "\n"))
+		if len(names) <= 0 {
+			return errors.New("failed to discover any vertical")
+		}
+		return fmt.Errorf("select from:\n- %s", strings.Join(names, "\n- "))
 	}
 
 	// build a mapping from name to slug(s)
@@ -356,7 +258,7 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 
 	allTargets := c.Bool(allFlag.Name)
 	if c.NArg() <= 0 && !allTargets {
-		return fmt.Errorf("select a resource from: %s", strings.Join(downloader.ProjectNames, ", "))
+		return fmt.Errorf("select a resource from: %s", strings.Join(downloader.Names(), ", "))
 	}
 	targetNames := make(map[string]bool)
 	for _, target := range c.Args().Slice() {
@@ -384,21 +286,25 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 	}
 	defer outfile.Close()
 
-	for _, v := range downloader.Manifest.Projects {
+	client := httpClient(c.Bool(verboseFlag.Name))
+	maximum := c.Int(maxFlag.Name)
+	for _, v := range downloader.Projects {
 		if _, ok := targetNames[v.Name]; !ok && !allTargets {
 			continue
 		}
 		targetNames[v.Name] = true
 		// Output is saved in manifest format
-		filename, err := downloader.Download(v, outdir)
+		currentOutDir := outdir + v.Name
+		current, err := downloader.Snap(client, v, maximum)
 		if err != nil {
 			return err
 		}
-		if filename != "" {
-			manifest.Deployment.Sources["subservice:"+v.Name] = fiware.ManifestSource{
-				Files: []string{filename},
-			}
+		currentSource, err := snapshots.WriteManifest(current, currentOutDir)
+		if err != nil {
+			return err
 		}
+		currentSource.Path = "." + v.Name
+		manifest.Deployment.Sources["subservice:"+v.Name] = currentSource
 	}
 
 	return checkTargets(targetNames, output, outfile, manifest)

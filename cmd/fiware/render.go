@@ -1,44 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/template"
 )
-
-type verticalWithParams struct {
-	fiware.Manifest
-	Params map[string]string `json:"params,omitempty"`
-}
-
-// Turn a manifest into a json dict to use in a template
-func manifestForTemplate(manifest fiware.Manifest, params map[string]string) (interface{}, error) {
-	var (
-		data       interface{}
-		strictData verticalWithParams
-	)
-	strictData.Manifest = manifest
-	if len(params) > 0 {
-		strictData.Params = params
-	}
-	// Convierto a map[string]interface{} pasando por json,
-	// porque no quiero que los diseñadores de los templates
-	// necesiten conocer el formato de los objetos golang.
-	// Mejor que puedan trabajar con la misma estructura de atributos
-	// que en el fichero de datos.
-	text, err := json.Marshal(strictData)
-	if err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal(text, &data); err != nil {
-		return nil, err
-	}
-	return data, nil
-}
 
 func render(c *cli.Context, params map[string]string) error {
 	output := outputFile(c.String(outputFlag.Name))
@@ -53,7 +20,7 @@ func render(c *cli.Context, params map[string]string) error {
 	if err != nil {
 		return err
 	}
-	data, err := manifestForTemplate(manifest, params)
+	data, err := template.ManifestForTemplate(manifest, params)
 	if err != nil {
 		return err
 	}
