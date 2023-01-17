@@ -52,7 +52,8 @@ func getConfig(c *cli.Context, store *config.Store) (zero config.Config, err err
 	return selected, nil
 }
 
-func getKeystoneHeaders(c *cli.Context, selected config.Config) (k *keystone.Keystone, h http.Header, err error) {
+// Might update selected if subservice flag is set
+func getKeystoneHeaders(c *cli.Context, selected *config.Config) (k *keystone.Keystone, h http.Header, err error) {
 	k, err = keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
 	if err != nil {
 		return nil, nil, err
@@ -76,7 +77,8 @@ func getKeystoneHeaders(c *cli.Context, selected config.Config) (k *keystone.Key
 	return k, header, nil
 }
 
-func getUrboHeaders(c *cli.Context, selected config.Config) (u *urbo.Urbo, h http.Header, err error) {
+// Might update "Selected" overwriting subservice, if set in flag
+func getUrboHeaders(c *cli.Context, selected *config.Config) (u *urbo.Urbo, h http.Header, err error) {
 	u, err = urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
 	if err != nil {
 		return nil, nil, err
@@ -96,8 +98,8 @@ func getUrboHeaders(c *cli.Context, selected config.Config) (u *urbo.Urbo, h htt
 			return nil, nil, errors.New("no urbo token found, please set `urbo` context var and login first")
 		}
 	}
-	header, err := u.Headers(token)
-	return u, header, err
+	header := u.Headers(token)
+	return u, header, nil
 }
 
 func getResource(c *cli.Context, store *config.Store) error {
@@ -129,7 +131,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		var header http.Header
 		switch arg {
 		case "devices":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getDevices(selected, client, header, vertical); err != nil {
@@ -138,7 +140,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		case "services":
 			fallthrough
 		case "groups":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getServices(selected, client, header, vertical); err != nil {
@@ -149,21 +151,21 @@ func getResource(c *cli.Context, store *config.Store) error {
 		case "subs":
 			fallthrough
 		case "suscriptions":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getSuscriptions(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "registrations":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getRegistrations(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "entities":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			filterId := c.String(filterIdFlag.Name)
@@ -173,28 +175,28 @@ func getResource(c *cli.Context, store *config.Store) error {
 				return err
 			}
 		case "rules":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getRules(selected, client, header, vertical); err != nil {
 				return err
 			}
 		case "projects":
-			if k, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getProjects(selected, client, k, header, vertical); err != nil {
 				return err
 			}
 		case "panels":
-			if u, header, err = getUrboHeaders(c, selected); err != nil {
+			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getPanels(selected, client, u, header, vertical); err != nil {
 				return err
 			}
 		case "verticals":
-			if u, header, err = getUrboHeaders(c, selected); err != nil {
+			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := getVerticals(selected, client, u, header, vertical); err != nil {

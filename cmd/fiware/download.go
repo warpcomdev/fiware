@@ -18,43 +18,46 @@ import (
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
-func newVerticalDownloader(c *cli.Context, store *config.Store) (*snapshots.Urbo, error) {
+type verticalDownloader struct {
+	Selected  config.Config
+	Api       *urbo.Urbo
+	Headers   http.Header
+	Client    keystone.HTTPClient
+	Verticals map[string]fiware.Vertical
+}
+
+func newVerticalDownloader(c *cli.Context, store *config.Store) (*verticalDownloader, error) {
 	selected, err := getConfig(c, store)
 	if err != nil {
 		return nil, err
 	}
+	api, headers, err := getUrboHeaders(c, &selected)
+	if err != nil {
+		return nil, err
+	}
 	client := httpClient(c.Bool(verboseFlag.Name))
-	ss := c.String(subServiceFlag.Name)
-	if ss != "" {
-		selected.Subservice = ss
-	}
-	api, headers, err := getUrboHeaders(c, selected)
+	verticals, err := api.GetVerticals(client, headers)
 	if err != nil {
 		return nil, err
 	}
-	return snapshots.NewUrbo(selected, client, api, headers)
+	return &verticalDownloader{
+		Selected:  selected,
+		Api:       api,
+		Headers:   headers,
+		Client:    client,
+		Verticals: verticals,
+	}, nil
 }
 
-func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
-	downloader, err := newVerticalDownloader(c, store)
-	if err != nil {
-		return nil, err
-	}
-	return downloader.List()
+func (v *verticalDownloader) List() []string {
+	return snapshots.VerticalList(v.Verticals)
 }
 
-func downloadVertical(c *cli.Context, store *config.Store) error {
-	downloader, err := newVerticalDownloader(c, store)
-	if err != nil {
-		return err
-	}
+func (dld *verticalDownloader) Download(c *cli.Context, store *config.Store) error {
 
 	allTargets := c.Bool(allFlag.Name)
 	if c.NArg() <= 0 && !allTargets {
-		names, err := downloader.List()
-		if err != nil {
-			return err
-		}
+		names := dld.List()
 		if len(names) <= 0 {
 			return errors.New("failed to discover any vertical")
 		}
@@ -63,7 +66,7 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 
 	// build a mapping from name to slug(s)
 	nameToSlug := make(map[string][]string)
-	for slug, vertical := range downloader.Verticals {
+	for slug, vertical := range dld.Verticals {
 		slugs, ok := nameToSlug[vertical.Name]
 		if !ok {
 			slugs = make([]string, 0, 1)
@@ -76,7 +79,7 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 	targetSlugs := make(map[string]bool)
 	for _, target := range c.Args().Slice() {
 		var matchingSlugs []string
-		if _, found := downloader.Verticals[target]; found {
+		if _, found := dld.Verticals[target]; found {
 			matchingSlugs = []string{target}
 		} else {
 			if slugs, found := nameToSlug[target]; found {
@@ -84,10 +87,7 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 			}
 		}
 		if len(matchingSlugs) <= 0 {
-			names, err := downloader.List()
-			if err != nil {
-				return err
-			}
+			names := dld.List()
 			return fmt.Errorf("No matching slug or vertical for '%s'. Select from: %s", target, strings.Join(names, "\n"))
 		}
 		for _, slug := range matchingSlugs {
@@ -113,14 +113,13 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 	}
 	defer outfile.Close()
 
-	client := httpClient(c.Bool(verboseFlag.Name))
-	for _, v := range downloader.Verticals {
+	for _, v := range dld.Verticals {
 		if _, ok := targetSlugs[v.Slug]; !ok && !allTargets {
 			continue
 		}
 		targetSlugs[v.Slug] = true
 		// Output is saved in manifest format
-		current, panels, err := downloader.Snap(client, v)
+		current, panels, err := snapshots.Urbo(dld.Client, dld.Api, dld.Selected, dld.Headers, v)
 		if err != nil {
 			return err
 		}
@@ -136,40 +135,46 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 	return checkTargets(targetSlugs, output, outfile, manifest)
 }
 
-func newProjectDownloader(c *cli.Context, store *config.Store) (*snapshots.Project, error) {
+type projectDownloader struct {
+	Selected config.Config
+	Api      *keystone.Keystone
+	Headers  http.Header
+	Client   keystone.HTTPClient
+	Projects []fiware.Project
+}
+
+func newProjectDownloader(c *cli.Context, store *config.Store) (*projectDownloader, error) {
 	selected, err := getConfig(c, store)
 	if err != nil {
 		return nil, err
 	}
+	api, headers, err := getKeystoneHeaders(c, &selected)
+	if err != nil {
+		return nil, err
+	}
 	client := httpClient(c.Bool(verboseFlag.Name))
-	ss := c.String(subServiceFlag.Name)
-	if ss != "" {
-		selected.Subservice = ss
-	}
-	keystone, headers, err := getKeystoneHeaders(c, selected)
+	projects, err := api.Projects(client, headers)
 	if err != nil {
 		return nil, err
 	}
-	return snapshots.NewProject(selected, client, keystone, headers)
+	return &projectDownloader{
+		Selected: selected,
+		Api:      api,
+		Headers:  headers,
+		Client:   client,
+		Projects: projects,
+	}, nil
 }
 
-func listProjects(c *cli.Context, store *config.Store, manifest *fiware.Manifest) ([]string, error) {
-	downloader, err := newProjectDownloader(c, store)
-	if err != nil {
-		return nil, err
-	}
-	return downloader.Names(), nil
+func (dld *projectDownloader) List() []string {
+	return snapshots.ProjectList(dld.Projects)
 }
 
-func downloadProject(c *cli.Context, store *config.Store) error {
-	downloader, err := newProjectDownloader(c, store)
-	if err != nil {
-		return err
-	}
+func (dld *projectDownloader) Download(c *cli.Context, store *config.Store) error {
 
 	allTargets := c.Bool(allFlag.Name)
 	if c.NArg() <= 0 && !allTargets {
-		return fmt.Errorf("select a resource from: %s", strings.Join(downloader.Names(), ", "))
+		return fmt.Errorf("select a resource from: %s", strings.Join(dld.List(), ", "))
 	}
 	targetNames := make(map[string]bool)
 	for _, target := range c.Args().Slice() {
@@ -197,16 +202,15 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 	}
 	defer outfile.Close()
 
-	client := httpClient(c.Bool(verboseFlag.Name))
 	maximum := c.Int(maxFlag.Name)
-	for _, v := range downloader.Projects {
+	for _, v := range dld.Projects {
 		if _, ok := targetNames[v.Name]; !ok && !allTargets {
 			continue
 		}
 		targetNames[v.Name] = true
 		// Output is saved in manifest format
 		currentOutDir := filepath.Join(outdir, v.Name)
-		current, err := downloader.Snap(client, v, maximum)
+		current, err := snapshots.Project(dld.Client, dld.Api, dld.Selected, dld.Headers, v, maximum)
 		if err != nil {
 			return err
 		}

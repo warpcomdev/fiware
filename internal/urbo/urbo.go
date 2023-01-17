@@ -75,10 +75,10 @@ func (u *Urbo) Login(client keystone.HTTPClient, password string, backoff keysto
 	return result.Token, nil
 }
 
-func (u *Urbo) Headers(token string) (http.Header, error) {
+func (u *Urbo) Headers(token string) http.Header {
 	header := http.Header{}
 	header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	return header, nil
+	return header
 }
 
 // Rules reads the list of rules from Perseo

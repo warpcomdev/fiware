@@ -45,7 +45,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		var header http.Header
 		switch arg {
 		case "devices":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := deleteDevices(selected, client, header, manifest); err != nil {
@@ -54,7 +54,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		case "services":
 			fallthrough
 		case "groups":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := deleteServices(selected, client, header, manifest); err != nil {
@@ -65,7 +65,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		case "subs":
 			fallthrough
 		case "suscriptions":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			useDescription := !c.Bool(useExactIdFlag.Name)
@@ -73,14 +73,14 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 				return err
 			}
 		case "rules":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := deleteRules(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "entities":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := deleteEntities(selected, client, header, manifest); err != nil {

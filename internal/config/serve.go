@@ -92,6 +92,8 @@ func (s *Store) onSave(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), code)
 		return
 	}
+	cfg.Token = ""
+	cfg.UrboToken = ""
 	if err := s.Save(cfg); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

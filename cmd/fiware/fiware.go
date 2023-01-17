@@ -16,6 +16,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
 	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/internal/snapshots"
 	"github.com/warpcomdev/fiware/internal/template"
 )
 
@@ -225,15 +226,19 @@ func main() {
 						Aliases: []string{"vertical", "v"},
 						Usage:   fmt.Sprintf("Download panels from vertical(s)"),
 						BashComplete: func(c *cli.Context) {
-							v, err := listVerticals(c, currentStore)
+							v, err := newVerticalDownloader(c, currentStore)
 							if err != nil {
 								fmt.Println("<log in first>")
 							} else {
-								fmt.Println(strings.Join(v, "\n"))
+								fmt.Println(strings.Join(v.List(), "\n"))
 							}
 						},
 						Action: func(c *cli.Context) error {
-							return downloadVertical(c, currentStore)
+							v, err := newVerticalDownloader(c, currentStore)
+							if err != nil {
+								return err
+							}
+							return v.Download(c, currentStore)
 						},
 						Flags: []cli.Flag{
 							verboseFlag,
@@ -249,15 +254,19 @@ func main() {
 						Aliases: []string{"subservice", "ss", "s"},
 						Usage:   fmt.Sprintf("Download resources from subservice(s)"),
 						BashComplete: func(c *cli.Context) {
-							v, err := listProjects(c, currentStore, nil)
+							v, err := newProjectDownloader(c, currentStore)
 							if err != nil {
 								fmt.Println("<log in first>")
 							} else {
-								fmt.Println(strings.Join(v, "\n"))
+								fmt.Println(strings.Join(v.List(), "\n"))
 							}
 						},
 						Action: func(c *cli.Context) error {
-							return downloadProject(c, currentStore)
+							v, err := newProjectDownloader(c, currentStore)
+							if err != nil {
+								return err
+							}
+							return v.Download(c, currentStore)
 						},
 						Flags: []cli.Flag{
 							verboseFlag,
@@ -424,10 +433,10 @@ func main() {
 				Category: "platform",
 				Usage:    fmt.Sprintf("Turn on http server"),
 				Action: func(c *cli.Context) error {
-					contextPrefix := "/contexts/"
-					storeServer := http.StripPrefix(contextPrefix, currentStore.Server())
+					client := httpClient(false)
 					mux := &http.ServeMux{}
-					mux.Handle(contextPrefix, storeServer)
+					mux.Handle("/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
+					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client)))
 					port := c.Int(portFlag.Name)
 					fmt.Printf("Listening at port %d\n", port)
 					addr := fmt.Sprintf(":%d", port)

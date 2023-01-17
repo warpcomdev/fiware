@@ -26,7 +26,7 @@ func uploadResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	u, header, err := getUrboHeaders(c, selected)
+	u, header, err := getUrboHeaders(c, &selected)
 	if err != nil {
 		return err
 	}

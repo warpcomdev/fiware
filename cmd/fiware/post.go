@@ -49,7 +49,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		var header http.Header
 		switch arg {
 		case "devices":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := postDevices(selected, client, header, manifest); err != nil {
@@ -58,7 +58,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		case "services":
 			fallthrough
 		case "groups":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := postServices(selected, client, header, manifest); err != nil {
@@ -69,28 +69,28 @@ func postResource(c *cli.Context, config *config.Store) error {
 		case "subs":
 			fallthrough
 		case "suscriptions":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := postSuscriptions(selected, client, header, manifest, useDescription); err != nil {
 				return err
 			}
 		case "rules":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := postRules(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "entities":
-			if _, header, err = getKeystoneHeaders(c, selected); err != nil {
+			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := postEntities(selected, client, header, manifest); err != nil {
 				return err
 			}
 		case "verticals":
-			if u, header, err = getUrboHeaders(c, selected); err != nil {
+			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
 			}
 			if err := postVerticals(selected, client, u, header, manifest); err != nil {

@@ -3,7 +3,6 @@ package snapshots
 import (
 	"net/http"
 	"sort"
-	"strings"
 
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
@@ -13,38 +12,9 @@ import (
 	"github.com/warpcomdev/fiware/internal/perseo"
 )
 
-type Project struct {
-	Selected config.Config
-	Keystone *keystone.Keystone
-	Headers  http.Header
-	Projects []fiware.Project
-}
-
-func NewProject(selected config.Config, client keystone.HTTPClient, keystone *keystone.Keystone, headers http.Header) (*Project, error) {
-	downloader := &Project{
-		Selected: selected,
-		Keystone: keystone,
-		Headers:  headers,
-	}
-	projects, err := keystone.Projects(client, headers)
-	if err != nil {
-		return nil, err
-	}
-	// Skip all projects that don't begin with "/"
-	cursor := 0
-	for _, item := range projects {
-		if strings.HasPrefix(item.Name, "/") {
-			projects[cursor] = item
-			cursor += 1
-		}
-	}
-	downloader.Projects = projects[0:cursor]
-	return downloader, nil
-}
-
-func (p *Project) Names() []string {
-	names := make([]string, 0, len(p.Projects))
-	for _, project := range p.Projects {
+func ProjectList(projects []fiware.Project) []string {
+	names := make([]string, 0, len(projects))
+	for _, project := range projects {
 		names = append(names, project.Name)
 	}
 	sort.Sort(sort.StringSlice(names))
@@ -52,12 +22,11 @@ func (p *Project) Names() []string {
 }
 
 // Snap takes an snapshot of all assets in project
-func (p *Project) Snap(client keystone.HTTPClient, project fiware.Project, maximum int) (fiware.Manifest, error) {
+func Project(client keystone.HTTPClient, api *keystone.Keystone, selected config.Config, headers http.Header, project fiware.Project, maximum int) (fiware.Manifest, error) {
 	var result fiware.Manifest
 	// IMPORTANT! must set selected subservice!
-	selected := p.Selected
-	headers := p.Headers.Clone()
 	selected.Subservice = project.Name
+	headers = headers.Clone()
 	headers.Set("Fiware-Servicepath", project.Name)
 
 	// Pre-create all clients, to fail early

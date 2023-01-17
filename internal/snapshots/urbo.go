@@ -12,44 +12,22 @@ import (
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
-type Urbo struct {
-	Selected  config.Config
-	Urbo      *urbo.Urbo
-	Headers   http.Header
-	Verticals map[string]fiware.Vertical
-}
-
-func NewUrbo(selected config.Config, client keystone.HTTPClient, api *urbo.Urbo, headers http.Header) (*Urbo, error) {
-	downloader := &Urbo{
-		Selected:  selected,
-		Urbo:      api,
-		Headers:   headers,
-		Verticals: make(map[string]fiware.Vertical),
-	}
-	verticals, err := api.GetVerticals(client, headers)
-	if err != nil {
-		return nil, err
-	}
-	downloader.Verticals = verticals
-	return downloader, nil
-}
-
 // List all available verticals as strings "name (slug)"
-func (v *Urbo) List() ([]string, error) {
-	names := make([]string, 0, len(v.Verticals))
-	for slug, vertical := range v.Verticals {
+func VerticalList(verticals map[string]fiware.Vertical) []string {
+	names := make([]string, 0, len(verticals))
+	for slug, vertical := range verticals {
 		names = append(names, fmt.Sprintf("%s (%s)", vertical.Name, slug))
 	}
 	sort.Sort(sort.StringSlice(names))
-	return names, nil
+	return names
 }
 
 // Dowload all panels in vertical, return vertical manifest and panels indexed by slug
-func (d *Urbo) Snap(client keystone.HTTPClient, v fiware.Vertical) (fiware.Manifest, map[string]json.RawMessage, error) {
+func Urbo(client keystone.HTTPClient, api *urbo.Urbo, selected config.Config, headers http.Header, v fiware.Vertical) (fiware.Manifest, map[string]json.RawMessage, error) {
 	result := fiware.Manifest{
-		Subservice: d.Selected.Subservice,
+		Subservice: selected.Subservice,
 	}
-	clean_vertical, err := d.Urbo.GetVertical(client, d.Headers, v.Slug)
+	clean_vertical, err := api.GetVertical(client, headers, v.Slug)
 	if err != nil {
 		return result, nil, err
 	}
@@ -59,7 +37,7 @@ func (d *Urbo) Snap(client keystone.HTTPClient, v fiware.Vertical) (fiware.Manif
 	}
 	panels := make(map[string]json.RawMessage)
 	for _, panel := range clean_vertical.AllPanels() {
-		content, err := d.Urbo.DownloadPanel(client, d.Headers, panel)
+		content, err := api.DownloadPanel(client, headers, panel)
 		if err != nil {
 			return result, nil, err
 		}
