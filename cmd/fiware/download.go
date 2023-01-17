@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -19,99 +18,21 @@ import (
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
-type verticalDownloader struct {
-	Selected  config.Config
-	Manifest  fiware.Manifest
-	Client    keystone.HTTPClient
-	Urbo      *urbo.Urbo
-	Headers   http.Header
-	Verticals map[string]string
-}
-
-func newVerticalDownloader(c *cli.Context, store *config.Store) (*verticalDownloader, error) {
-	var (
-		downloader verticalDownloader
-		err        error
-	)
-	downloader.Selected, err = getConfig(c, store)
+func newVerticalDownloader(c *cli.Context, store *config.Store) (*snapshots.Urbo, error) {
+	selected, err := getConfig(c, store)
 	if err != nil {
 		return nil, err
 	}
-	downloader.Manifest.Subservice = downloader.Selected.Subservice
-	downloader.Client = httpClient(c.Bool(verboseFlag.Name))
-	downloader.Urbo, downloader.Headers, err = getUrboHeaders(c, downloader.Selected)
+	client := httpClient(c.Bool(verboseFlag.Name))
+	ss := c.String(subServiceFlag.Name)
+	if ss != "" {
+		selected.Subservice = ss
+	}
+	api, headers, err := getUrboHeaders(c, selected)
 	if err != nil {
 		return nil, err
 	}
-	if err := getVerticals(downloader.Selected, downloader.Client, downloader.Urbo, downloader.Headers, &downloader.Manifest); err != nil {
-		return nil, err
-	}
-	downloader.Verticals = make(map[string]string)
-	for _, item := range downloader.Manifest.Verticals {
-		downloader.Verticals[item.Slug] = item.Name
-	}
-	return &downloader, nil
-}
-
-// List all available verticals as strings "name (slug)"
-func (v *verticalDownloader) List() ([]string, error) {
-	names := make([]string, 0, len(v.Verticals))
-	for slug, name := range v.Verticals {
-		names = append(names, fmt.Sprintf("%s (%s)", name, slug))
-	}
-	sort.Sort(sort.StringSlice(names))
-	return names, nil
-}
-
-// Dowload all panels in vertical, return file name of manifest written
-func (d *verticalDownloader) Download(v fiware.Vertical, outdir string) (string, error) {
-	clean_vertical := v
-	clean_vertical.UrboVerticalStatus = fiware.UrboVerticalStatus{}
-	manifest := fiware.Manifest{
-		Verticals: map[string]fiware.Vertical{
-			v.Slug: clean_vertical,
-		},
-		ManifestPanels: fiware.PanelManifest{
-			Sources: make(map[string]fiware.ManifestSource),
-		},
-	}
-	manifestPrefixed := "urbo-" + v.Slug
-	manifestFilename := manifestPrefixed + ".json"
-	manifestFullname := outputFile(filepath.Join(outdir, manifestFilename))
-	manifestFile, err := manifestFullname.Create()
-	if err != nil {
-		return "", err
-	}
-	defer manifestFile.Close()
-
-	paneldir := filepath.Join(outdir, manifestPrefixed)
-	panelCount := len(v.Panels) + len(v.ShadowPanels)
-	sources := fiware.ManifestSource{
-		Path:  v.Slug,
-		Files: make([]string, 0, panelCount),
-	}
-	if panelCount <= 0 {
-		return "", nil
-	}
-	if err := ensureDir(paneldir); err != nil {
-		return "", err
-	}
-	for _, panel := range v.Panels {
-		fileName, err := downloadPanel(d.Urbo, d.Client, d.Headers, panel, paneldir)
-		if err != nil {
-			return "", err
-		}
-		sources.Files = append(sources.Files, fileName)
-	}
-	for _, panel := range v.ShadowPanels {
-		fileName, err := downloadPanel(d.Urbo, d.Client, d.Headers, panel, paneldir)
-		if err != nil {
-			return "", err
-		}
-		sources.Files = append(sources.Files, fileName)
-	}
-	manifestFullname.Encode(manifestFile, manifest, nil)
-	return manifestFilename, nil
+	return snapshots.NewUrbo(selected, client, api, headers)
 }
 
 func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
@@ -120,44 +41,6 @@ func listVerticals(c *cli.Context, store *config.Store) ([]string, error) {
 		return nil, err
 	}
 	return downloader.List()
-}
-
-func newProjectDownloader(c *cli.Context, store *config.Store) (*snapshots.Project, error) {
-	selected, err := getConfig(c, store)
-	if err != nil {
-		return nil, err
-	}
-	client := httpClient(c.Bool(verboseFlag.Name))
-	keystone, headers, err := getKeystoneHeaders(c, selected)
-	if err != nil {
-		return nil, err
-	}
-	return snapshots.NewProject(selected, client, keystone, headers)
-}
-
-func listProjects(c *cli.Context, store *config.Store, manifest *fiware.Manifest) ([]string, error) {
-	downloader, err := newProjectDownloader(c, store)
-	if err != nil {
-		return nil, err
-	}
-	return downloader.Names(), nil
-}
-
-func ensureDir(outdir string) error {
-	stat, err := os.Stat(outdir)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return fmt.Errorf("Failed to check folder %s: %w", outdir, err)
-		}
-		if err := os.MkdirAll(outdir, 0750); err != nil {
-			return fmt.Errorf("Failed to create folder %s: %w", outdir, err)
-		}
-	} else {
-		if !stat.IsDir() {
-			return fmt.Errorf("path %s already exists and it is not a directory", outdir)
-		}
-	}
-	return nil
 }
 
 func downloadVertical(c *cli.Context, store *config.Store) error {
@@ -180,13 +63,13 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 
 	// build a mapping from name to slug(s)
 	nameToSlug := make(map[string][]string)
-	for slug, name := range downloader.Verticals {
-		slugs, ok := nameToSlug[name]
+	for slug, vertical := range downloader.Verticals {
+		slugs, ok := nameToSlug[vertical.Name]
 		if !ok {
 			slugs = make([]string, 0, 1)
 		}
 		slugs = append(slugs, slug)
-		nameToSlug[name] = slugs
+		nameToSlug[vertical.Name] = slugs
 	}
 
 	// Match all arguments against names or slugs
@@ -223,31 +106,59 @@ func downloadVertical(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	output := outputFile(filepath.Join(outdir, "00_urbo.json"))
+	output := outputFile(filepath.Join(outdir, "urbo.json"))
 	outfile, err := output.Create()
 	if err != nil {
 		return err
 	}
 	defer outfile.Close()
 
-	for _, v := range downloader.Manifest.Verticals {
+	client := httpClient(c.Bool(verboseFlag.Name))
+	for _, v := range downloader.Verticals {
 		if _, ok := targetSlugs[v.Slug]; !ok && !allTargets {
 			continue
 		}
 		targetSlugs[v.Slug] = true
 		// Output is saved in manifest format
-		filename, err := downloader.Download(v, outdir)
+		current, panels, err := downloader.Snap(client, v)
 		if err != nil {
 			return err
 		}
-		if filename != "" {
-			manifest.Deployment.Sources["vertical:"+v.Slug] = fiware.ManifestSource{
-				Files: []string{filename},
-			}
+		currentOutDir := filepath.Join(outdir, v.Slug)
+		currentSource, err := snapshots.WriteManifest(current, panels, currentOutDir)
+		if err != nil {
+			return err
 		}
+		currentSource.Path = "./" + v.Slug
+		manifest.Deployment.Sources["urboverticals:"+v.Slug] = currentSource
 	}
 
 	return checkTargets(targetSlugs, output, outfile, manifest)
+}
+
+func newProjectDownloader(c *cli.Context, store *config.Store) (*snapshots.Project, error) {
+	selected, err := getConfig(c, store)
+	if err != nil {
+		return nil, err
+	}
+	client := httpClient(c.Bool(verboseFlag.Name))
+	ss := c.String(subServiceFlag.Name)
+	if ss != "" {
+		selected.Subservice = ss
+	}
+	keystone, headers, err := getKeystoneHeaders(c, selected)
+	if err != nil {
+		return nil, err
+	}
+	return snapshots.NewProject(selected, client, keystone, headers)
+}
+
+func listProjects(c *cli.Context, store *config.Store, manifest *fiware.Manifest) ([]string, error) {
+	downloader, err := newProjectDownloader(c, store)
+	if err != nil {
+		return nil, err
+	}
+	return downloader.Names(), nil
 }
 
 func downloadProject(c *cli.Context, store *config.Store) error {
@@ -279,7 +190,7 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	output := outputFile(filepath.Join(outdir, "00_orion.json"))
+	output := outputFile(filepath.Join(outdir, "orion.json"))
 	outfile, err := output.Create()
 	if err != nil {
 		return err
@@ -294,12 +205,12 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 		}
 		targetNames[v.Name] = true
 		// Output is saved in manifest format
-		currentOutDir := outdir + v.Name
+		currentOutDir := filepath.Join(outdir, v.Name)
 		current, err := downloader.Snap(client, v, maximum)
 		if err != nil {
 			return err
 		}
-		currentSource, err := snapshots.WriteManifest(current, currentOutDir)
+		currentSource, err := snapshots.WriteManifest(current, nil, currentOutDir)
 		if err != nil {
 			return err
 		}
@@ -308,6 +219,23 @@ func downloadProject(c *cli.Context, store *config.Store) error {
 	}
 
 	return checkTargets(targetNames, output, outfile, manifest)
+}
+
+func ensureDir(outdir string) error {
+	stat, err := os.Stat(outdir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("Failed to check folder %s: %w", outdir, err)
+		}
+		if err := os.MkdirAll(outdir, 0750); err != nil {
+			return fmt.Errorf("Failed to create folder %s: %w", outdir, err)
+		}
+	} else {
+		if !stat.IsDir() {
+			return fmt.Errorf("path %s already exists and it is not a directory", outdir)
+		}
+	}
+	return nil
 }
 
 func checkTargets(targets map[string]bool, output outputFile, writer serialize.Writer, manifest serialize.Serializable) error {

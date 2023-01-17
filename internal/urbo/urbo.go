@@ -142,23 +142,32 @@ func (u *Urbo) GetVerticals(client keystone.HTTPClient, headers http.Header) (ma
 	// Must read verticals one by one again because '/verticals'
 	// does not tell regular panels from shadow panels
 	for _, p := range response {
-		var detailed fiware.Vertical
-		if err := u.slugResource(client, headers, "/api/verticals/"+p.Slug, map[string]string{"shadowPanels": "true"}, &detailed); err != nil {
+		detailed, err := u.GetVertical(client, headers, p.Slug)
+		if err != nil {
 			return nil, err
 		}
-		verticals[p.Slug] = fiware.Vertical{
-			Name:         detailed.Name,
-			Slug:         detailed.Slug,
-			I18n:         detailed.I18n,
-			Panels:       slugs(detailed.PanelsObjects),
-			ShadowPanels: slugs(detailed.ShadowPanelsObjects),
-			UrboVerticalStatus: fiware.UrboVerticalStatus{
-				PanelsObjects:       detailed.PanelsObjects,
-				ShadowPanelsObjects: detailed.ShadowPanelsObjects,
-			},
-		}
+		verticals[p.Slug] = detailed
 	}
 	return verticals, nil
+}
+
+// GetVerticals reads the list of verticals from Urbo
+func (u *Urbo) GetVertical(client keystone.HTTPClient, headers http.Header, slug string) (fiware.Vertical, error) {
+	var detailed fiware.Vertical
+	if err := u.slugResource(client, headers, "/api/verticals/"+slug, map[string]string{"shadowPanels": "true"}, &detailed); err != nil {
+		return detailed, err
+	}
+	return fiware.Vertical{
+		Name:         detailed.Name,
+		Slug:         detailed.Slug,
+		I18n:         detailed.I18n,
+		Panels:       slugs(detailed.PanelsObjects),
+		ShadowPanels: slugs(detailed.ShadowPanelsObjects),
+		UrboVerticalStatus: fiware.UrboVerticalStatus{
+			PanelsObjects:       detailed.PanelsObjects,
+			ShadowPanelsObjects: detailed.ShadowPanelsObjects,
+		},
+	}, nil
 }
 
 // PostVerticals reads the list of verticals from Urbo

@@ -2,6 +2,7 @@ package snapshots
 
 import (
 	"bytes"
+	"encoding/json"
 	"path/filepath"
 
 	"github.com/warpcomdev/fiware"
@@ -9,8 +10,10 @@ import (
 	"github.com/warpcomdev/fiware/internal/template"
 )
 
-// Write all assets in manifest using deployer format
-func WriteManifest(manifest fiware.Manifest, folder string) (fiware.ManifestSource, error) {
+// Write all assets in manifest using deployer format.
+// panels might containe payload for any panel in manifest.Verticals.
+// panels outside manifest.Verticals are not stored.
+func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, folder string) (fiware.ManifestSource, error) {
 	result := fiware.ManifestSource{
 		Files: make([]string, 0, 8),
 	}
@@ -18,10 +21,11 @@ func WriteManifest(manifest fiware.Manifest, folder string) (fiware.ManifestSour
 	// dump assets
 	conditionalSave := func(asset string, when bool, manifest fiware.Manifest) error {
 		if when {
-			if err := config.AtomicSave(filepath.Join(folder, asset+".json"), asset, manifest); err != nil {
+			filename := asset + ".json"
+			if err := config.AtomicSave(filepath.Join(folder, filename), asset, manifest); err != nil {
 				return err
 			}
-			result.Files = append(result.Files, asset)
+			result.Files = append(result.Files, filename)
 		}
 		return nil
 	}
@@ -55,6 +59,44 @@ func WriteManifest(manifest fiware.Manifest, folder string) (fiware.ManifestSour
 		Devices: manifest.Devices,
 	}); err != nil {
 		return result, err
+	}
+
+	if len(panels) > 0 {
+		manifest := fiware.Manifest{
+			Verticals: manifest.Verticals,
+			ManifestPanels: fiware.PanelManifest{
+				Sources: make(map[string]fiware.ManifestSource),
+			},
+		}
+		// Only dump panels in verticals
+		for verticalSlug, vertical := range manifest.Verticals {
+			panelSource := fiware.ManifestSource{
+				Path:  "./panels",
+				Files: make([]string, 0, len(panels)),
+			}
+			for _, slug := range vertical.AllPanels() {
+				payload, ok := panels[slug]
+				if !ok {
+					continue
+				}
+				filename := slug + ".json"
+				panelSource.Files = append(panelSource.Files, filename)
+				fullPath := filepath.Join(folder, "panels", filename)
+				if err := config.AtomicSaveBytes(fullPath, slug, payload); err != nil {
+					return result, err
+				}
+			}
+			manifest.ManifestPanels.Sources[verticalSlug] = panelSource
+		}
+		if err := conditionalSave("verticals", true, manifest); err != nil {
+			return result, err
+		}
+	} else {
+		if err := conditionalSave("verticals", len(manifest.Verticals) > 0, fiware.Manifest{
+			Verticals: manifest.Verticals,
+		}); err != nil {
+			return result, err
+		}
 	}
 
 	// dump entities as CSV

@@ -124,6 +124,12 @@ type Vertical struct {
 	UrboVerticalStatus
 }
 
+// Return all Panels of the vertical, regular and shadow
+func (v Vertical) AllPanels() []string {
+	result := make([]string, 0, len(v.Panels)+len(v.ShadowPanels))
+	return append(append(result, v.Panels...), v.ShadowPanels...)
+}
+
 // UrboVerticalStatus contains detailed vertical status
 type UrboVerticalStatus struct {
 	PanelsObjects       []UrboPanel `json:"panelsObjects,omitempty"`
