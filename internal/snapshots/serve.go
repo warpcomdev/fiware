@@ -1,11 +1,17 @@
 package snapshots
 
 import (
+	"archive/zip"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 
+	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
@@ -16,8 +22,8 @@ type dldFunc func(keystone.HTTPClient, http.ResponseWriter, *http.Request, confi
 
 func Serve(client keystone.HTTPClient, store *config.Store) http.Handler {
 	mux := &http.ServeMux{}
-	mux.Handle("/projects/", http.StripPrefix("/projects", serve(client, store, projectLister, nil)))
-	mux.Handle("/verticals/", http.StripPrefix("/verticals", serve(client, store, urboLister, nil)))
+	mux.Handle("/projects/", http.StripPrefix("/projects", serve(client, store, projectLister, projectDownloader)))
+	mux.Handle("/verticals/", http.StripPrefix("/verticals", serve(client, store, urboLister, urboDownloader)))
 	return mux
 }
 
@@ -29,34 +35,11 @@ func serve(client keystone.HTTPClient, store *config.Store, lister listFunc, dld
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		context := r.Header.Get("Fiware-Context")
-		token := r.Header.Get("X-Auth-Token")
-		if context == "" || token == "" {
-			username, password, ok := r.BasicAuth()
-			if ok {
-				if context == "" {
-					context = username
-				}
-				if token == "" {
-					token = password
-				}
-			}
-			if context == "" {
-				http.Error(w, "Missing header Fiware-Context or username", http.StatusBadRequest)
-				return
-			}
-			if token == "" {
-				http.Error(w, "Missing header X-Auth-Token or password", http.StatusUnauthorized)
-				return
-			}
-		}
-		selected, err := store.Info(context)
+		selected, err := config.FromHeaders(r, store)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-		selected.Token = token
-		selected.UrboToken = token
 		if id == "" {
 			if lister == nil {
 				http.Error(w, "operation not supported", http.StatusNotAcceptable)
@@ -73,7 +56,7 @@ func serve(client keystone.HTTPClient, store *config.Store, lister listFunc, dld
 			enc.Encode(data)
 			return
 		}
-		if dlder != nil {
+		if dlder == nil {
 			http.Error(w, "operation not supported", http.StatusNotAcceptable)
 			return
 		}
@@ -104,4 +87,102 @@ func urboLister(client keystone.HTTPClient, selected config.Config) (interface{}
 	}
 	headers := api.Headers(selected.UrboToken)
 	return api.GetVerticals(client, headers)
+}
+
+func projectDownloader(client keystone.HTTPClient, w http.ResponseWriter, r *http.Request, selected config.Config, id string) {
+	api, err := keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !strings.HasPrefix(id, "/") {
+		id = "/" + id
+	}
+	headers := api.Headers(id, selected.Token)
+	manifest, err := Project(client, api, selected, headers, fiware.Project{Name: id}, 10000)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	attachName := strings.TrimPrefix(id, "/")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", attachName))
+	w.Header().Set("Content-Type", "application/zip")
+	w.WriteHeader(http.StatusOK)
+	zipper := &zipWriter{
+		Visited: make(map[string]struct{}),
+		Zipper:  zip.NewWriter(w),
+	}
+	defer zipper.Zipper.Close()
+	source, err := WriteManifest(manifest, nil, zipper)
+	if err != nil {
+		log.Print(err.Error())
+		return
+	}
+	deployment := fiware.Manifest{
+		Deployment: fiware.DeploymentManifest{
+			Sources: map[string]fiware.ManifestSource{
+				attachName: source,
+			},
+		},
+	}
+	if err := config.AtomicSave(zipper, "project.json", "project", deployment); err != nil {
+		log.Print(err.Error())
+	}
+}
+
+func urboDownloader(client keystone.HTTPClient, w http.ResponseWriter, r *http.Request, selected config.Config, id string) {
+	api, err := urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	id = strings.TrimPrefix(id, "/")
+	headers := api.Headers(selected.UrboToken)
+	manifest, panels, err := Urbo(client, api, selected, headers, fiware.Vertical{Slug: id})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	attachName := id
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", attachName))
+	w.Header().Set("Content-Type", r.Header.Get("application/zip"))
+	w.WriteHeader(http.StatusOK)
+	zipper := &zipWriter{
+		Visited: make(map[string]struct{}),
+		Zipper:  zip.NewWriter(w),
+	}
+	defer zipper.Zipper.Close()
+	if _, err := WriteManifest(manifest, panels, zipper); err != nil {
+		log.Print(err.Error())
+		return
+	}
+}
+
+type zipWriter struct {
+	Visited map[string]struct{}
+	Zipper  *zip.Writer
+}
+
+func (z *zipWriter) AtomicSave(path, tmpPrefix string, data []byte) error {
+	folder, _ := filepath.Split(path)
+	if folder != "" {
+		if _, ok := z.Visited[folder]; !ok {
+			if _, err := z.Zipper.Create(folder + "/"); err != nil {
+				return err
+			}
+			z.Visited[folder] = struct{}{}
+		}
+	}
+	w, err := z.Zipper.Create(path)
+	if err != nil {
+		return err
+	}
+	n, err := w.Write(data)
+	if err != nil {
+		return err
+	}
+	if n < len(data) {
+		return errors.New("failed to zip all available data")
+	}
+	return nil
 }

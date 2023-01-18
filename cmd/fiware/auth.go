@@ -1,10 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -41,32 +45,10 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	if err != nil {
 		return err
 	}
-	client := httpClient(c.Bool(verboseFlag.Name))
-	var fiwareToken, urboToken string
-	var fiwareError, urboError error
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		fiwareToken, fiwareError = k.Login(client, string(bytepw), backoff)
-	}()
-	if selected.UrboURL != "" {
-		wg.Add(1)
-		u, err := urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
-		if err != nil {
-			return err
-		}
-		go func() {
-			defer wg.Done()
-			urboToken, urboError = u.Login(client, string(bytepw), backoff)
-		}()
-	}
-	wg.Wait()
-	if fiwareError != nil {
-		return fiwareError
-	}
-	if urboError != nil {
-		return urboError
+	verbose := c.Bool(verboseFlag.Name)
+	fiwareToken, urboToken, err := getTokens(k, selected, string(bytepw), backoff, verbose)
+	if err != nil {
+		return err
 	}
 	save := c.Bool(saveFlag.Name)
 	if save {
@@ -77,7 +59,6 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 			return err
 		}
 	}
-	verbose := c.Bool(verboseFlag.Name)
 	if save && !verbose {
 		fmt.Printf("tokens for context %s cached\n", selected.Name)
 	} else {
@@ -88,4 +69,89 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 		}
 	}
 	return nil
+}
+
+func getTokens(api *keystone.Keystone, selected config.Config, password string, backoff keystone.Backoff, verbose bool) (string, string, error) {
+	client := httpClient(verbose)
+	var fiwareToken, urboToken string
+	var fiwareError, urboError error
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fiwareToken, fiwareError = api.Login(client, password, backoff)
+	}()
+	if selected.UrboURL != "" {
+		wg.Add(1)
+		u, err := urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
+		if err != nil {
+			return "", "", err
+		}
+		go func() {
+			defer wg.Done()
+			urboToken, urboError = u.Login(client, password, backoff)
+		}()
+	}
+	wg.Wait()
+	if fiwareError != nil {
+		return "", "", fiwareError
+	}
+	if urboError != nil {
+		return "", "", urboError
+	}
+	return fiwareToken, urboToken, nil
+}
+
+func serve(store *config.Store, backoff keystone.Backoff) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "invalid method", http.StatusMethodNotAllowed)
+			return
+		}
+		if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
+			http.Error(w, "unsupported content type", http.StatusNotAcceptable)
+			return
+		}
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		context := r.Form.Get("context")
+		if context == "" {
+			http.Error(w, "must provide context name", http.StatusBadRequest)
+			return
+		}
+		password := r.Form.Get("password")
+		if password == "" {
+			http.Error(w, "must provide password", http.StatusBadRequest)
+			return
+		}
+		selected, err := store.Info(context)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if selected.KeystoneURL == "" || selected.Service == "" || selected.Username == "" {
+			http.Error(w, "context is not properly configured", http.StatusNotFound)
+			return
+		}
+		k, err := keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fiwareToken, urboToken, err := getTokens(k, selected, password, backoff, false)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		selected.Token = fiwareToken
+		selected.UrboToken = urboToken
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(selected); err != nil {
+			log.Println(err.Error())
+		}
+	})
 }

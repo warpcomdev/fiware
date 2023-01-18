@@ -435,6 +435,7 @@ func main() {
 				Action: func(c *cli.Context) error {
 					client := httpClient(false)
 					mux := &http.ServeMux{}
+					mux.Handle("/auth", serve(currentStore, backoff))
 					mux.Handle("/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
 					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
 					port := c.Int(portFlag.Name)

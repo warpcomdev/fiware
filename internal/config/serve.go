@@ -74,22 +74,10 @@ func (s *Store) onLoad(w http.ResponseWriter, r *http.Request, id string) {
 	reply(w, info)
 }
 
-func readPost(w http.ResponseWriter, r *http.Request) (Config, int, error) {
-	var cfg Config
-	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-		return cfg, http.StatusBadRequest, errors.New("Invalid content-type")
-	}
-	decoder := json.NewDecoder(io.LimitReader(r.Body, 65536))
-	if err := decoder.Decode(&cfg); err != nil {
-		return cfg, http.StatusBadRequest, err
-	}
-	return cfg, http.StatusOK, nil
-}
-
 func (s *Store) onSave(w http.ResponseWriter, r *http.Request) {
-	cfg, code, err := readPost(w, r)
+	cfg, err := FromBody(r)
 	if err != nil {
-		http.Error(w, err.Error(), code)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	cfg.Token = ""
@@ -107,4 +95,45 @@ func (s *Store) onRemove(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	reply(w, id)
+}
+
+func FromHeaders(r *http.Request, store *Store) (Config, error) {
+	context := r.Header.Get("Fiware-Context")
+	token := r.Header.Get("X-Auth-Token")
+	if context == "" || token == "" {
+		username, password, ok := r.BasicAuth()
+		if ok {
+			if context == "" {
+				context = username
+			}
+			if token == "" {
+				token = password
+			}
+		}
+		if context == "" {
+			return Config{}, errors.New("Missing header Fiware-Context or username")
+		}
+		if token == "" {
+			return Config{}, errors.New("Missing header X-Auth-Token or password")
+		}
+	}
+	selected, err := store.Info(context)
+	if err != nil {
+		return Config{}, err
+	}
+	selected.Token = token
+	selected.UrboToken = token
+	return selected, nil
+}
+
+func FromBody(r *http.Request) (Config, error) {
+	var cfg Config
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		return cfg, errors.New("Invalid content-type")
+	}
+	decoder := json.NewDecoder(io.LimitReader(r.Body, 65536))
+	if err := decoder.Decode(&cfg); err != nil {
+		return cfg, err
+	}
+	return cfg, nil
 }
