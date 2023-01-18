@@ -436,7 +436,7 @@ func main() {
 					client := httpClient(false)
 					mux := &http.ServeMux{}
 					mux.Handle("/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
-					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client)))
+					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
 					port := c.Int(portFlag.Name)
 					fmt.Printf("Listening at port %d\n", port)
 					addr := fmt.Sprintf(":%d", port)

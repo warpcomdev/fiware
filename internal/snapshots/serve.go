@@ -12,33 +12,51 @@ import (
 )
 
 type listFunc func(keystone.HTTPClient, config.Config) (interface{}, error)
-type dldFunc func(keystone.HTTPClient, http.ResponseWriter, *http.Request, config.Config)
+type dldFunc func(keystone.HTTPClient, http.ResponseWriter, *http.Request, config.Config, string)
 
-func Serve(client keystone.HTTPClient) http.Handler {
+func Serve(client keystone.HTTPClient, store *config.Store) http.Handler {
 	mux := &http.ServeMux{}
-	mux.Handle("/projects/", http.StripPrefix("/projects", serve(client, projectLister, nil)))
-	mux.Handle("/verticals/", http.StripPrefix("/verticals", serve(client, urboLister, nil)))
+	mux.Handle("/projects/", http.StripPrefix("/projects", serve(client, store, projectLister, nil)))
+	mux.Handle("/verticals/", http.StripPrefix("/verticals", serve(client, store, urboLister, nil)))
 	return mux
 }
 
-func serve(client keystone.HTTPClient, lister listFunc, dlder dldFunc) http.Handler {
+func serve(client keystone.HTTPClient, store *config.Store, lister listFunc, dlder dldFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer exhaust(r)
 		id := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")[0]
-		if r.Method != http.MethodPost {
+		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-			http.Error(w, "invalid content type", http.StatusBadRequest)
+		context := r.Header.Get("Fiware-Context")
+		token := r.Header.Get("X-Auth-Token")
+		if context == "" || token == "" {
+			username, password, ok := r.BasicAuth()
+			if ok {
+				if context == "" {
+					context = username
+				}
+				if token == "" {
+					token = password
+				}
+			}
+			if context == "" {
+				http.Error(w, "Missing header Fiware-Context or username", http.StatusBadRequest)
+				return
+			}
+			if token == "" {
+				http.Error(w, "Missing header X-Auth-Token or password", http.StatusUnauthorized)
+				return
+			}
+		}
+		selected, err := store.Info(context)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		reader := io.LimitReader(r.Body, 65536)
-		decode := json.NewDecoder(reader)
-		var selected config.Config
-		if err := decode.Decode(&selected); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
+		selected.Token = token
+		selected.UrboToken = token
 		if id == "" {
 			if lister == nil {
 				http.Error(w, "operation not supported", http.StatusNotAcceptable)
@@ -59,7 +77,7 @@ func serve(client keystone.HTTPClient, lister listFunc, dlder dldFunc) http.Hand
 			http.Error(w, "operation not supported", http.StatusNotAcceptable)
 			return
 		}
-		dlder(client, w, r, selected)
+		dlder(client, w, r, selected, id)
 	})
 }
 
