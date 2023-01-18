@@ -39,8 +39,8 @@ func deleteContext(s *config.Store, c *cli.Context) error {
 	return nil
 }
 
-func listContext(s *config.Store, c *cli.Context) error {
-	names, err := s.List()
+func listContext(s *config.Store, c *cli.Context, ignoreMissing bool) error {
+	names, err := s.List(ignoreMissing)
 	if err != nil {
 		return err
 	}

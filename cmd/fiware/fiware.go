@@ -36,7 +36,7 @@ func main() {
 			return
 		}
 		if currentStore.Path != "" {
-			configs, err := currentStore.List()
+			configs, err := currentStore.List(true)
 			if err == nil {
 				fmt.Println(strings.Join(configs, "\n"))
 			}
@@ -362,7 +362,7 @@ func main() {
 						Aliases: []string{"ls"},
 						Usage:   "List all contexts",
 						Action: func(c *cli.Context) error {
-							return listContext(currentStore, c)
+							return listContext(currentStore, c, true)
 						},
 					},
 					{

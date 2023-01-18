@@ -124,7 +124,7 @@ func (dld *verticalDownloader) Download(c *cli.Context, store *config.Store) err
 			return err
 		}
 		currentOutDir := filepath.Join(outdir, v.Slug)
-		currentSource, err := snapshots.WriteManifest(current, panels, currentOutDir)
+		currentSource, err := snapshots.WriteManifest(current, panels, config.FolderWriter(currentOutDir))
 		if err != nil {
 			return err
 		}
@@ -214,7 +214,7 @@ func (dld *projectDownloader) Download(c *cli.Context, store *config.Store) erro
 		if err != nil {
 			return err
 		}
-		currentSource, err := snapshots.WriteManifest(current, nil, currentOutDir)
+		currentSource, err := snapshots.WriteManifest(current, nil, config.FolderWriter(currentOutDir))
 		if err != nil {
 			return err
 		}

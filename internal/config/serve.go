@@ -54,7 +54,7 @@ func reply(w http.ResponseWriter, data interface{}) {
 }
 
 func (s *Store) onList(w http.ResponseWriter, r *http.Request) {
-	listing, err := s.List()
+	listing, err := s.List(true)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

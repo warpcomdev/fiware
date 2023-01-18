@@ -217,41 +217,8 @@ func (s *Store) getConfigDir() (string, error) {
 	return s.DirPath, nil
 }
 
-// save some file atomically
-func AtomicSave(fullPath string, tmpPrefix string, data interface{}) error {
-	byteData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return err
-	}
-	return AtomicSaveBytes(fullPath, tmpPrefix, byteData)
-}
-
-// save some file atomically
-func AtomicSaveBytes(fullPath string, tmpPrefix string, byteData []byte) error {
-	folder, _ := filepath.Split(fullPath)
-	if err := os.MkdirAll(folder, 0750); err != nil {
-		// Ignore error if the folder exists
-		if !os.IsExist(err) {
-			return err
-		}
-	}
-	file, err := ioutil.TempFile(folder, tmpPrefix)
-	if err != nil {
-		return err
-	}
-	defer os.Remove(file.Name()) // just in case
-	_, err = file.Write(byteData)
-	closeErr := file.Close() // Close before returning and renaming, for windows.
-	if err != nil {
-		return err
-	}
-	if closeErr != nil {
-		return closeErr
-	}
-	if runtime.GOOS == "windows" {
-		os.Chmod(fullPath, 0644) // So that os.Rename works. See https://github.com/golang/go/issues/38287
-	}
-	return os.Rename(file.Name(), fullPath)
+func (s *Store) atomicSave(fullPath, tmpPrefix string, data interface{}) error {
+	return AtomicSave(FolderWriter(""), fullPath, tmpPrefix, data)
 }
 
 // Atomically save a config. Does not change current selection.
@@ -261,7 +228,7 @@ func (s *Store) Save(cfg Config) error {
 		return err
 	}
 	fullPath := filepath.Join(dirPath, cfg.Name+".json")
-	return AtomicSave(fullPath, tmpContextPrefix, cfg)
+	return s.atomicSave(fullPath, tmpContextPrefix, cfg)
 }
 
 // Migrate the selection file
@@ -280,7 +247,7 @@ func (s *Store) migrate(dirPath string) (string, error) {
 			var selected string
 			if len(options) > 0 {
 				selected = options[0]
-				return selected, AtomicSave(s.Path, tmpSelectPrefix, selected)
+				return selected, s.atomicSave(s.Path, tmpSelectPrefix, selected)
 			}
 			return "", nil
 		}
@@ -323,16 +290,18 @@ func (s *Store) migrate(dirPath string) (string, error) {
 	if len(configList) > 0 {
 		selected = configList[0].Name
 	}
-	return selected, AtomicSave(s.Path, tmpSelectPrefix, selected)
+	return selected, s.atomicSave(s.Path, tmpSelectPrefix, selected)
 }
 
 // List available Configs
-func (s *Store) List() ([]string, error) {
+func (s *Store) List(ignoreMissing bool) ([]string, error) {
 	// Read selected context (the former API contract requires it)
-	// also, if makes sure we migrate the contexts, if the user is
+	// also, it makes sure we migrate the contexts, if the user is
 	// running an old version.
 	if err := s.Read(""); err != nil {
-		return nil, err
+		if !ignoreMissing {
+			return nil, err
+		}
 	}
 	return s.listConfigFolder()
 }
@@ -368,7 +337,7 @@ func (s *Store) Create(name string) error {
 		return err
 	}
 	// And update the marker
-	return AtomicSave(s.Path, tmpSelectPrefix, s.Current.Name)
+	return s.atomicSave(s.Path, tmpSelectPrefix, s.Current.Name)
 }
 
 // Delete the named config, return the current one
@@ -390,7 +359,7 @@ func (s *Store) Delete(name string) error {
 	}
 	// If the context was selected, replace it by any other
 	if selected == name {
-		remain, err := s.List()
+		remain, err := s.List(true)
 		if err != nil {
 			return err
 		}
@@ -398,7 +367,9 @@ func (s *Store) Delete(name string) error {
 			selected = remain[0]
 		}
 	}
-	s.Read(selected) // we must populate s.Current after each call...
+	if selected != "" {
+		return s.Use(selected) // we must populate s.Current after each call...
+	}
 	return nil
 }
 
@@ -409,7 +380,7 @@ func (s *Store) Use(name string) error {
 		return err
 	}
 	// And update the marker
-	return AtomicSave(s.Path, tmpSelectPrefix, s.Current.Name)
+	return s.atomicSave(s.Path, tmpSelectPrefix, s.Current.Name)
 }
 
 // Info about a particular Config
@@ -482,7 +453,7 @@ func (s *Store) Dup(name string) error {
 	if err := s.Save(cfg); err != nil {
 		return err
 	}
-	if err := AtomicSave(s.Path, tmpSelectPrefix, cfg.Name); err != nil {
+	if err := s.atomicSave(s.Path, tmpSelectPrefix, cfg.Name); err != nil {
 		return err
 	}
 	// And set it as current
@@ -573,7 +544,7 @@ func (s *Store) Set(contextName string, strPairs map[string]string) ([]string, e
 		os.Remove(filepath.Join(dirPath, formerName+".json"))
 		if selectName == formerName {
 			// If the renamed vertical is the active one, change name
-			if err := AtomicSave(s.Path, tmpSelectPrefix, cfg.Name); err != nil {
+			if err := s.atomicSave(s.Path, tmpSelectPrefix, cfg.Name); err != nil {
 				return nil, err
 			}
 		}

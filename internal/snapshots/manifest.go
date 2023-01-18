@@ -13,7 +13,7 @@ import (
 // Write all assets in manifest using deployer format.
 // panels might containe payload for any panel in manifest.Verticals.
 // panels outside manifest.Verticals are not stored.
-func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, folder string) (fiware.ManifestSource, error) {
+func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, writer config.Writer) (fiware.ManifestSource, error) {
 	result := fiware.ManifestSource{
 		Files: make([]string, 0, 8),
 	}
@@ -22,7 +22,7 @@ func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, 
 	conditionalSave := func(asset string, when bool, manifest fiware.Manifest) error {
 		if when {
 			filename := asset + ".json"
-			if err := config.AtomicSave(filepath.Join(folder, filename), asset, manifest); err != nil {
+			if err := config.AtomicSave(writer, filename, asset, manifest); err != nil {
 				return err
 			}
 			result.Files = append(result.Files, filename)
@@ -81,8 +81,8 @@ func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, 
 				}
 				filename := slug + ".json"
 				panelSource.Files = append(panelSource.Files, filename)
-				fullPath := filepath.Join(folder, "panels", filename)
-				if err := config.AtomicSaveBytes(fullPath, slug, payload); err != nil {
+				fullPath := filepath.Join("panels", filename)
+				if err := writer.AtomicSave(fullPath, slug, payload); err != nil {
 					return result, err
 				}
 			}
@@ -113,7 +113,7 @@ func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, 
 		if err := template.Render([]string{"default_csv.tmpl"}, plain, csvData); err != nil {
 			return result, err
 		}
-		if err := config.AtomicSaveBytes(filepath.Join(folder, "entities.csv"), "entities", csvData.Bytes()); err != nil {
+		if err := writer.AtomicSave("entities.csv", "entities", csvData.Bytes()); err != nil {
 			return result, err
 		}
 	}
