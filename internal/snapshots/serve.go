@@ -99,7 +99,11 @@ func projectDownloader(client keystone.HTTPClient, w http.ResponseWriter, r *htt
 		id = "/" + id
 	}
 	headers := api.Headers(id, selected.Token)
-	manifest, err := Project(client, api, selected, headers, fiware.Project{Name: id}, 10000)
+	var assets []string
+	if a, ok := r.URL.Query()["assets"]; ok {
+		assets = a
+	}
+	manifest, err := Project(client, api, selected, headers, fiware.Project{Name: id}, assets, 10000)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
