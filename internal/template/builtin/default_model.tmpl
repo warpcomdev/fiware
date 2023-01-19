@@ -52,7 +52,15 @@
         {{- $dbType = append $dbType "text" }}
         "dbType": {{ index $dbType 0 | quote  }},
         "description": {{ index .description 0 | quote }},
-        "extra":       {{ if gt (len .description) 1 }}{{ index .description 1 | quote }}{{ else }}"-"{{ end }},
+        {{- if gt (len .description) 1 }}
+        {{- if hasPrefix "Ejemplo:" (index .description 1) }}
+        "extra":       "-",
+        {{- else }}
+        "extra":       {{ index .description 1 | quote }},
+        {{- end }}
+        {{- else }}
+        "extra":       "-",
+        {{- end }}
         "unit":        {{ if gt (len .description) 2 }}{{ index .description 2 | quote }}{{ else }}"-"{{ end }},
         "range":       {{ if gt (len .description) 3 }}{{ index .description 3 | quote }}{{ else }}"-"{{ end }},
         "example":     {{ if .value }}{{ .value | toJson }}{{ else }}""{{ end }},
@@ -74,13 +82,15 @@
 
     "flows": {
       "historic": {
-        "class": "FLOW_HISTORIC"
+        "class": "FLOW_HISTORIC",
+        "endpoint": "HISTORIC"
         {{- if gt (len $singleton) 0 }}
         , "replaceId": [{{ join ", " $singleton }}]
         {{- end }}
       },
       "lastdata": {
-        "class": "FLOW_LASTDATA"
+        "class": "FLOW_LASTDATA",
+        "endpoint": "LASTDATA"
         {{- if gt (len $singleton) 0 }}
         , "replaceId": [{{ join ", " $singleton }}]
         {{- end }}

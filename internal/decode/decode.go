@@ -44,18 +44,28 @@ func Decode(outfile, verticalName, subserviceName string, paths []string) error 
 	// entity types are read from NGSI file, but entity values are
 	// read from CSV.
 	for _, path := range paths {
-		if strings.HasSuffix(strings.ToLower(path), ".csv") {
+		pathLower := strings.ToLower(path)
+		switch {
+		case strings.HasSuffix(pathLower, ".csv"):
 			localModels, localInstances := CSV(path)
 			instances = localInstances
 			if models == nil {
 				models = localModels
 			}
-		} else {
+		case strings.HasSuffix(pathLower, ".md"):
 			localModels, localInstances := NGSI(path)
 			models = localModels
 			if instances == nil {
 				instances = localInstances
 			}
+		case strings.HasSuffix(pathLower, ".json"):
+			localModels, localInstances := Builder(path)
+			models = localModels
+			if instances == nil {
+				instances = localInstances
+			}
+		default:
+			return fmt.Errorf("Unrecognized import format for %s", path)
 		}
 	}
 	indent := "    "

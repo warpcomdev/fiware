@@ -23,8 +23,12 @@ func mustEncode(v interface{}) json.RawMessage {
 func importJson(v string) fiware.Attribute {
 	var structured interface{}
 	if !strings.HasPrefix(v, "{") && !strings.HasPrefix(v, "[") {
-		log.Printf("supposed json type %s does not start with '{' or '[', decoding as string", v)
-		return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
+		// Try to detect the common error of using "location": ... as example
+		if !strings.HasPrefix(v, "\"location\"") {
+			log.Printf("supposed json type %s does not start with '{' or '[', decoding as string", v)
+			return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
+		}
+		v = "{" + v + "}"
 	}
 	if err := json.Unmarshal([]byte(v), &structured); err != nil {
 		log.Printf("failed to decode %s because of %v, assuming it's a text placeholder", v, err)
@@ -35,6 +39,15 @@ func importJson(v string) fiware.Attribute {
 		if v, ok := d["value"]; ok {
 			if m, ok := d["metadatas"]; ok {
 				return fiware.Attribute{Value: mustEncode(v), Metadatas: mustEncode(m)}
+			}
+			return fiware.Attribute{Value: mustEncode(v)}
+		}
+		// Try to detect the common error of using "location": ... as example
+		if v, ok := d["location"]; ok {
+			if l, ok := v.(map[string]interface{}); ok {
+				if v2, ok := l["value"]; ok {
+					return fiware.Attribute{Value: mustEncode(v2)}
+				}
 			}
 		}
 	}

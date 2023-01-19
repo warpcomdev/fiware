@@ -210,7 +210,7 @@ func (dld *projectDownloader) Download(c *cli.Context, store *config.Store) erro
 		targetNames[v.Name] = true
 		// Output is saved in manifest format
 		currentOutDir := filepath.Join(outdir, v.Name)
-		current, err := snapshots.Project(dld.Client, dld.Api, dld.Selected, dld.Headers, v, maximum)
+		current, err := snapshots.Project(dld.Client, dld.Api, dld.Selected, dld.Headers, v, nil, maximum)
 		if err != nil {
 			return err
 		}

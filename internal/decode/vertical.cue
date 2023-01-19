@@ -107,13 +107,13 @@ import (
             description: "Suscripción a POSTGRES para " + entityType.entityType
             // PREVIEW FEATURE: Cuando se soporte el parámetro "ngsi"
             // en las suscripciones, se podrá volver a habilitar replaceId
-            // if len(#replaceId[entityType.entityType].attrs) == 0 {
+            if len(#replaceId[entityType.entityType].attrs) == 0 {
                 notification: http: url: "CYGNUS"
-            //}
-            //if len(#replaceId[entityType.entityType].attrs) > 0 {
-            //    notification: httpCustom: url: "CYGNUS"
-            //    notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
-            //}
+            }
+            if len(#replaceId[entityType.entityType].attrs) > 0 {
+                notification: httpCustom: url: "CYGNUS"
+                notification: httpCustom: ngsi: id: "${\(#replaceId[entityType.entityType].text)}"
+            }
         }
     }}
     subscriptions: {for entityType in entityTypes {

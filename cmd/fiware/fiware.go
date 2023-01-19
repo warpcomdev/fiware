@@ -78,7 +78,7 @@ func main() {
 				Name:     "decode",
 				Aliases:  []string{"import"},
 				Category: "template",
-				Usage:    "decode NGSI README.md or CSV file",
+				Usage:    "decode NGSI README.md, CSV file or builder json model",
 				Action: func(c *cli.Context) error {
 					if c.NArg() <= 0 {
 						return errors.New("please provide the path to NGSI README file")
@@ -165,6 +165,7 @@ func main() {
 					libFlag,
 					outputFlag,
 					relaxedFlag,
+					oncePerEntityFlag,
 				},
 				BashComplete: func(c *cli.Context) {
 					if c.NArg() <= 0 {

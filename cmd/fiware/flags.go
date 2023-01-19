@@ -130,4 +130,11 @@ var (
 		Usage:   "Maximum number of assets to get",
 		Value:   0,
 	}
+
+	oncePerEntityFlag = &cli.StringFlag{
+		Name:    "per-entity",
+		Aliases: []string{"E"},
+		Usage:   "Run the template once per entity, generating files with this extension",
+		Value:   "",
+	}
 )
