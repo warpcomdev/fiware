@@ -439,6 +439,7 @@ func main() {
 					mux.Handle("/auth", serve(currentStore, backoff))
 					mux.Handle("/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
 					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
+					mux.Handle("/", http.HandlerFunc(onRenderRequest))
 					port := c.Int(portFlag.Name)
 					fmt.Printf("Listening at port %d\n", port)
 					addr := fmt.Sprintf(":%d", port)

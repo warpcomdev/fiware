@@ -13,6 +13,15 @@ import (
 func render(c *cli.Context, params map[string]string) error {
 
 	datapath, libpath := c.String(dataFlag.Name), c.String(libFlag.Name)
+	perEntity := c.String(oncePerEntityFlag.Name)
+	outPath := c.String(outputFlag.Name)
+	templates := c.Args().Slice()
+	return renderTemplate(datapath, libpath, outPath, perEntity, templates, params)
+}
+
+// stand-alone render function for use in other commands
+func renderTemplate(datapath, libpath, outPath, perEntity string, templates []string, params map[string]string) error {
+
 	manifest, err := importer.Load(datapath, params, libpath)
 	if err != nil {
 		return err
@@ -20,15 +29,12 @@ func render(c *cli.Context, params map[string]string) error {
 
 	// Runs is a map from outputfile to manifest
 	runs := make(map[string]fiware.Manifest)
-	perEntity := c.String(oncePerEntityFlag.Name)
 	if perEntity == "" {
 		// If only running once, add single entry to map.
-		outPath := c.String(outputFlag.Name)
 		runs[outPath] = manifest
 	} else {
 		// If running once per entity, coutputFlag is a folder.
 		// Use a separate manifest per entityType
-		outPath := c.String(outputFlag.Name)
 		for _, et := range manifest.EntityTypes {
 			fullOutPath := filepath.Join(outPath, et.Type+"."+perEntity)
 			etManifest := manifest
@@ -48,7 +54,7 @@ func render(c *cli.Context, params map[string]string) error {
 		if err != nil {
 			return err
 		}
-		if err := template.Render(c.Args().Slice(), data, outFile); err != nil {
+		if err := template.Render(templates, data, outFile); err != nil {
 			return err
 		}
 	}
