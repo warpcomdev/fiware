@@ -16,4 +16,5 @@ FROM scratch
 
 COPY --from=builder /bin/app /bin/app
 
+WORKDIR /tmp
 ENTRYPOINT ["/bin/app"]
