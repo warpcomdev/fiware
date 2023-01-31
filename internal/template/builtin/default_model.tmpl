@@ -51,8 +51,12 @@
         {{- end }}
         {{- $dbType = append $dbType "text" }}
         "dbType": {{ index $dbType 0 | quote  }},
+        {{- if and .description (gt (len .description) 0) }}
         "description": {{ index .description 0 | quote }},
-        {{- if gt (len .description) 1 }}
+        {{- else }}
+        "description": "-",
+        {{- end }}
+        {{- if and .description gt (len .description) 1 }}
         {{- if hasPrefix "Ejemplo:" (index .description 1) }}
         "extra":       "-",
         {{- else }}
@@ -61,8 +65,8 @@
         {{- else }}
         "extra":       "-",
         {{- end }}
-        "unit":        {{ if gt (len .description) 2 }}{{ index .description 2 | quote }}{{ else }}"-"{{ end }},
-        "range":       {{ if gt (len .description) 3 }}{{ index .description 3 | quote }}{{ else }}"-"{{ end }},
+        "unit":        {{ if and .description gt (len .description) 2 }}{{ index .description 2 | quote }}{{ else }}"-"{{ end }},
+        "range":       {{ if and .description gt (len .description) 3 }}{{ index .description 3 | quote }}{{ else }}"-"{{ end }},
         "example":     {{ if .value }}{{ .value | toJson }}{{ else }}""{{ end }},
         "flows": ["historic", "lastdata"]
       }
