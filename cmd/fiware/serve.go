@@ -62,7 +62,7 @@ func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	line := strings.TrimSpace(scanner.Text())
 	var ext string
-	if strings.HasPrefix(line, "id") {
+	if strings.HasPrefix(line, "entityID") {
 		ext = "csv"
 	} else {
 		ext = "md"
