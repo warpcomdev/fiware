@@ -65,8 +65,8 @@
         {{- else }}
         "extra":       "-",
         {{- end }}
-        "unit":        {{ if and .description gt (len .description) 2 }}{{ index .description 2 | quote }}{{ else }}"-"{{ end }},
-        "range":       {{ if and .description gt (len .description) 3 }}{{ index .description 3 | quote }}{{ else }}"-"{{ end }},
+        "unit":        {{ if and .description (gt (len .description) 2) }}{{ index .description 2 | quote }}{{ else }}"-"{{ end }},
+        "range":       {{ if and .description (gt (len .description) 3) }}{{ index .description 3 | quote }}{{ else }}"-"{{ end }},
         "example":     {{ if .value }}{{ .value | toJson }}{{ else }}""{{ end }},
         "flows": ["historic", "lastdata"]
       }
