@@ -56,7 +56,7 @@
         {{- else }}
         "description": "-",
         {{- end }}
-        {{- if and .description gt (len .description) 1 }}
+        {{- if and .description (gt (len .description) 1) }}
         {{- if hasPrefix "Ejemplo:" (index .description 1) }}
         "extra":       "-",
         {{- else }}
