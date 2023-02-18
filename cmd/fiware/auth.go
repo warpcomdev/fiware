@@ -14,6 +14,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
@@ -45,19 +46,21 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	if err != nil {
 		return err
 	}
-	verbose := c.Bool(verboseFlag.Name)
-	fiwareToken, urboToken, err := getTokens(k, selected, string(bytepw), backoff, verbose)
+	verbose := verbosity(c) > 0
+	client := httpClient(verbosity(c))
+	fiwareToken, urboToken, err := getTokens(client, k, &selected, string(bytepw), backoff)
 	if err != nil {
 		return err
 	}
 	save := c.Bool(saveFlag.Name)
 	if save {
-		if _, err := store.Set(selectedContext, map[string]string{
-			"token":     fiwareToken,
-			"urbotoken": urboToken,
-		}); err != nil {
-			return err
-		}
+		selected.SetCredentials(fiwareToken, urboToken)
+	}
+	// Save config to update project cache, so we can autocomplete.
+	// Notice this is only done when we authenticate through the CLI.
+	// This 'auth' function is not called from the API.
+	if err := store.Save(selected); err != nil {
+		return err
 	}
 	if save && !verbose {
 		fmt.Printf("tokens for context %s cached\n", selected.Name)
@@ -71,15 +74,39 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	return nil
 }
 
-func getTokens(api *keystone.Keystone, selected config.Config, password string, backoff keystone.Backoff, verbose bool) (string, string, error) {
-	client := httpClient(verbose)
+func getAndCacheProjects(client keystone.HTTPClient, api *keystone.Keystone, selected *config.Config, fiwareToken string) error {
+	headers := api.Headers("", fiwareToken)
+	projects, err := api.Projects(client, headers)
+	if err != nil {
+		return err
+	}
+	return cacheProjects(selected, projects)
+}
+
+func cacheProjects(selected *config.Config, projects []fiware.Project) error {
+	projectNames := make([]string, 0, len(projects))
+	for _, project := range projects {
+		if strings.HasPrefix(project.Name, "/") {
+			projectNames = append(projectNames, strings.TrimPrefix(project.Name, "/"))
+		}
+	}
+	selected.ProjectCache = projectNames
+	return nil
+}
+
+func getTokens(client keystone.HTTPClient, api *keystone.Keystone, selected *config.Config, password string, backoff keystone.Backoff) (string, string, error) {
 	var fiwareToken, urboToken string
 	var fiwareError, urboError error
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
+		// get fiware token and cache of project names for autocomplete
 		defer wg.Done()
 		fiwareToken, fiwareError = api.Login(client, password, backoff)
+		if fiwareError != nil {
+			return
+		}
+		fiwareError = getAndCacheProjects(client, api, selected, fiwareToken)
 	}()
 	if selected.UrboURL != "" {
 		wg.Add(1)
@@ -102,7 +129,7 @@ func getTokens(api *keystone.Keystone, selected config.Config, password string, 
 	return fiwareToken, urboToken, nil
 }
 
-func serve(store *config.Store, backoff keystone.Backoff) http.Handler {
+func serve(client keystone.HTTPClient, store *config.Store, backoff keystone.Backoff) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "invalid method", http.StatusMethodNotAllowed)
@@ -140,13 +167,12 @@ func serve(store *config.Store, backoff keystone.Backoff) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fiwareToken, urboToken, err := getTokens(k, selected, password, backoff, false)
+		fiwareToken, urboToken, err := getTokens(client, k, &selected, password, backoff)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		selected.Token = fiwareToken
-		selected.UrboToken = urboToken
+		selected.SetCredentials(fiwareToken, urboToken)
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		enc := json.NewEncoder(w)

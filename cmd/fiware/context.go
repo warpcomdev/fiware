@@ -55,19 +55,42 @@ func listContext(s *config.Store, c *cli.Context, ignoreMissing bool) error {
 }
 
 func useContext(s *config.Store, c *cli.Context) error {
-	var name string
+	var (
+		name       string
+		subservice string
+	)
 	if c.NArg() > 0 {
 		name = c.Args().Get(0)
+	}
+	if c.NArg() > 1 {
+		subservice = c.Args().Get(1)
 	}
 	if err := s.Use(name); err != nil {
 		return err
 	}
-	if s.Current.Name == "" {
+	cfg := s.Current
+	if cfg.Name == "" {
 		fmt.Println("no contexts available")
 		return nil
 	}
-	fmt.Printf("using context %s\n", s.Current.Name)
+	if subservice != "" {
+		cfg.Params["subservice"] = subservice
+		if err := s.Save(cfg); err != nil {
+			return err
+		}
+	}
+	summaryContext(cfg)
 	return nil
+}
+
+// summaryContext prints a summary of the current context selections
+func summaryContext(cfg config.Config) {
+	ss := cfg.Params["subservice"]
+	if ss != "" {
+		fmt.Printf("using context '%s' subservice '%s'\n", cfg.Name, ss)
+	} else {
+		fmt.Printf("using context '%s' without subservice\n", cfg.Name)
+	}
 }
 
 func infoContext(s *config.Store, c *cli.Context) error {

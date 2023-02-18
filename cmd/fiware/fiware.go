@@ -20,6 +20,41 @@ import (
 	"github.com/warpcomdev/fiware/internal/template"
 )
 
+// Autocompleter builds an autocomplete function for projects and (optionally) subservices
+func autocompleter(currentStore *config.Store, subservices bool) func(c *cli.Context) {
+	return func(c *cli.Context) {
+		if c.NArg() > 1 {
+			return
+		}
+		currentStore.Path = c.String("context")
+		if c.NArg() < 1 {
+			names, err := currentStore.List(true)
+			if err != nil {
+				log.Printf("Error listing contexts: %s", err)
+				return
+			}
+			fmt.Println(strings.Join(names, "\n"))
+			return
+		}
+		// If c.NArgs() == 1, some context is already selected.
+		// Try to autocomplete with subservices, if the command
+		// supports it.
+		if subservices {
+			subserviceComplete(currentStore, c.Args().Get(0))
+		}
+	}
+}
+
+// SubserviceComplete prints a list of subservices for the given context
+func subserviceComplete(currentStore *config.Store, contextName string) {
+	selected, err := currentStore.Info(contextName)
+	if err != nil {
+		log.Printf("Error getting info for config: %s", err)
+		return
+	}
+	fmt.Println(strings.Join(selected.ProjectCache, "\n"))
+}
+
 func main() {
 
 	dirname, err := os.UserConfigDir()
@@ -29,19 +64,6 @@ func main() {
 	}
 	defaultStore := path.Join(dirname, "fiware.json")
 	currentStore := &config.Store{}
-
-	// Autocomplete enumera los contextos disponibles para autocompletado
-	autocomplete := func(c *cli.Context) {
-		if c.NArg() > 0 {
-			return
-		}
-		if currentStore.Path != "" {
-			configs, err := currentStore.List(true)
-			if err == nil {
-				fmt.Println(strings.Join(configs, "\n"))
-			}
-		}
-	}
 
 	// Backoff policy
 	backoff := keystone.ExponentialBackoff{
@@ -85,14 +107,14 @@ func main() {
 					}
 					return decode.Decode(
 						c.String(outputFlag.Name),
-						c.String(verticalFlag.Name),
+						c.String(namespaceFlag.Name),
 						c.String(subServiceFlag.Name),
 						c.Args().Slice(),
 					)
 				},
 				Flags: []cli.Flag{
 					outputFlag,
-					verticalFlag,
+					namespaceFlag,
 					subServiceFlag,
 				},
 			},
@@ -185,11 +207,10 @@ func main() {
 				Action: func(c *cli.Context) error {
 					return auth(c, currentStore, backoff)
 				},
-				Flags: []cli.Flag{
-					verboseFlag,
+				Flags: append([]cli.Flag{
 					selectedContextFlag,
 					saveFlag,
-				},
+				}, verboseFlags...),
 			},
 
 			{
@@ -202,8 +223,7 @@ func main() {
 				Action: func(c *cli.Context) error {
 					return getResource(c, currentStore)
 				},
-				Flags: []cli.Flag{
-					verboseFlag,
+				Flags: append([]cli.Flag{
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
@@ -212,7 +232,7 @@ func main() {
 					filterTypeFlag,
 					simpleQueryFlag,
 					maxFlag,
-				},
+				}, verboseFlags...),
 			},
 
 			{
@@ -241,13 +261,12 @@ func main() {
 							}
 							return v.Download(c, currentStore)
 						},
-						Flags: []cli.Flag{
-							verboseFlag,
+						Flags: append([]cli.Flag{
 							outdirFlag,
 							urboTokenFlag,
 							allFlag,
 							maxFlag,
-						},
+						}, verboseFlags...),
 					}),
 
 					&(cli.Command{
@@ -269,12 +288,11 @@ func main() {
 							}
 							return v.Download(c, currentStore)
 						},
-						Flags: []cli.Flag{
-							verboseFlag,
+						Flags: append([]cli.Flag{
 							outdirFlag,
 							tokenFlag,
 							allFlag,
-						},
+						}, verboseFlags...),
 					}),
 				},
 			},
@@ -286,12 +304,11 @@ func main() {
 				Action: func(c *cli.Context) error {
 					return uploadResource(c, currentStore)
 				},
-				Flags: []cli.Flag{
-					verboseFlag,
+				Flags: append([]cli.Flag{
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
-				},
+				}, verboseFlags...),
 			},
 
 			{
@@ -304,15 +321,14 @@ func main() {
 				Action: func(c *cli.Context) error {
 					return postResource(c, currentStore)
 				},
-				Flags: []cli.Flag{
-					verboseFlag,
+				Flags: append([]cli.Flag{
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
 					dataFlag,
 					libFlag,
 					useExactIdFlag,
-				},
+				}, verboseFlags...),
 			},
 
 			{
@@ -325,15 +341,14 @@ func main() {
 				Action: func(c *cli.Context) error {
 					return deleteResource(c, currentStore)
 				},
-				Flags: []cli.Flag{
-					verboseFlag,
+				Flags: append([]cli.Flag{
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
 					dataFlag,
 					libFlag,
 					useExactIdFlag,
-				},
+				}, verboseFlags...),
 			},
 
 			{
@@ -341,6 +356,15 @@ func main() {
 				Category: "config",
 				Aliases:  []string{"ctx"},
 				Usage:    "Manage contexts",
+				Action: func(c *cli.Context) error {
+					// Default action just prints selected context,
+					// to simplify spotting which context is selected
+					if err := currentStore.Use(""); err != nil {
+						return err
+					}
+					summaryContext(currentStore.Current)
+					return nil
+				},
 				Subcommands: []*cli.Command{
 					{
 						Name:  "create",
@@ -356,7 +380,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							return deleteContext(currentStore, c)
 						},
-						BashComplete: autocomplete,
+						BashComplete: autocompleter(currentStore, false),
 					},
 					{
 						Name:    "list",
@@ -372,7 +396,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							return useContext(currentStore, c)
 						},
-						BashComplete: autocomplete,
+						BashComplete: autocompleter(currentStore, true),
 					},
 					{
 						Name:    "info",
@@ -381,7 +405,7 @@ func main() {
 						Action: func(c *cli.Context) error {
 							return infoContext(currentStore, c)
 						},
-						BashComplete: autocomplete,
+						BashComplete: autocompleter(currentStore, false),
 					},
 					{
 						Name:  "dup",
@@ -410,12 +434,19 @@ func main() {
 						BashComplete: func(c *cli.Context) {
 							nargs := c.NArg()
 							if nargs%2 == 1 {
+								// subservice can also be autocompleted
+								lastArg := c.Args().Get(nargs - 1)
+								if lastArg == "subservice" || lastArg == "ss" {
+									// must prep currentStore for it to work
+									// from autocomplete functions
+									currentStore.Path = c.String("context")
+									subserviceComplete(currentStore, "")
+								}
 								return
 							}
 							fmt.Println(strings.Join(currentStore.CanConfig(), "\n"))
 						},
 					},
-
 					{
 						Name:  "params",
 						Usage: "Set a template parameter",
@@ -429,14 +460,15 @@ func main() {
 					},
 				},
 			},
+
 			{
 				Name:     "serve",
 				Category: "platform",
 				Usage:    fmt.Sprintf("Turn on http server"),
 				Action: func(c *cli.Context) error {
-					client := httpClient(false)
+					client := httpClient(0)
 					mux := &http.ServeMux{}
-					mux.Handle("/auth", serve(currentStore, backoff))
+					mux.Handle("/auth", serve(client, currentStore, backoff))
 					mux.Handle("/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
 					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
 					mux.Handle("/", http.HandlerFunc(onRenderRequest))

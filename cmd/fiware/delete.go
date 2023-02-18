@@ -40,7 +40,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	client := httpClient(c.Bool(verboseFlag.Name))
+	client := httpClient(verbosity(c))
 	for _, arg := range c.Args().Slice() {
 		var header http.Header
 		switch arg {

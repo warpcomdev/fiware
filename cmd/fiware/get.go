@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -124,7 +125,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		},
 	}
 	maximum := c.Int(maxFlag.Name)
-	client := httpClient(c.Bool(verboseFlag.Name))
+	client := httpClient(verbosity(c))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
 		var u *urbo.Urbo
@@ -187,6 +188,32 @@ func getResource(c *cli.Context, store *config.Store) error {
 			}
 			if err := getProjects(selected, client, k, header, vertical); err != nil {
 				return err
+			} else {
+				// Take the chance to store the project list in cache,
+				// so we can use it for autocomplete later on.
+				// Notice we only do this when called through the CLI.
+				// getResource is also called from the API.
+				refreshCache := func() error {
+					if err := cacheProjects(&selected, vertical.Projects); err != nil {
+						return err
+					}
+					// Our selected store might have local changes due to
+					// flags, so it's better to load a fresh copy of the config
+					// and make sure we just update the cache.
+					orig, err := store.Info(selected.Name)
+					if err != nil {
+						return err
+					}
+					orig.ProjectCache = selected.ProjectCache
+					if err := store.Save(orig); err != nil {
+						return err
+					}
+					return nil
+				}
+				// This is best effort, so we don't care if it fails.
+				if err := refreshCache(); err != nil {
+					log.Printf("failed to refresh cache of %s: %s", selected.Name, err)
+				}
 			}
 		case "panels":
 			if u, header, err = getUrboHeaders(c, &selected); err != nil {
@@ -207,8 +234,8 @@ func getResource(c *cli.Context, store *config.Store) error {
 		}
 	}
 
-	// This is mostly cosmetic, but ir may indice to error if an user
-	// specifies --subservice X and doesn't bet the subservice in return
+	// This is mostly cosmetic, but it might induce to error if an user
+	// specifies --subservice X and doesn't see the subservice in the output.
 	if subservice := c.String(subServiceFlag.Name); subservice != "" {
 		vertical.Subservice = subservice
 	}

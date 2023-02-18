@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
 )
@@ -85,7 +83,7 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 
 // PostRules posts a list of rules to Perseo
 func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rules []fiware.Rule) error {
-	var errList error
+	var errList []error
 	for _, rule := range rules {
 		// HACK: No quiero que se añada a las acciones el servicio y el subservicio,
 		// a menos que use variables (contenga "${}").
@@ -151,15 +149,15 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 			return err
 		}
 		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, rule); err != nil {
-			errList = multierror.Append(errList, err)
+			errList = append(errList, err)
 		}
 	}
-	return errList
+	return errors.Join(errList...)
 }
 
 // DeleteRules deletes a list of rules from Perseo
 func (o *Perseo) DeleteRules(client keystone.HTTPClient, headers http.Header, rules []fiware.Rule) error {
-	var errList error
+	var errList []error
 	for _, rule := range rules {
 		rule.RuleStatus = fiware.RuleStatus{}
 		if rule.Name == "" {
@@ -170,8 +168,8 @@ func (o *Perseo) DeleteRules(client keystone.HTTPClient, headers http.Header, ru
 			return err
 		}
 		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
-			errList = multierror.Append(errList, err)
+			errList = append(errList, err)
 		}
 	}
-	return errList
+	return errors.Join(errList...)
 }

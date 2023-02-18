@@ -3,11 +3,11 @@ package main
 import "github.com/urfave/cli/v2"
 
 var (
-	verticalFlag = &cli.StringFlag{
-		Name:        "vertical",
-		Aliases:     []string{"v"},
-		DefaultText: "vertical",
-		Usage:       "vertical name (without '-vertical' suffix)",
+	namespaceFlag = &cli.StringFlag{
+		Name:        "namespace",
+		Aliases:     []string{"ns", "n"},
+		DefaultText: "namespace",
+		Usage:       "namespace for the vertical entities",
 		Required:    true,
 	}
 
@@ -61,7 +61,7 @@ var (
 	simpleQueryFlag = &cli.StringFlag{
 		Name:    "simple-query",
 		Aliases: []string{"q"},
-		Usage:   "Filter by entity ID",
+		Usage:   "Filter by entity attribs (using NGSIv2 simple query format)",
 	}
 
 	outputFlag = &cli.StringFlag{
@@ -72,10 +72,25 @@ var (
 
 	verboseFlag = &cli.BoolFlag{
 		Name:    "verbose",
-		Aliases: []string{"V"},
-		Usage:   "write verbose logging",
+		Aliases: []string{"v"},
+		Usage:   "write verbose logging (HTTP requests)",
 		Value:   false,
 	}
+
+	verbose2Flag = &cli.BoolFlag{
+		Name:  "vv",
+		Usage: "more verbose logging (HTTP reply headers)",
+		Value: false,
+	}
+
+	verbose3Flag = &cli.BoolFlag{
+		Name:  "vvv",
+		Usage: "the most verbose logging (HTTP reply bodies)",
+		Value: false,
+	}
+
+	// Simplify management of repeated verbosity flags
+	verboseFlags = []cli.Flag{verboseFlag, verbose2Flag, verbose3Flag}
 
 	allFlag = &cli.BoolFlag{
 		Name:  "all",
@@ -138,3 +153,19 @@ var (
 		Value:   "",
 	}
 )
+
+// verbosity combines info from all verbose flags
+func verbosity(c *cli.Context) int {
+	verbose := 0
+	if c.Bool(verbose3Flag.Name) {
+		verbose = 3
+	} else if c.Bool(verbose2Flag.Name) {
+		verbose = 2
+	} else if c.Bool(verboseFlag.Name) {
+		// There is some weird bug in urfave/cli 2.24.4 that never counts a flag
+		// just once. It is either 0, 2, or more.
+		// return c.Count(verboseFlag.Name)
+		return 1
+	}
+	return verbose
+}

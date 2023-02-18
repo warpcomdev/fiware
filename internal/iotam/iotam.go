@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
 )
@@ -89,7 +87,7 @@ func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, se
 
 // DeleteServices sends a DELETE request for a set of Services
 func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, services []fiware.Service) error {
-	var errList error
+	var errList []error
 	for _, service := range services {
 		if service.Resource == "" || service.APIKey == "" || service.Protocol == "" {
 			return errors.New("All devices must have protocol, resource and apikey")
@@ -104,10 +102,10 @@ func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, 
 		query.Add("protocol", service.Protocol)
 		path.RawQuery = query.Encode()
 		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, true); err != nil {
-			errList = multierror.Append(errList, err)
+			errList = append(errList, err)
 		}
 	}
-	return errList
+	return errors.Join(errList...)
 }
 
 // PostDevices sends a POST request for a set of Devices
@@ -138,7 +136,7 @@ func (i *Iotam) PostDevices(client keystone.HTTPClient, headers http.Header, dev
 
 // DeleteDevices sends a DELETE request for a set of Devices
 func (i *Iotam) DeleteDevices(client keystone.HTTPClient, headers http.Header, devices []fiware.Device) error {
-	var errList error
+	var errList []error
 	for _, device := range devices {
 		if device.DeviceId == "" {
 			return errors.New("All devices must have a deviceId")
@@ -148,10 +146,10 @@ func (i *Iotam) DeleteDevices(client keystone.HTTPClient, headers http.Header, d
 			return err
 		}
 		if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, true); err != nil {
-			errList = multierror.Append(errList, err)
+			errList = append(errList, err)
 		}
 	}
-	return errList
+	return errors.Join(errList...)
 }
 
 func groupResources[R any](resources []R, indexFunc func(R) string) (map[string][]R, error) {

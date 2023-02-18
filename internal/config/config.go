@@ -50,6 +50,7 @@ type Config struct {
 	Token         string            `json:"token,omitempty"`
 	UrboToken     string            `json:"urbotoken,omitempty"`
 	Params        map[string]string `json:"params,omitempty"`
+	ProjectCache  []string          `json:"projects,omitempty"`
 }
 
 func (c *Config) defaults() {
@@ -194,6 +195,11 @@ func (c *Config) HasUrboToken() string {
 		return ""
 	}
 	return c.UrboToken
+}
+
+func (c *Config) SetCredentials(token, urboToken string) {
+	c.Token = token
+	c.UrboToken = urboToken
 }
 
 // Store can manage several configs

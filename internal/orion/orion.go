@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
 )
@@ -125,7 +123,7 @@ func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) (
 
 // PostSuscriptions posts a list of suscriptions to orion
 func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Subscription, ep map[string]string, useDescription bool) error {
-	var errList error
+	var errList []error
 	if useDescription {
 		epCopy := make(map[string]string, len(ep))
 		for k, v := range ep {
@@ -146,13 +144,11 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 			if sub.Description != "" {
 				if _, ok := descId[sub.Description]; ok {
 					err := fmt.Errorf("subscription with description %s already exists", sub.Description)
-					errList = multierror.Append(errList, err)
+					errList = append(errList, err)
 				}
 			}
 		}
-		if errList != nil {
-			return errList
-		}
+		return errors.Join(errList...)
 	}
 	for _, sub := range subs {
 		sub.SubscriptionStatus = fiware.SubscriptionStatus{}
@@ -163,19 +159,19 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 		}
 		sub, err = sub.UpdateEndpoint(ep)
 		if err != nil {
-			errList = multierror.Append(errList, err)
+			errList = append(errList, err)
 		} else {
 			if _, _, err := keystone.Update(client, http.MethodPost, headers, path, sub); err != nil {
-				errList = multierror.Append(errList, err)
+				errList = append(errList, err)
 			}
 		}
 	}
-	return errList
+	return errors.Join(errList...)
 }
 
 // DeleteSuscriptions deletes a list of suscriptions from Orion
 func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Subscription, useDescription bool) error {
-	var errList error
+	var errList []error
 	byDescription := make(map[string]struct{})
 	for _, sub := range subs {
 		if sub.ID == "" {
@@ -197,23 +193,23 @@ func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Head
 				if netErr.StatusCode == 404 {
 					byDescription[sub.Description] = struct{}{}
 				} else {
-					errList = multierror.Append(errList, err)
+					errList = append(errList, err)
 				}
 			} else {
-				errList = multierror.Append(errList, err)
+				errList = append(errList, err)
 			}
 		}
 	}
 	if len(byDescription) <= 0 {
-		return errList
+		return errors.Join(errList...)
 	}
 	// If there are some subscriptions we have to remove by description,
 	// collect the current subscriptions and try to match them
 	epCopy := make(map[string]string)
 	allSubs, err := o.Subscriptions(client, headers, epCopy)
 	if err != nil {
-		errList = multierror.Append(errList, err)
-		return errList
+		errList = append(errList, err)
+		return errors.Join(errList...)
 	}
 	for _, sub := range allSubs {
 		if sub.Description != "" {
@@ -223,12 +219,12 @@ func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Head
 					return err
 				}
 				if _, err := keystone.Query(client, http.MethodDelete, headers, path, nil, false); err != nil {
-					errList = multierror.Append(errList, err)
+					errList = append(errList, err)
 				}
 			}
 		}
 	}
-	return errList
+	return errors.Join(errList...)
 }
 
 // Entity representa una entidad tal como la ve la API
