@@ -147,33 +147,51 @@ func (l ExponentialBackoff) KeepTrying(retries int) (bool, time.Duration) {
 	return (retries < l.MaxRetries), targetDelay
 }
 
+// Just enough model of the auth response to get to the user id
+type authReply struct {
+	Token struct {
+		User struct {
+			Id string `json:"id"`
+		} `json:"user"`
+	} `json:"token"`
+}
+
 // Login into the Context Broker, get a session token
-func (o *Keystone) Login(client HTTPClient, password string, retries Backoff) (string, error) {
+func (o *Keystone) Login(client HTTPClient, password string, retries Backoff) (string, string, error) {
 	payload := fmt.Sprintf(
 		`{"auth": {"identity": {"methods": ["password"], "password": {"user": {"domain": {"name": %q}, "name": %q, "password": %q}}}, "scope": {"domain": {"name": %q}}}}`,
 		o.Service, o.Username, password, o.Service,
 	)
 	loginURL, err := o.URL.Parse("/v3/auth/tokens")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	var current int
 	for {
-		header, _, err := PostJSON(client, nil, loginURL, payload)
+		header, body, err := PostJSON(client, nil, loginURL, payload)
 		if err == nil {
-			return header.Get("X-Subject-Token"), nil
+			var (
+				reply  authReply
+				userId string
+			)
+			if err := json.Unmarshal(body, &reply); err != nil {
+				log.Printf("Failed to parse auth reply, will not propagate user id: %s", err)
+			} else {
+				userId = reply.Token.User.Id
+			}
+			return header.Get("X-Subject-Token"), userId, nil
 		}
 		// retry errors 500
 		var netErr NetError
 		if errors.As(err, &netErr) {
 			if netErr.StatusCode != 500 {
-				return "", err
+				return "", "", err
 			}
 		}
 		retry, delay := retries.KeepTrying(current)
 		current += 1
 		if !retry {
-			return "", err
+			return "", "", err
 		}
 		<-time.After(delay)
 	}

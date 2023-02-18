@@ -34,6 +34,45 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	if selected.KeystoneURL == "" || selected.Service == "" || selected.Username == "" {
 		return errors.New("current context is not properly configured")
 	}
+	saveCreds := c.Bool(saveFlag.Name)
+	if err := getCredentials(c, &selected, backoff, saveCreds, true); err != nil {
+		return err
+	}
+	// Save config to update project cache, so we can autocomplete.
+	// Notice this is only done when we authenticate through the CLI.
+	if err := store.Save(selected); err != nil {
+		return err
+	}
+	if saveCreds {
+		fmt.Printf("tokens for context %s cached\n", selected.Name)
+	}
+	return nil
+}
+
+// impresonatePep get user ID for PEP user in admin_domain env
+func authAsPep(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
+	selectedContext := c.String(selectedContextFlag.Name)
+	if err := store.Read(selectedContext); err != nil {
+		return err
+	}
+	if store.Current.Name == "" {
+		return errors.New("no contexts defined")
+	}
+	selected := store.Current
+	selected.Service = "admin_domain"
+	selected.Username = "pep"
+	if err := getCredentials(c, &selected, backoff, false, false); err != nil {
+		return err
+	}
+	return nil
+}
+
+// getCredentials updates credentials in the selected config object
+// but does not save anything to any persistent store.
+func getCredentials(c *cli.Context, selected *config.Config, backoff keystone.Backoff, saveCreds, getProjects bool) error {
+	if selected.KeystoneURL == "" || selected.Service == "" || selected.Username == "" {
+		return errors.New("current context is not properly configured")
+	}
 	k, err := keystone.New(selected.KeystoneURL, selected.Username, selected.Service)
 	if err != nil {
 		return err
@@ -46,29 +85,18 @@ func auth(c *cli.Context, store *config.Store, backoff keystone.Backoff) error {
 	if err != nil {
 		return err
 	}
-	verbose := verbosity(c) > 0
 	client := httpClient(verbosity(c))
-	fiwareToken, urboToken, err := getTokens(client, k, &selected, string(bytepw), backoff)
+	fiwareToken, urboToken, userId, err := getTokens(client, k, selected, string(bytepw), backoff, getProjects)
 	if err != nil {
 		return err
 	}
-	save := c.Bool(saveFlag.Name)
-	if save {
+	if saveCreds {
 		selected.SetCredentials(fiwareToken, urboToken)
-	}
-	// Save config to update project cache, so we can autocomplete.
-	// Notice this is only done when we authenticate through the CLI.
-	// This 'auth' function is not called from the API.
-	if err := store.Save(selected); err != nil {
-		return err
-	}
-	if save && !verbose {
-		fmt.Printf("tokens for context %s cached\n", selected.Name)
 	} else {
 		if runtime.GOOS == "windows" {
-			fmt.Printf("SET FIWARE_TOKEN=%s\nSET URBO_TOKEN=%s\n", fiwareToken, urboToken)
+			fmt.Printf("SET FIWARE_USERID=%s\nSET FIWARE_TOKEN=%s\nSET URBO_TOKEN=%s\n", userId, fiwareToken, urboToken)
 		} else {
-			fmt.Printf("export FIWARE_TOKEN=%s\nexport URBO_TOKEN=%s\n", fiwareToken, urboToken)
+			fmt.Printf("export FIWARE_USERID=%s\nexport FIWARE_TOKEN=%s\nexport URBO_TOKEN=%s\n", userId, fiwareToken, urboToken)
 		}
 	}
 	return nil
@@ -94,25 +122,28 @@ func cacheProjects(selected *config.Config, projects []fiware.Project) error {
 	return nil
 }
 
-func getTokens(client keystone.HTTPClient, api *keystone.Keystone, selected *config.Config, password string, backoff keystone.Backoff) (string, string, error) {
-	var fiwareToken, urboToken string
+func getTokens(client keystone.HTTPClient, api *keystone.Keystone, selected *config.Config, password string, backoff keystone.Backoff, getProjects bool) (string, string, string, error) {
+	var fiwareToken, urboToken, userId string
 	var fiwareError, urboError error
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		// get fiware token and cache of project names for autocomplete
+		// get fiware token and user id
 		defer wg.Done()
-		fiwareToken, fiwareError = api.Login(client, password, backoff)
+		fiwareToken, userId, fiwareError = api.Login(client, password, backoff)
 		if fiwareError != nil {
 			return
 		}
-		fiwareError = getAndCacheProjects(client, api, selected, fiwareToken)
+		// when appropiate, get list of projects for autocomplete
+		if getProjects {
+			fiwareError = getAndCacheProjects(client, api, selected, fiwareToken)
+		}
 	}()
 	if selected.UrboURL != "" {
 		wg.Add(1)
 		u, err := urbo.New(selected.UrboURL, selected.Username, selected.Service, selected.Service)
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 		go func() {
 			defer wg.Done()
@@ -121,12 +152,12 @@ func getTokens(client keystone.HTTPClient, api *keystone.Keystone, selected *con
 	}
 	wg.Wait()
 	if fiwareError != nil {
-		return "", "", fiwareError
+		return "", "", "", fiwareError
 	}
 	if urboError != nil {
-		return "", "", urboError
+		return "", "", "", urboError
 	}
-	return fiwareToken, urboToken, nil
+	return fiwareToken, urboToken, userId, nil
 }
 
 func serve(client keystone.HTTPClient, store *config.Store, backoff keystone.Backoff) http.Handler {
@@ -167,7 +198,7 @@ func serve(client keystone.HTTPClient, store *config.Store, backoff keystone.Bac
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fiwareToken, urboToken, err := getTokens(client, k, &selected, password, backoff)
+		fiwareToken, urboToken, _, err := getTokens(client, k, &selected, password, backoff, false)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return

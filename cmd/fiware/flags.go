@@ -152,6 +152,12 @@ var (
 		Usage:   "Run the template once per entity, generating files with this extension",
 		Value:   "",
 	}
+
+	pepFlag = &cli.BoolFlag{
+		Name:  "pep",
+		Usage: "Authenticate as PEP user (and get the user_id needed for trusts)",
+		Value: false,
+	}
 )
 
 // verbosity combines info from all verbose flags

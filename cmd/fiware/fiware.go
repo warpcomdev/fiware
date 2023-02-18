@@ -205,10 +205,14 @@ func main() {
 				Aliases:  []string{"auth"},
 				Usage:    "Login into keystone",
 				Action: func(c *cli.Context) error {
+					if c.Bool(pepFlag.Name) {
+						return authAsPep(c, currentStore, backoff)
+					}
 					return auth(c, currentStore, backoff)
 				},
 				Flags: append([]cli.Flag{
 					selectedContextFlag,
+					pepFlag,
 					saveFlag,
 				}, verboseFlags...),
 			},
