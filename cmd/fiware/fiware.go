@@ -472,10 +472,16 @@ func main() {
 				Action: func(c *cli.Context) error {
 					client := httpClient(0)
 					mux := &http.ServeMux{}
-					mux.Handle("/auth", serve(client, currentStore, backoff))
-					mux.Handle("/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
-					mux.Handle("/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
-					mux.Handle("/", http.HandlerFunc(onRenderRequest))
+					mux.Handle("/api/auth", serve(client, currentStore, backoff))
+					mux.Handle("/api/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
+					mux.Handle("/api/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
+					if c.NArg() > 0 {
+						mux.Handle("/legacy", http.HandlerFunc(onRenderRequest))
+						serveFS := os.DirFS(c.Args().First())
+						mux.Handle("/", http.FileServer(http.FS(serveFS)))
+					} else {
+						mux.Handle("/", http.HandlerFunc(onRenderRequest))
+					}
 					port := c.Int(portFlag.Name)
 					fmt.Printf("Listening at port %d\n", port)
 					addr := fmt.Sprintf(":%d", port)
