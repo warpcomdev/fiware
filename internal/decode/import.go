@@ -73,8 +73,15 @@ func importOther(v string) fiware.Attribute {
 		return importJson(v)
 	}
 	if strings.HasPrefix(v, "\"") && strings.HasSuffix(v, "\"") && !strings.HasPrefix(v, "\"\"") {
-		// Si ya nos han dado la cadena escapada
-		return fiware.Attribute{Value: []byte(v)}
+		if strings.Contains(v, "\\") {
+			// Si ya nos han dado la cadena escapada
+			return fiware.Attribute{Value: []byte(v)}
+		}
+		if len(v) <= 2 {
+			v = ""
+		} else {
+			v = strings.TrimSpace(v[1 : len(v)-1])
+		}
 	}
 	if strings.HasPrefix(v, "'") && strings.HasSuffix(v, "'") {
 		if len(v) <= 2 {
