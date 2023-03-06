@@ -35,3 +35,10 @@ El modelo se ha construido con cuatro premisas:
 
 El schema del modelo resultante se ha documentado formalmente en el fichero [serializations.cue](./serializations.cue). La especificación utiliza el lenguaje [cue](https://cuelang.org/). La versión actual del schema se ha generado automáticamente a partir del código, aunque a futuro podría ser alrevés y ser el código el que se autogenerase en función del schema.
 
+## Cheatsheet
+
+- Extraer las suscripciones de los ficheros de assets generados por builder:
+
+```bash
+$ cat *.json | jq -s 'add | map(.[].subscriptions) | add | { subscriptions: . }' > subs.json
+```

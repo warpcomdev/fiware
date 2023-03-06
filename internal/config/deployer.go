@@ -49,6 +49,7 @@ func FromConfig(cfg Config) Environment {
 	for param, endpoint := range map[string]string{
 		"cygnus_url":          "HISTORIC",
 		"cygnus_url_lastdata": "LASTDATA",
+		"lastdata_url":        "LASTDATA",
 		"perseo_url":          "RULES",
 		"HISTORIC":            "HISTORIC",
 		"LASTDATA":            "LASTDATA",

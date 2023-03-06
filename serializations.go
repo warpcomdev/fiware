@@ -573,6 +573,9 @@ func (x SubscriptionStatus) Serialize(s serialize.Serializer) {
 	if x.ID != "" {
 		s.KeyString("id", string(x.ID))
 	}
+	if x.Documentation != "" {
+		s.KeyString("documentation", string(x.Documentation))
+	}
 }
 
 func (x Rule) MarshalJSON() ([]byte, error) {

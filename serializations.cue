@@ -65,12 +65,13 @@ views?: [...#View]
 }
 
 #Subscription: {
-	description:  string
-	status?:      string
-	expires?:     string
-	notification: #Notification
-	subject:      #Subject
-	id?:          string @anonymous(SubscriptionStatus)
+	description:    string
+	status?:        string
+	expires?:       string
+	notification:   #Notification
+	subject:        #Subject
+	id?:            string @anonymous(SubscriptionStatus)
+	documentation?: string @anonymous(SubscriptionStatus)
 }
 
 #Notification: {

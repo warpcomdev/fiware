@@ -133,7 +133,13 @@ func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http
 	dictMessage("POSTing suscriptions with descriptions", vertical.Subscriptions,
 		func(k string, v fiware.Subscription) string { return v.Description },
 	)
-	return api.PostSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), vertical.Environment.NotificationEndpoints, useDescription)
+	// Mewrge configuration notificationEndpoints with vertical ones
+	ep := config.FromConfig(ctx).NotificationEndpoints
+	for k, v := range vertical.Environment.NotificationEndpoints {
+		ep[k] = v
+	}
+	subs := fiware.ValuesOf(vertical.Subscriptions)
+	return api.PostSuscriptions(client, header, subs, ep, useDescription)
 }
 
 func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {

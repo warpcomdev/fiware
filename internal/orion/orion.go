@@ -148,7 +148,9 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 				}
 			}
 		}
-		return errors.Join(errList...)
+		if errList != nil {
+			return errors.Join(errList...)
+		}
 	}
 	for _, sub := range subs {
 		sub.SubscriptionStatus = fiware.SubscriptionStatus{}
@@ -158,6 +160,9 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 			return err
 		}
 		sub, err = sub.UpdateEndpoint(ep)
+		if sub.Notification.AttrsFormat == "" {
+			sub.Notification.AttrsFormat = "normalized"
+		}
 		if err != nil {
 			errList = append(errList, err)
 		} else {

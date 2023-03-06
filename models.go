@@ -266,14 +266,15 @@ func (subs Subscription) UpdateEndpoint(notificationEndpoints map[string]string)
 
 // SubscriptionStatus agrupa los datos de estado de la suscripción
 type SubscriptionStatus struct {
-	ID string `json:"id,omitempty"`
+	ID            string `json:"id,omitempty"`
+	Documentation string `json:"documentation,omitempty"`
 }
 
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
 	Attrs            []string               `json:"attrs,omitempty" sort:"true" compact:"true"`
 	ExceptAttrs      []string               `json:"exceptAttrs,omitempty" sort:"true" compact:"true"`
-	AttrsFormat      string                 `json:"attrsFormat"`
+	AttrsFormat      string                 `json:"attrsFormat,omitempty"`
 	HTTP             NotificationHTTP       `json:"http,omitempty"`
 	HTTPCustom       NotificationCustom     `json:"httpCustom,omitempty"`
 	MQTT             NotificationMQTT       `json:"mqtt,omitempty"`
