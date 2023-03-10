@@ -126,8 +126,12 @@ func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header ht
 		)
 	} else {
 		dictMessage("DELETing suscriptions with ids (or descriptions)", vertical.Subscriptions,
-			func(k string, v fiware.Subscription) string { return fmt.Sprintf("%s (%s)", v.ID, v.Description) },
-		)
+			func(k string, v fiware.Subscription) string {
+				if v.ID != "" {
+					return fmt.Sprintf("%s (%s)", v.ID, v.Description)
+				}
+				return v.Description
+			})
 	}
 	return api.DeleteSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), useDescription)
 }

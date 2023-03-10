@@ -159,10 +159,10 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 		if err != nil {
 			return err
 		}
-		sub, err = sub.UpdateEndpoint(ep)
 		if sub.Notification.AttrsFormat == "" {
 			sub.Notification.AttrsFormat = "normalized"
 		}
+		sub, err = sub.UpdateEndpoint(ep)
 		if err != nil {
 			errList = append(errList, err)
 		} else {
@@ -187,6 +187,8 @@ func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Head
 					byDescription[sub.Description] = struct{}{}
 				}
 			}
+			// skip the current sub, go to "byDescription"
+			continue
 		}
 		path, err := o.URL.Parse(fmt.Sprintf("v2/subscriptions/%s", sub.ID))
 		if err != nil {
