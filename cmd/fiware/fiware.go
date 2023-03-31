@@ -472,9 +472,9 @@ func main() {
 				Action: func(c *cli.Context) error {
 					client := httpClient(0)
 					mux := &http.ServeMux{}
-					mux.Handle("/api/auth", serve(client, currentStore, backoff))
-					mux.Handle("/api/contexts/", http.StripPrefix("/contexts", currentStore.Server()))
-					mux.Handle("/api/snaps/", http.StripPrefix("/snaps", snapshots.Serve(client, currentStore)))
+					mux.Handle("/api/auth", cors(authServe(client, currentStore, backoff)))
+					mux.Handle("/api/contexts/", cors(http.StripPrefix("/api/contexts", currentStore.Server())))
+					mux.Handle("/api/snaps/", cors(http.StripPrefix("/api/snaps", snapshots.Serve(client, currentStore))))
 					if c.NArg() > 0 {
 						mux.Handle("/legacy", http.HandlerFunc(onRenderRequest))
 						serveFS := os.DirFS(c.Args().First())

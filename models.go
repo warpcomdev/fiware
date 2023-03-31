@@ -253,6 +253,12 @@ func (subs Subscription) UpdateEndpoint(notificationEndpoints map[string]string)
 	if result.Notification.HTTPCustom.URL != "" {
 		url = &(result.Notification.HTTPCustom.URL)
 	}
+	if result.Notification.MQTT.URL != "" {
+		url = &(result.Notification.MQTT.URL)
+	}
+	if result.Notification.MQTTCustom.URL != "" {
+		url = &(result.Notification.MQTTCustom.URL)
+	}
 	if url == nil {
 		return result, errors.New("subscription has no notification URL")
 	}

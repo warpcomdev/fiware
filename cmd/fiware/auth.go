@@ -160,7 +160,7 @@ func getTokens(client keystone.HTTPClient, api *keystone.Keystone, selected *con
 	return fiwareToken, urboToken, userId, nil
 }
 
-func serve(client keystone.HTTPClient, store *config.Store, backoff keystone.Backoff) http.Handler {
+func authServe(client keystone.HTTPClient, store *config.Store, backoff keystone.Backoff) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "invalid method", http.StatusMethodNotAllowed)

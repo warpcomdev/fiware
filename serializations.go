@@ -347,7 +347,9 @@ func (x Notification) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	s.KeyString("attrsFormat", string(x.AttrsFormat))
+	if x.AttrsFormat != "" {
+		s.KeyString("attrsFormat", string(x.AttrsFormat))
+	}
 	if !x.HTTP.IsEmpty() {
 		s.BeginBlock("http")
 		x.HTTP.Serialize(s)

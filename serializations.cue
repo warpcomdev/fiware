@@ -77,7 +77,7 @@ views?: [...#View]
 #Notification: {
 	attrs?: [...string]
 	exceptAttrs?: [...string]
-	attrsFormat:        string
+	attrsFormat?:       string
 	http?:              #NotificationHTTP
 	httpCustom?:        #NotificationCustom
 	mqtt?:              #NotificationMQTT
