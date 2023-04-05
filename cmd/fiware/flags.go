@@ -158,6 +158,18 @@ var (
 		Usage: "Authenticate as PEP user (and get the user_id needed for trusts)",
 		Value: false,
 	}
+
+	ngsiFlag = &cli.BoolFlag{
+		Name:  "ngsi",
+		Usage: "When decoding, parse json files as NGSI v2 format entities",
+		Value: false,
+	}
+
+	assetFlag = &cli.BoolFlag{
+		Name:  "asset",
+		Usage: "When decoding, parse json files as DEPLOYER top-level assets",
+		Value: false,
+	}
 )
 
 // verbosity combines info from all verbose flags

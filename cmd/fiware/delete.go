@@ -83,7 +83,11 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := deleteEntities(selected, client, header, manifest); err != nil {
+			filterManifest, err := filterEntities(c, manifest)
+			if err != nil {
+				return err
+			}
+			if err := deleteEntities(selected, client, header, filterManifest); err != nil {
 				return err
 			}
 		default:

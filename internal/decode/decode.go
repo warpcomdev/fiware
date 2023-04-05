@@ -17,9 +17,13 @@ var verticalTemplate string
 const (
 	fromMarker = "// BEGIN REPLACE"
 	toMarker   = "// END REPLACE"
+
+	FORMAT_BUILDER = "builder"
+	FORMAT_NGSI    = "ngsi"
+	FORMAT_ASSET   = "asset"
 )
 
-func Decode(outfile, verticalName, subserviceName string, paths []string) error {
+func Decode(outfile, verticalName, subserviceName string, paths []string, format string) error {
 
 	fromIndex := strings.Index(verticalTemplate, fromMarker)
 	toIndex := strings.Index(verticalTemplate, toMarker)
@@ -53,13 +57,30 @@ func Decode(outfile, verticalName, subserviceName string, paths []string) error 
 				models = localModels
 			}
 		case strings.HasSuffix(pathLower, ".md"):
-			localModels, localInstances := NGSI(path)
+			localModels, localInstances := Markdown(path)
 			models = localModels
 			if instances == nil {
 				instances = localInstances
 			}
 		case strings.HasSuffix(pathLower, ".json"):
-			localModels, localInstances := Builder(path)
+			var (
+				localModels    []fiware.EntityType
+				localInstances []fiware.Entity
+			)
+			switch format {
+			case FORMAT_NGSI:
+				localModels, localInstances = NGSI(path)
+			case FORMAT_ASSET:
+				localModels, localInstances = Asset(path)
+			default:
+				localModels, localInstances = Builder(path)
+			}
+			models = localModels
+			if instances == nil {
+				instances = localInstances
+			}
+		case strings.HasSuffix(pathLower, ".ngsi"):
+			localModels, localInstances := NGSI(path)
 			models = localModels
 			if instances == nil {
 				instances = localInstances

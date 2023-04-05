@@ -26,6 +26,22 @@ var canPost []string = []string{
 	"verticals",
 }
 
+func filterEntities(c *cli.Context, manifest fiware.Manifest) (fiware.Manifest, error) {
+	filterType := c.String(filterTypeFlag.Name)
+	postedEntities := make([]fiware.Entity, 0, len(manifest.Entities))
+	for _, entity := range manifest.Entities {
+		if filterType == "" || filterType == entity.Type {
+			postedEntities = append(postedEntities, entity)
+		}
+	}
+	if len(postedEntities) <= 0 {
+		return fiware.Manifest{}, fmt.Errorf("no entities of type %s found", filterType)
+	}
+	postedManifest := manifest
+	postedManifest.Entities = postedEntities
+	return postedManifest, nil
+}
+
 func postResource(c *cli.Context, config *config.Store) error {
 	if c.NArg() <= 0 {
 		return fmt.Errorf("select a resource from: %s", strings.Join(canPost, ", "))
@@ -86,7 +102,11 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if _, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := postEntities(selected, client, header, manifest); err != nil {
+			filterManifest, err := filterEntities(c, manifest)
+			if err != nil {
+				return err
+			}
+			if err := postEntities(selected, client, header, filterManifest); err != nil {
 				return err
 			}
 		case "verticals":

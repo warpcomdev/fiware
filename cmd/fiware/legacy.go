@@ -99,7 +99,7 @@ func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	outFile := filepath.Join(tmpDir, "out.cue")
-	if err := decode.Decode(outFile, vertical, subservice, []string{tmpFile.Name()}); err != nil {
+	if err := decode.Decode(outFile, vertical, subservice, []string{tmpFile.Name()}, ""); err != nil {
 		http.Error(w, fmt.Sprintf("failed to decode input data: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}

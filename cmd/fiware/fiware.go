@@ -105,17 +105,27 @@ func main() {
 					if c.NArg() <= 0 {
 						return errors.New("please provide the path to NGSI README file")
 					}
+					format := ""
+					if c.Bool(ngsiFlag.Name) {
+						format = decode.FORMAT_NGSI
+					}
+					if c.Bool(assetFlag.Name) {
+						format = decode.FORMAT_ASSET
+					}
 					return decode.Decode(
 						c.String(outputFlag.Name),
 						c.String(namespaceFlag.Name),
 						c.String(subServiceFlag.Name),
 						c.Args().Slice(),
+						format,
 					)
 				},
 				Flags: []cli.Flag{
 					outputFlag,
 					namespaceFlag,
 					subServiceFlag,
+					ngsiFlag,
+					assetFlag,
 				},
 			},
 
@@ -332,6 +342,7 @@ func main() {
 					dataFlag,
 					libFlag,
 					useExactIdFlag,
+					filterTypeFlag,
 				}, verboseFlags...),
 			},
 
@@ -352,6 +363,7 @@ func main() {
 					dataFlag,
 					libFlag,
 					useExactIdFlag,
+					filterTypeFlag,
 				}, verboseFlags...),
 			},
 
