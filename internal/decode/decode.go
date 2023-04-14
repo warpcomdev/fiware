@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/internal/serialize"
 )
 
 //go:embed vertical.cue
@@ -92,13 +93,29 @@ func Decode(outfile, verticalName, subserviceName string, paths []string, format
 	indent := "    "
 	modelText, err := json.MarshalIndent(models, indent, indent)
 	if err != nil {
-		return fmt.Errorf("failed to marshal models: %w", err)
+		text_models := make([]string, 0, len(models))
+		for _, model := range models {
+			rawData, err := serialize.MarshalJSON(model)
+			if err != nil {
+				return fmt.Errorf("failed to marshal offending model '%s': %w", string(rawData), err)
+			}
+			text_models = append(text_models, string(rawData))
+		}
+		return fmt.Errorf("failed to marshal models (%s): %w", strings.Join(text_models, ", "), err)
 	}
 	var instanceText []byte
 	if len(instances) > 0 {
 		instanceText, err = json.MarshalIndent(instances, indent, indent)
 		if err != nil {
-			return fmt.Errorf("failed to marshal instances: %w", err)
+			text_instances := make([]string, 0, len(instances))
+			for _, instance := range instances {
+				rawData, err := serialize.MarshalJSON(instance)
+				if err != nil {
+					return fmt.Errorf("failed to marshal offending instance '%s': %w", string(rawData), err)
+				}
+				text_instances = append(text_instances, string(rawData))
+			}
+			return fmt.Errorf("failed to marshal instances (%s): %w", strings.Join(text_instances, ", "), err)
 		}
 	}
 

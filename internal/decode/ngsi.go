@@ -26,6 +26,9 @@ func getAttribute(entity ngsiEntity, field string) fiware.Attribute {
 	if err := json.Unmarshal(entity[field], &ta); err != nil {
 		log.Fatalf("Failed to decode %s: %v", field, err)
 	}
+	if ta.Type == "" {
+		log.Fatalf("Failed to decode attribute '%s': missing type", field)
+	}
 	return fiware.Attribute{
 		Name:  field,
 		Type:  ta.Type,
