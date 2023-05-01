@@ -15,7 +15,7 @@ func Serve(client keystone.HTTPClient, store *config.Store) http.Handler {
 }
 
 func servePanels(client keystone.HTTPClient, store *config.Store, w http.ResponseWriter, r *http.Request) {
-	path := strings.SplitN(r.URL.Path, "/", 2)
+	path := strings.SplitN(strings.Trim(r.URL.Path, "/"), "/", 2)
 	if len(path) < 2 {
 		http.Error(w, "path must include context name and slug", http.StatusBadRequest)
 		return
