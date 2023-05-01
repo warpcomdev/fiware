@@ -18,6 +18,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/snapshots"
 	"github.com/warpcomdev/fiware/internal/template"
+	"github.com/warpcomdev/fiware/internal/urbo"
 )
 
 // Autocompleter builds an autocomplete function for projects and (optionally) subservices
@@ -493,6 +494,7 @@ func main() {
 					mux.Handle("/api/auth", cors(authServe(client, currentStore, backoff)))
 					mux.Handle("/api/contexts/", cors(http.StripPrefix("/api/contexts", currentStore.Server())))
 					mux.Handle("/api/snaps/", cors(http.StripPrefix("/api/snaps", snapshots.Serve(client, currentStore))))
+					mux.Handle("/api/urbo/", cors(http.StripPrefix("/api/urbo", urbo.Serve(client, currentStore))))
 					if c.NArg() > 0 {
 						mux.Handle("/legacy", http.HandlerFunc(onRenderRequest))
 						serveFS := os.DirFS(c.Args().First())
