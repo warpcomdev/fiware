@@ -15,15 +15,13 @@ func Serve(client keystone.HTTPClient, store *config.Store) http.Handler {
 }
 
 func servePanels(client keystone.HTTPClient, store *config.Store, w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	if query.Get("context") == "" {
-		http.Error(w, "must provide context name", http.StatusBadRequest)
+	path := strings.SplitN(r.URL.Path, "/", 2)
+	if len(path) < 2 {
+		http.Error(w, "path must include context name and slug", http.StatusBadRequest)
 		return
 	}
-	if query.Get("slug") == "" {
-		http.Error(w, "must provide slug name", http.StatusBadRequest)
-		return
-	}
+	context := path[0]
+	slug := path[1]
 	bearer := r.Header.Get("Authorization")
 	if bearer == "" {
 		http.Error(w, "must provide authorization header", http.StatusUnauthorized)
@@ -34,8 +32,6 @@ func servePanels(client keystone.HTTPClient, store *config.Store, w http.Respons
 		return
 	}
 	token := strings.TrimPrefix(bearer, "Bearer ")
-	context := query.Get("context")
-	slug := query.Get("slug")
 	contextObj, err := store.Info(context)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
