@@ -59,7 +59,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 	}
 
 	useDescription := !c.Bool(useExactIdFlag.Name)
-	client := httpClient(verbosity(c))
+	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, arg := range c.Args().Slice() {
 		var u *urbo.Urbo
 		var header http.Header

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"cuelang.org/go/pkg/encoding/json"
 	"github.com/warpcomdev/fiware/internal/keystone"
@@ -79,9 +80,9 @@ func (lc loggingClient) Do(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-func httpClient(verbosity int) keystone.HTTPClient {
+func httpClient(verbosity int, timeout time.Duration) keystone.HTTPClient {
 	return loggingClient{
 		verbosity: verbosity,
-		client:    _httpClient(),
+		client:    _httpClient(timeout),
 	}
 }

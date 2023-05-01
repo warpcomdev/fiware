@@ -1,6 +1,10 @@
 package main
 
-import "github.com/urfave/cli/v2"
+import (
+	"time"
+
+	"github.com/urfave/cli/v2"
+)
 
 var (
 	namespaceFlag = &cli.StringFlag{
@@ -170,6 +174,12 @@ var (
 		Usage: "When decoding, parse json files as DEPLOYER top-level assets",
 		Value: false,
 	}
+
+	timeoutFlag = &cli.IntFlag{
+		Name:    "timeout",
+		Usage:   "Request expiration timeout for requests (in seconds)",
+		Value:   15,
+	}
 )
 
 // verbosity combines info from all verbose flags
@@ -186,4 +196,16 @@ func verbosity(c *cli.Context) int {
 		return 1
 	}
 	return verbose
+}
+
+// verbosity combines info from all verbose flags
+func configuredTimeout(c *cli.Context) time.Duration {
+	timeout := c.Int(timeoutFlag.Name)
+	if timeout < 5 {
+		timeout = 15
+	}
+	if timeout > 1800 {
+		timeout = 1800
+	}
+	return time.Duration(timeout) * time.Second
 }

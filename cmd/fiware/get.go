@@ -125,7 +125,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		},
 	}
 	maximum := c.Int(maxFlag.Name)
-	client := httpClient(verbosity(c))
+	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
 		var u *urbo.Urbo

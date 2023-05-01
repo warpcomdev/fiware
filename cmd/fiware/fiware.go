@@ -224,6 +224,7 @@ func main() {
 					selectedContextFlag,
 					pepFlag,
 					saveFlag,
+					timeoutFlag,
 				}, verboseFlags...),
 			},
 
@@ -246,6 +247,7 @@ func main() {
 					filterTypeFlag,
 					simpleQueryFlag,
 					maxFlag,
+					timeoutFlag,
 				}, verboseFlags...),
 			},
 
@@ -306,6 +308,7 @@ func main() {
 							outdirFlag,
 							tokenFlag,
 							allFlag,
+							timeoutFlag,
 						}, verboseFlags...),
 					}),
 				},
@@ -322,6 +325,7 @@ func main() {
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
+					timeoutFlag,
 				}, verboseFlags...),
 			},
 
@@ -343,6 +347,7 @@ func main() {
 					libFlag,
 					useExactIdFlag,
 					filterTypeFlag,
+					timeoutFlag,
 				}, verboseFlags...),
 			},
 
@@ -364,6 +369,7 @@ func main() {
 					libFlag,
 					useExactIdFlag,
 					filterTypeFlag,
+					timeoutFlag,
 				}, verboseFlags...),
 			},
 
@@ -482,7 +488,7 @@ func main() {
 				Category: "platform",
 				Usage:    fmt.Sprintf("Turn on http server"),
 				Action: func(c *cli.Context) error {
-					client := httpClient(0)
+					client := httpClient(0, 15*time.Second)
 					mux := &http.ServeMux{}
 					mux.Handle("/api/auth", cors(authServe(client, currentStore, backoff)))
 					mux.Handle("/api/contexts/", cors(http.StripPrefix("/api/contexts", currentStore.Server())))

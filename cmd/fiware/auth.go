@@ -85,7 +85,7 @@ func getCredentials(c *cli.Context, selected *config.Config, backoff keystone.Ba
 	if err != nil {
 		return err
 	}
-	client := httpClient(verbosity(c))
+	client := httpClient(verbosity(c), configuredTimeout(c))
 	fiwareToken, urboToken, userId, err := getTokens(client, k, selected, string(bytepw), backoff, getProjects)
 	if err != nil {
 		return err

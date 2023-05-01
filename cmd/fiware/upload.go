@@ -31,7 +31,7 @@ func uploadResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
-	client := httpClient(verbosity(c))
+	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, target := range c.Args().Slice() {
 		fullpath, err := filepath.Abs(target)
 		if err != nil {

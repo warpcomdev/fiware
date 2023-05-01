@@ -35,7 +35,7 @@ func newVerticalDownloader(c *cli.Context, store *config.Store) (*verticalDownlo
 	if err != nil {
 		return nil, err
 	}
-	client := httpClient(verbosity(c))
+	client := httpClient(verbosity(c), configuredTimeout(c))
 	verticals, err := api.GetVerticals(client, headers)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func newProjectDownloader(c *cli.Context, store *config.Store) (*projectDownload
 	if err != nil {
 		return nil, err
 	}
-	client := httpClient(verbosity(c))
+	client := httpClient(verbosity(c), configuredTimeout(c))
 	projects, err := api.Projects(client, headers)
 	if err != nil {
 		return nil, err

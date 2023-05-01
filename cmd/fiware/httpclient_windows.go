@@ -10,9 +10,9 @@ import (
 	ieproxy "github.com/mattn/go-ieproxy"
 )
 
-func _httpClient() *http.Client {
+func _httpClient(timeout time.Duration) *http.Client {
 	return &http.Client{
-		Timeout: 15 * time.Second,
+		Timeout: timeout,
 		Transport: &http.Transport{
 			// TODO: Hacer esto configurable
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
