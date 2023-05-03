@@ -176,9 +176,9 @@ var (
 	}
 
 	timeoutFlag = &cli.IntFlag{
-		Name:    "timeout",
-		Usage:   "Request expiration timeout for requests (in seconds)",
-		Value:   15,
+		Name:  "timeout",
+		Usage: "Request expiration timeout for requests (in seconds)",
+		Value: 15,
 	}
 )
 

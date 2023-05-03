@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/warpcomdev/fiware/internal/decode"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/snapshots"
+	"github.com/warpcomdev/fiware/internal/storage"
 	"github.com/warpcomdev/fiware/internal/template"
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
@@ -491,10 +493,16 @@ func main() {
 				Action: func(c *cli.Context) error {
 					client := httpClient(0, 15*time.Second)
 					mux := &http.ServeMux{}
+					configDir, err := currentStore.GetConfigDir()
+					if err != nil {
+						return err
+					}
+					storageDir := filepath.Join(configDir, "storage")
 					mux.Handle("/api/auth", cors(authServe(client, currentStore, backoff)))
 					mux.Handle("/api/contexts/", cors(http.StripPrefix("/api/contexts", currentStore.Server())))
 					mux.Handle("/api/snaps/", cors(http.StripPrefix("/api/snaps", snapshots.Serve(client, currentStore))))
 					mux.Handle("/api/urbo/", cors(http.StripPrefix("/api/urbo", urbo.Serve(client, currentStore))))
+					mux.Handle("/api/storage/", cors(http.StripPrefix("/api/storage", storage.New(storageDir).Serve())))
 					if c.NArg() > 0 {
 						mux.Handle("/legacy", http.HandlerFunc(onRenderRequest))
 						serveFS := os.DirFS(c.Args().First())
