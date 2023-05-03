@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -45,12 +46,22 @@ func (s *Store) readDir(assetPath string, isDir bool) ([]string, error) {
 
 // Assets in a particular context and resourceType
 func (s *Store) Assets(context, resourceType string) ([]string, error) {
-	return s.readDir(filepath.Join(s.Path, context, resourceType), true)
+	assets, err := s.readDir(filepath.Join(s.Path, context, resourceType), true)
+	if err != nil {
+		return nil, err
+	}
+	sort.Sort(sort.StringSlice(assets))
+	return assets, nil
 }
 
 // Snapshots of a particular asset
 func (s *Store) Snapshots(context, resourceType, asset string) ([]string, error) {
-	return s.readDir(filepath.Join(s.Path, context, resourceType, asset), false)
+	snapshots, err := s.readDir(filepath.Join(s.Path, context, resourceType, asset), false)
+	if err != nil {
+		return nil, err
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(snapshots)))
+	return snapshots, nil
 }
 
 // Load item in a particular snapshot
