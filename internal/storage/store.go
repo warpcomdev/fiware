@@ -203,6 +203,19 @@ func (s *Store) Serve() http.Handler {
 			json.NewEncoder(w).Encode(listing)
 			return
 		}
+		if r.Method == http.MethodDelete {
+			if len(urlPath) < 4 {
+				http.Error(w, "invalid path", http.StatusBadRequest)
+				return
+			}
+			err := s.RemoveSnapshot(urlPath[0], urlPath[1], urlPath[2], urlPath[3])
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
 }
