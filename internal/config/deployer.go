@@ -46,6 +46,14 @@ func FromConfig(cfg Config) Environment {
 	result.Api.Perseo = cfg.PerseoURL
 	result.Api.Pentaho = cfg.PentahoURL
 	result.Api.Urbo = cfg.UrboURL
+	for key, val := range EndpointsFromParams(cfg.Params) {
+		result.NotificationEndpoints[key] = val
+	}
+	return result
+}
+
+func EndpointsFromParams(cfgParams map[string]string) map[string]string {
+	result := make(map[string]string)
 	for param, endpoint := range map[string]string{
 		"cygnus_url":          "HISTORIC",
 		"cygnus_url_lastdata": "LASTDATA",
@@ -55,8 +63,8 @@ func FromConfig(cfg Config) Environment {
 		"LASTDATA":            "LASTDATA",
 		"RULES":               "RULES",
 	} {
-		if value, ok := cfg.Params[param]; ok {
-			result.NotificationEndpoints[endpoint] = value
+		if value, ok := cfgParams[param]; ok {
+			result[endpoint] = value
 		}
 	}
 	return result

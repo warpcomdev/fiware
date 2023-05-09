@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
 )
 
@@ -44,6 +45,13 @@ func Load(datafile string, params map[string]string, libPath string) (fiware.Man
 			return manifest, fmt.Errorf("failed to unmarshal file %s: %w, then %w", datafile, err, rawErr)
 		}
 		manifest = rawConfig.ToManifest()
+	}
+	// Always add notification endpoints
+	if manifest.Environment.NotificationEndpoints == nil {
+		manifest.Environment.NotificationEndpoints = make(map[string]string)
+	}
+	for key, val := range config.EndpointsFromParams(params) {
+		manifest.Environment.NotificationEndpoints[key] = val
 	}
 	return manifest, nil
 }

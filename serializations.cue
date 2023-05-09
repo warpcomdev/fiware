@@ -137,6 +137,7 @@ views?: [...#View]
 	attrs: [...string]
 	expression?: #SubjectExpression
 	alterationTypes?: [...string]
+	notifyOnMetadataChange?: bool
 }
 
 #SubjectExpression: {

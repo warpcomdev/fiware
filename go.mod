@@ -3,7 +3,7 @@ module github.com/warpcomdev/fiware
 go 1.18
 
 require (
-	cuelang.org/go v0.4.3
+	cuelang.org/go v0.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/google/go-jsonnet v0.19.1
 	github.com/mattn/go-ieproxy v0.0.9
@@ -15,9 +15,8 @@ require (
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
-	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
+	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect

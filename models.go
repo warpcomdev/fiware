@@ -364,9 +364,10 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs           []string          `json:"attrs" sort:"true"`
-	Expression      SubjectExpression `json:"expression,omitempty"`
-	AlterationTypes []string          `json:"alterationTypes,omitempty"`
+	Attrs                  []string          `json:"attrs" sort:"true"`
+	Expression             SubjectExpression `json:"expression,omitempty"`
+	AlterationTypes        []string          `json:"alterationTypes,omitempty"`
+	NotifyOnMetadataChange bool              `json:"notifyOnMetadataChange,omitempty"`
 }
 
 // SubjectExpression es la expresion en la condicion

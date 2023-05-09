@@ -541,6 +541,9 @@ func (x SubjectCondition) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if x.NotifyOnMetadataChange {
+		s.KeyBool("notifyOnMetadataChange", x.NotifyOnMetadataChange)
+	}
 }
 
 func (x SubjectExpression) MarshalJSON() ([]byte, error) {
