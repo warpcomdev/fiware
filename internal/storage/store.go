@@ -126,6 +126,21 @@ func (s *Store) RemoveSnapshot(context, resourceType, asset, snapshot string) er
 	return nil
 }
 
+// Rename a snapshot
+func (s *Store) RenameSnapshot(context, resourceType, asset, oldSnapshot, newSnapshot string) error {
+	assetFolder := filepath.Join(s.Path, context, resourceType, asset)
+	oldSnapFile := filepath.Join(assetFolder, oldSnapshot)
+	newSnapFile := filepath.Join(assetFolder, newSnapshot)
+	if err := os.Rename(oldSnapFile, newSnapFile); err != nil {
+		return err
+	}
+	return nil
+}
+
+type patchRequest struct {
+	Name string `json:"name"`
+}
+
 func (s *Store) Serve() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
@@ -209,6 +224,31 @@ func (s *Store) Serve() http.Handler {
 				return
 			}
 			err := s.RemoveSnapshot(urlPath[0], urlPath[1], urlPath[2], urlPath[3])
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if r.Method == http.MethodPatch {
+			if len(urlPath) < 4 {
+				http.Error(w, "invalid path", http.StatusBadRequest)
+				return
+			}
+			decoder := json.NewDecoder(r.Body)
+			var req patchRequest
+			if err := decoder.Decode(&req); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			safe := filepath.Base(filepath.Clean(req.Name))
+			if safe == "" || safe == "." || safe != req.Name {
+				err := fmt.Errorf("%s is not a safe file name. Remove dots, slashes and any other unsafe character", req.Name)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			err := s.RenameSnapshot(urlPath[0], urlPath[1], urlPath[2], urlPath[3], req.Name)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
