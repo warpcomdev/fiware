@@ -17,22 +17,25 @@ import (
 	"github.com/warpcomdev/fiware/internal/decode"
 )
 
-//go:embed static/*
-var staticFS embed.FS
+//go:embed legacy/*
+var legacy embed.FS
 
-func onRenderRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		sub, err := fs.Sub(staticFS, "static")
-		if err != nil {
-			http.Error(w, "Failed to read static files", http.StatusInternalServerError)
-			return
-		}
-		http.FileServer(http.FS(sub)).ServeHTTP(w, r)
-	} else if r.Method == "POST" {
-		onPostRenderRequest(w, r)
-	} else {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+func legacyHandler() http.Handler {
+	sub, err := fs.Sub(legacy, "legacy")
+	if err != nil {
+		panic("Failed to read legacy files")
 	}
+	fsHandler := http.FileServer(http.FS(sub))
+	onRenderRequest := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			fsHandler.ServeHTTP(w, r)
+		} else if r.Method == "POST" {
+			onPostRenderRequest(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}
+	return http.HandlerFunc(onRenderRequest)
 }
 
 func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {

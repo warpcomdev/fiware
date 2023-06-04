@@ -1,8 +1,10 @@
 package main
 
 import (
+	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -22,6 +24,9 @@ import (
 	"github.com/warpcomdev/fiware/internal/template"
 	"github.com/warpcomdev/fiware/internal/urbo"
 )
+
+//go:embed static
+var staticFS embed.FS
 
 // Autocompleter builds an autocomplete function for projects and (optionally) subservices
 func autocompleter(currentStore *config.Store, subservices bool) func(c *cli.Context) {
@@ -503,13 +508,18 @@ func main() {
 					mux.Handle("/api/snaps/", cors(http.StripPrefix("/api/snaps", snapshots.Serve(client, currentStore))))
 					mux.Handle("/api/urbo/", cors(http.StripPrefix("/api/urbo", urbo.Serve(client, currentStore))))
 					mux.Handle("/api/storage/", cors(http.StripPrefix("/api/storage", storage.New(storageDir).Serve())))
+					mux.Handle("/legacy", legacyHandler())
+					var serveFS fs.FS
 					if c.NArg() > 0 {
-						mux.Handle("/legacy", http.HandlerFunc(onRenderRequest))
-						serveFS := os.DirFS(c.Args().First())
-						mux.Handle("/", http.FileServer(http.FS(serveFS)))
+						subdir := c.Args().First()
+						serveFS = os.DirFS(subdir)
 					} else {
-						mux.Handle("/", http.HandlerFunc(onRenderRequest))
+						serveFS, err = fs.Sub(staticFS, "static")
+						if err != nil {
+							panic(err)
+						}
 					}
+					mux.Handle("/", http.FileServer(http.FS(serveFS)))
 					port := c.Int(portFlag.Name)
 					fmt.Printf("Listening at port %d\n", port)
 					addr := fmt.Sprintf(":%d", port)

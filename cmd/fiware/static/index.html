@@ -1,77 +1,128 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="./favicon.png" />
+		<meta name="viewport" content="width=device-width" />
+		<!-- See https://github.com/rtfpessoa/diff2html#diff2htmlui-usage -->
+		<!--
+			I don't know how the hell to use the css bundled with the diff2html library
+			downloaded from npm. So they are not added automatically by svelte, I have
+			to do some magic with rollup? (https://stackoverflow.com/questions/56483209/import-css-in-node-modules-to-svelte)
+			WTF?
+		-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/github.min.css" />
+		<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+		
+		<link href="./_app/immutable/assets/0.6a9d9731.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/2.7a92a6da.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.09549e6b.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.61187ccf.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.4bbe023a.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.dff0bf3e.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.bda74bb5.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.5927ebdf.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/preferDark.4a1c90e5.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.d49f7408.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Construye tu modelo</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-</head>
 
-<body>
-    <section class="section">
-        <div class="container is-max-desktop">
-            <h1 class="title">
-                Construye tu modelo
-            </h1>
-            <form method="post">
+<div class="viewport svelte-1esvan8"><div class="grid svelte-1esvan8"><div class="topbar svelte-1esvan8">
+			<div class="topbar svelte-194iv7x"><div class="tabs svelte-194iv7x"><button>[New connection]</button>
+		
+		</div>
 
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Namespace</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <input class="input" type="text" name="vertical" placeholder="namespace">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+	<dialog class="credentials svelte-194iv7x"><form method="dialog"><div class="authcontrol svelte-194iv7x"><label for="context" class="svelte-194iv7x">Contexto:</label>
+				<select id="context" name="context"><option value="">--</option></select></div>
+			<div class="authcontrol svelte-194iv7x"><span class="servicehint svelte-194iv7x">service: @</span></div>
+			<div class="authcontrol svelte-194iv7x"><label for="password" class="svelte-194iv7x">Password:</label>
+				<input type="password" id="username" name="username" value=""></div>
+			<div class="authcontrol svelte-194iv7x"><button name="authenticate" value="authenticate" class="svelte-194iv7x">Authenticate</button>
+				<button name="skip" value="skip" class="svelte-194iv7x">Close</button></div></form></dialog>
+</div></div>
 
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Subservicio</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <input class="input" type="text" name="subservice" placeholder="subservice">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+		<div class="slugbar svelte-1esvan8">
+			<div class="slugbar svelte-1tp2jjj"><label for="slug">Slug:</label>
+	<div class="slug svelte-1tp2jjj" id="slug">&lt;Not saved yet></div>
+	<div class="icons"><button name="snap" value="snap">Save snapshot</button>
+		<button name="save" value="save">Export to Urbo</button>
+		<select><option value="default-light">default-light</option><option value="default-dark">default-dark</option><option value="cm6-theme-solarized-dark">cm6-theme-solarized-dark</option><option value="cm6-theme-gruvbox-dark">cm6-theme-gruvbox-dark</option><option value="cm6-theme-material-dark">cm6-theme-material-dark</option><option value="cm6-theme-basic-dark">cm6-theme-basic-dark</option><option value="cm6-theme-nord">cm6-theme-nord</option><option value="cm6-theme-solarized-light">cm6-theme-solarized-light</option><option value="cm6-theme-gruvbox-light">cm6-theme-gruvbox-light</option><option value="cm6-theme-basic-light">cm6-theme-basic-light</option></select></div>
+</div></div>
 
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">README ngsi (o CSV)</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <textarea class="textarea is-small" rows="20" name="data" placeholder="modelo NGSI o CSV"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+		<div class="statusbar svelte-1esvan8">
+			<div class="statusbar svelte-60ug4v"><div class="notifications svelte-60ug4v"><span class="info"></span></div>
+	<div class="buttons"><button>atajos</button>
+		<button>histórico</button>
+		<button>dar formato</button></div></div>
 
-                <div class="field is-horizontal">
-                    <div class="field-label">
-                        <!-- left empty for spacing-->
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <button class="button is-link">Obtén las plantillas</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<dialog class="history svelte-60ug4v" id="history"><div class="history svelte-60ug4v"><div class="scroller svelte-60ug4v"><table class="svelte-60ug4v"><thead class="svelte-60ug4v"><tr class="svelte-60ug4v"><th class="svelte-60ug4v">Date</th><th class="svelte-60ug4v">Level</th><th class="svelte-60ug4v">Message</th></tr></thead>
+				<tbody class="svelte-60ug4v"></tbody></table></div>
+		<button>Cerrar</button></div></dialog>
 
-            </form>
-        </div>
-    </section>
-</body>
+<dialog class="help" id="help"><div class="history svelte-60ug4v"><div class="scroller svelte-60ug4v"><table class="svelte-60ug4v"><thead class="svelte-60ug4v"><tr class="svelte-60ug4v"><th class="svelte-60ug4v">Teclas</th><th class="svelte-60ug4v">Acción</th></tr></thead>
+				<tbody class="svelte-60ug4v"><tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + UP</td><td class="svelte-60ug4v">Ir a la ocurrencia anterior de un bloque<br>Por ejemplo, si estás en el <emph>&quot;pulls&quot;</emph> de un widget y pulsas <emph>Ctrl + UP</emph>, irás al <emph>&quot;pulls&quot;</emph> del widget anterior</td></tr>
+					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + DOWN</td><td class="svelte-60ug4v">Ir a la ocurrencia siguiente de un bloque</td></tr>
+					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + DEL</td><td class="svelte-60ug4v">Colapsar o abrir el bloque de código actual</td></tr>
+					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + ENTER</td><td class="svelte-60ug4v">Cambiar entre el editor y el árbol</td></tr>
+					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + FIN</td><td class="svelte-60ug4v">Seleccionar desde la posición del cursor hasta el fin de línea</td></tr></tbody></table></div>
+		<button>Cerrar</button></div>
+</dialog></div>
 
+		<div class="editor svelte-1esvan8">
+			
+<div class="editor svelte-bkpf3s"></div></div>
+
+		<div class="featurebar svelte-1esvan8"><div class="featurebar svelte-1t36hzi"><div class="svelte-1t36hzi"><a href="/" class="svelte-1t36hzi highlight">Snapshots</a></div>
+	<div class="svelte-1t36hzi"><a href="/" class="svelte-1t36hzi">Browse</a></div>
+</div></div>
+
+		<div class="sidebar svelte-1esvan8"><div class="sidebar svelte-hvwnyo"><div class="control"><div class="shortcuts svelte-hvwnyo offline">&lt;Ctrl-Enter para alternar editor y árbol&gt;
+		</div></div>
+	<div class="content svelte-hvwnyo"><div class="svelte-hvwnyo offline"><ul class="svelte-1mm32h9">
+	<li class="svelte-1mm32h9"><div class="svelte-1mm32h9"><button tabindex="-1" disabled class="svelte-1mm32h9">-</button>
+			<input type="text" readonly value="<root>" class="svelte-1mm32h9"></div>
+		</li>
+</ul></div>
+		<div class="svelte-hvwnyo"><ul class="svelte-r5jo0a"><li class="slug svelte-r5jo0a"><div class="snapoptions svelte-r5jo0a"><div class="snaplink svelte-r5jo0a"><input type="text" name="slug" id="slug" style="width: 95%" placeholder="Slug o URL de panel" value=""></div>
+			<div class="snapload"><button>Import from Urbo</button></div></div></li>
+	<li><hr></li>
+	
+	
+</ul></div></div>
+</div></div></div></div>
+
+<div class="nodisplay"><dialog class="diff svelte-1esvan8"><div class="diff svelte-1esvan8"><div id="scroller" class="scroller svelte-1esvan8"><div id="diffView" class="diffView svelte-1kplg9a"></div></div>
+    	<button>Cerrar</button></div></dialog>
+</div>
+
+
+			
+			<script>
+				{
+					__sveltekit_18bhdjn = {
+						base: new URL(".", location).pathname.slice(0, -1),
+						env: {"PUBLIC_FIWARE_API_URL":"/api"}
+					};
+
+					const element = document.currentScript.parentElement;
+
+					const data = [null,null];
+
+					Promise.all([
+						import("./_app/immutable/entry/start.09549e6b.js"),
+						import("./_app/immutable/entry/app.bda74bb5.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 2],
+							data,
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
 </html>
