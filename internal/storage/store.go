@@ -244,7 +244,7 @@ func (s *Store) Serve() http.Handler {
 			}
 			safe := filepath.Base(filepath.Clean(req.Name))
 			if safe == "" || safe == "." || safe != req.Name {
-				err := fmt.Errorf("%s is not a safe file name. Remove dots, slashes and any other unsafe character", req.Name)
+				err := fmt.Errorf("'%s' is not a safe file name. Remove dots, slashes and any other unsafe character", req.Name)
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
