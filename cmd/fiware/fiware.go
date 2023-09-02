@@ -1,32 +1,24 @@
 package main
 
 import (
-	"embed"
 	"errors"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
 	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/snapshots"
-	"github.com/warpcomdev/fiware/internal/storage"
 	"github.com/warpcomdev/fiware/internal/template"
-	"github.com/warpcomdev/fiware/internal/urbo"
 )
-
-//go:embed static
-var staticFS embed.FS
 
 // Autocompleter builds an autocomplete function for projects and (optionally) subservices
 func autocompleter(currentStore *config.Store, subservices bool) func(c *cli.Context) {
@@ -101,6 +93,18 @@ func main() {
 			return nil
 		},
 		EnableBashCompletion: true,
+		Action: func(c *cli.Context) error {
+			mux, addr, err := prepareServer(currentStore, c, backoff)
+			if err != nil {
+				return err
+			}
+			browserURL := "http://" + addr
+			go func() {
+				<-time.After(time.Second)
+				browser.OpenURL(browserURL)
+			}()
+			return http.ListenAndServe(addr, mux)
+		},
 
 		Commands: []*cli.Command{
 
@@ -498,35 +502,11 @@ func main() {
 				Category: "platform",
 				Usage:    fmt.Sprintf("Turn on http server"),
 				Action: func(c *cli.Context) error {
-					client := httpClient(0, 15*time.Second)
-					mux := &http.ServeMux{}
-					configDir, err := currentStore.GetConfigDir()
+					mux, addr, err := prepareServer(currentStore, c, backoff)
 					if err != nil {
 						return err
 					}
-					storageDir := filepath.Join(configDir, "storage")
-					mux.Handle("/api/auth", cors(authServe(client, currentStore, backoff)))
-					mux.Handle("/api/contexts/", cors(http.StripPrefix("/api/contexts", currentStore.Server())))
-					mux.Handle("/api/snaps/", cors(http.StripPrefix("/api/snaps", snapshots.Serve(client, currentStore))))
-					mux.Handle("/api/urbo/", cors(http.StripPrefix("/api/urbo", urbo.Serve(client, currentStore))))
-					mux.Handle("/api/storage/", cors(http.StripPrefix("/api/storage", storage.New(storageDir).Serve())))
-					mux.Handle("/legacy", legacyHandler())
-					var serveFS fs.FS
-					if c.NArg() > 0 {
-						subdir := c.Args().First()
-						serveFS = os.DirFS(subdir)
-					} else {
-						serveFS, err = fs.Sub(staticFS, "static")
-						if err != nil {
-							panic(err)
-						}
-					}
-					mux.Handle("/", http.FileServer(http.FS(serveFS)))
-					port := c.Int(portFlag.Name)
-					fmt.Printf("Listening at port %d\n", port)
-					addr := fmt.Sprintf(":%d", port)
-					http.ListenAndServe(addr, mux)
-					return nil
+					return http.ListenAndServe(addr, mux)
 				},
 				Flags: []cli.Flag{
 					portFlag,

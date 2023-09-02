@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -50,7 +50,7 @@ func (s *Store) Assets(context, resourceType string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.Sort(sort.StringSlice(assets))
+	slices.Sort(assets)
 	return assets, nil
 }
 
@@ -72,7 +72,7 @@ func (s *Store) Load(context, resourceType, asset, snapshot string) ([]byte, err
 		return nil, err
 	}
 	defer data.Close()
-	return ioutil.ReadAll(data)
+	return io.ReadAll(data)
 }
 
 // Save a snapshot
@@ -105,7 +105,9 @@ func (s *Store) SaveSnapshot(context, resourceType, asset, snapshot string, r io
 
 // Save creating a new Snapshot
 func (s *Store) Save(context, resourceType, asset string, r io.Reader) (string, error) {
-	snapshot_name := fmt.Sprintf("%s.json", time.Now().Format(time.RFC3339))
+	// custom format for dates, windows does not like the
+	// ":", " +XX:XX" characters in hours or timezones.
+	snapshot_name := fmt.Sprintf("%s.json", time.Now().Format("20060102-150405"))
 	return snapshot_name, s.SaveSnapshot(context, resourceType, asset, snapshot_name, r)
 }
 
@@ -145,7 +147,7 @@ func (s *Store) Serve() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
 			defer func() {
-				io.Copy(ioutil.Discard, r.Body)
+				io.Copy(io.Discard, r.Body)
 				r.Body.Close()
 			}()
 		}

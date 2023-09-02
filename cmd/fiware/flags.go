@@ -140,7 +140,7 @@ var (
 		Name:    "port",
 		Aliases: []string{"p"},
 		Usage:   "TCP port for server mode",
-		Value:   9081,
+		Value:   9181,
 	}
 
 	maxFlag = &cli.IntFlag{
