@@ -20,7 +20,7 @@ type Orion struct {
 	AllowUnknownFields bool
 }
 
-const batchSize = 50
+const defaultBatchSize = 50
 
 // New Orion instance
 func New(orionURL string) (*Orion, error) {
@@ -422,7 +422,10 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 }
 
 // UpdateEntities updates a list of entities
-func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, ents []Entity) error {
+func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, ents []Entity, batchSize int) error {
+	if batchSize <= 0 {
+		batchSize = defaultBatchSize
+	}
 	for base := 0; base < len(ents); base += batchSize {
 		if base > 0 {
 			// Wait for a timeout, for safety's sake
@@ -452,12 +455,15 @@ func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, 
 }
 
 // DeleteEntities deletes a list of entities from Orion
-func (o *Orion) DeleteEntities(client keystone.HTTPClient, headers http.Header, ents []fiware.Entity) error {
+func (o *Orion) DeleteEntities(client keystone.HTTPClient, headers http.Header, ents []fiware.Entity, batchSize int) error {
 	type deleteEntity struct {
 		ID   string `json:"id"`
 		Type string `json:"type"`
 	}
 	var lastError error
+	if batchSize <= 0 {
+		batchSize = defaultBatchSize
+	}
 	for base := 0; base < len(ents); base += batchSize {
 		req := struct {
 			ActionType string         `json:"actionType"`

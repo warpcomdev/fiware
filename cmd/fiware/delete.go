@@ -40,6 +40,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 		return err
 	}
 
+	batchSize := c.Int(batchSizeFlag.Name)
 	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, arg := range c.Args().Slice() {
 		var header http.Header
@@ -87,7 +88,7 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 			if err != nil {
 				return err
 			}
-			if err := deleteEntities(selected, client, header, filterManifest); err != nil {
+			if err := deleteEntities(selected, client, header, filterManifest, batchSize); err != nil {
 				return err
 			}
 		default:
@@ -170,7 +171,7 @@ func knownEntities(vertical fiware.Manifest) []fiware.Entity {
 	return knownEntities
 }
 
-func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, batchSize int) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -179,5 +180,5 @@ func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.H
 	listMessage("DELETing entities ", toDelete,
 		func(g fiware.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
 	)
-	return api.DeleteEntities(client, header, toDelete)
+	return api.DeleteEntities(client, header, toDelete, batchSize)
 }

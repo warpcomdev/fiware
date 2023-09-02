@@ -14,71 +14,73 @@
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/github.min.css" />
 		<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
 		
-		<link href="./_app/immutable/assets/0.009739a1.css" rel="stylesheet">
-		<link href="./_app/immutable/assets/2.8897aca4.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.c4899bd3.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.61187ccf.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.1c950b44.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.dff0bf3e.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.a8855d28.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.1d184691.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/preferDark.4a1c90e5.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.c2e13962.js">
+		<link href="./_app/immutable/assets/0.aba3793f.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/2.a3804aee.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.53dd3881.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.e5b8cf1f.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.9d49e938.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.6ab8c0af.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.5f069583.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.fadee67f.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/preferDark.cf841c41.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.1142ae8b.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">
 
 
-<div class="viewport svelte-6mtct3"><div class="grid svelte-6mtct3"><div class="topbar svelte-6mtct3">
-			<div class="topbar svelte-1icjwpi"><div class="tabs svelte-1icjwpi"><button class="shy">[New connection]</button>
+<div class="viewport svelte-1xfkj1h"><div class="grid svelte-1xfkj1h"><div class="topbar svelte-1xfkj1h">
+			<div class="topbar svelte-fq8lvr"><label for="tabs" class="svelte-fq8lvr">Contexts:</label>
+	<div class="tabs svelte-fq8lvr"><button class="shy" title="connect">[Login]</button>
 		
 		</div>
 
-	<dialog class="credentials svelte-1icjwpi"><form method="dialog"><div class="authcontrol svelte-1icjwpi"><label for="context" class="svelte-1icjwpi">Contexto:</label>
+	<dialog class="credentials svelte-fq8lvr"><form method="dialog"><div class="authcontrol svelte-fq8lvr"><label for="context" class="svelte-fq8lvr">Contexto:</label>
 				<select id="context" name="context"><option value="">--</option></select></div>
-			<div class="authcontrol svelte-1icjwpi"><span class="servicehint svelte-1icjwpi">service: @</span></div>
-			<div class="authcontrol svelte-1icjwpi"><label for="password" class="svelte-1icjwpi">Password:</label>
+			<div class="authcontrol svelte-fq8lvr"><span class="servicehint svelte-fq8lvr">service: @</span></div>
+			<div class="authcontrol svelte-fq8lvr"><label for="password" class="svelte-fq8lvr">Password:</label>
 				<input type="password" id="username" name="username" value=""></div>
-			<div class="authcontrol svelte-1icjwpi"><button name="authenticate" value="authenticate" class="svelte-1icjwpi">Authenticate</button>
-				<button name="skip" value="skip" class="svelte-1icjwpi">Close</button></div></form></dialog>
+			<div class="authcontrol svelte-fq8lvr"><button name="authenticate" value="authenticate" class="svelte-fq8lvr">Authenticate</button>
+				<button name="skip" value="skip" class="svelte-fq8lvr">Close</button></div></form></dialog>
 </div></div>
 
-		<div class="slugbar svelte-6mtct3">
-			<div class="slugbar svelte-1tp2jjj"><label for="slug">Slug:</label>
-	<div class="slug svelte-1tp2jjj" id="slug">&lt;Not saved yet></div>
-	<div class="icons"><button name="snap" value="snap" class="green">Save snapshot</button>
-		<button name="save" value="save" class="red">Export to Urbo</button>
-		<select><option value="default-light">default-light</option><option value="default-dark">default-dark</option><option value="cm6-theme-solarized-dark">cm6-theme-solarized-dark</option><option value="cm6-theme-gruvbox-dark">cm6-theme-gruvbox-dark</option><option value="cm6-theme-material-dark">cm6-theme-material-dark</option><option value="cm6-theme-basic-dark">cm6-theme-basic-dark</option><option value="cm6-theme-nord">cm6-theme-nord</option><option value="cm6-theme-solarized-light">cm6-theme-solarized-light</option><option value="cm6-theme-gruvbox-light">cm6-theme-gruvbox-light</option><option value="cm6-theme-basic-light">cm6-theme-basic-light</option></select></div>
+		<div class="slugbar svelte-1xfkj1h">
+			<div class="slugbar svelte-i2idx"><label for="tabs" class="svelte-i2idx">Slugs:</label>
+	<div class="tabs svelte-i2idx" id="tabs"></div>
+	<div class="icons"><button name="snap" value="snap" class="green">Snapshot</button>
+		<button name="save" value="save" class="red">Upload</button>
+		<select title="theme" class="svelte-i2idx"><option value="default-light">default-light</option><option value="default-dark">default-dark</option><option value="cm6-theme-solarized-dark">cm6-theme-solarized-dark</option><option value="cm6-theme-gruvbox-dark">cm6-theme-gruvbox-dark</option><option value="cm6-theme-material-dark">cm6-theme-material-dark</option><option value="cm6-theme-basic-dark">cm6-theme-basic-dark</option><option value="cm6-theme-nord">cm6-theme-nord</option><option value="cm6-theme-solarized-light">cm6-theme-solarized-light</option><option value="cm6-theme-gruvbox-light">cm6-theme-gruvbox-light</option><option value="cm6-theme-basic-light">cm6-theme-basic-light</option></select></div>
 </div></div>
 
-		<div class="statusbar svelte-6mtct3">
-			<div class="statusbar svelte-60ug4v"><div class="notifications svelte-60ug4v"><span class="info"></span></div>
+		<div class="statusbar svelte-1xfkj1h">
+			<div class="statusbar svelte-gfreoh"><label for="notifications" class="svelte-gfreoh">» info:</label>
+	<div class="notifications svelte-gfreoh"><span class="info svelte-gfreoh"></span></div>
 	<div class="buttons"><button class="shy">atajos</button>
 		<button class="shy">histórico</button>
 		<button class="shy">dar formato</button></div></div>
 
-<dialog class="history svelte-60ug4v" id="history"><div class="history svelte-60ug4v"><div class="scroller svelte-60ug4v"><table class="svelte-60ug4v"><thead class="svelte-60ug4v"><tr class="svelte-60ug4v"><th class="svelte-60ug4v">Date</th><th class="svelte-60ug4v">Level</th><th class="svelte-60ug4v">Message</th></tr></thead>
-				<tbody class="svelte-60ug4v"></tbody></table></div>
+<dialog class="history svelte-gfreoh" id="history"><div class="history svelte-gfreoh"><div class="scroller svelte-gfreoh"><table class="svelte-gfreoh"><thead class="svelte-gfreoh"><tr class="svelte-gfreoh"><th class="svelte-gfreoh">Date</th><th class="svelte-gfreoh">Level</th><th class="svelte-gfreoh">Message</th></tr></thead>
+				<tbody class="svelte-gfreoh"></tbody></table></div>
 		<button>Cerrar</button></div></dialog>
 
-<dialog class="help" id="help"><div class="history svelte-60ug4v"><div class="scroller svelte-60ug4v"><table class="svelte-60ug4v"><thead class="svelte-60ug4v"><tr class="svelte-60ug4v"><th class="svelte-60ug4v">Teclas</th><th class="svelte-60ug4v">Acción</th></tr></thead>
-				<tbody class="svelte-60ug4v"><tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + UP</td><td class="svelte-60ug4v">Ir a la ocurrencia anterior de un bloque<br>Por ejemplo, si estás en el <emph>&quot;pulls&quot;</emph> de un widget y pulsas <emph>Ctrl + UP</emph>, irás al <emph>&quot;pulls&quot;</emph> del widget anterior</td></tr>
-					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + DOWN</td><td class="svelte-60ug4v">Ir a la ocurrencia siguiente de un bloque</td></tr>
-					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + DEL</td><td class="svelte-60ug4v">Colapsar o abrir el bloque de código actual</td></tr>
-					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + ENTER</td><td class="svelte-60ug4v">Cambiar entre el editor y el árbol</td></tr>
-					<tr class="svelte-60ug4v"><td class="svelte-60ug4v">Ctrl + FIN</td><td class="svelte-60ug4v">Seleccionar desde la posición del cursor hasta el fin de línea</td></tr></tbody></table></div>
+<dialog class="help" id="help"><div class="history svelte-gfreoh"><div class="scroller svelte-gfreoh"><table class="svelte-gfreoh"><thead class="svelte-gfreoh"><tr class="svelte-gfreoh"><th class="svelte-gfreoh">Teclas</th><th class="svelte-gfreoh">Acción</th></tr></thead>
+				<tbody class="svelte-gfreoh"><tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + UP</td><td class="svelte-gfreoh">Ir a la ocurrencia anterior de un bloque<br>Por ejemplo, si estás en el <emph>&quot;pulls&quot;</emph> de un widget y pulsas <emph>Ctrl + UP</emph>, irás al <emph>&quot;pulls&quot;</emph> del widget anterior</td></tr>
+					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + DOWN</td><td class="svelte-gfreoh">Ir a la ocurrencia siguiente de un bloque</td></tr>
+					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + DEL</td><td class="svelte-gfreoh">Colapsar o abrir el bloque de código actual</td></tr>
+					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + ENTER</td><td class="svelte-gfreoh">Cambiar entre el editor y el árbol</td></tr>
+					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + FIN</td><td class="svelte-gfreoh">Seleccionar desde la posición del cursor hasta el fin de línea</td></tr></tbody></table></div>
 		<button>Cerrar</button></div>
 </dialog></div>
 
-		<div class="editor svelte-6mtct3">
+		<div class="editor svelte-1xfkj1h">
 			
 <div class="editor svelte-bkpf3s"></div></div>
 
-		<div class="featurebar svelte-6mtct3"><div class="featurebar svelte-1g26c2j"><button class="shy svelte-1g26c2j highlight">Snapshots</button>
-	<button class="shy svelte-1g26c2j">Browse</button>
+		<div class="featurebar svelte-1xfkj1h"><div class="featurebar svelte-g69m7z"><button class="shy svelte-g69m7z highlight">Snapshots</button>
+	<button class="shy svelte-g69m7z">Browse</button>
 </div></div>
 
-		<div class="sidebar svelte-6mtct3"><div class="sidebar svelte-18e05zv"><div class="control"><div class="shortcuts svelte-18e05zv offline">&lt;Ctrl-Enter para alternar editor y árbol&gt;
+		<div class="sidebar svelte-1xfkj1h"><div class="sidebar svelte-18e05zv"><div class="control"><div class="shortcuts svelte-18e05zv offline">&lt;Ctrl-Enter para alternar editor y árbol&gt;
 			<hr></div></div>
 	<div class="content svelte-18e05zv"><div class="svelte-18e05zv offline"><ul class="svelte-17l2jy7">
 	<li class="svelte-17l2jy7"><div class="svelte-17l2jy7"><button class="reallyshy svelte-17l2jy7" tabindex="-1" disabled>-</button>
@@ -86,14 +88,15 @@
 		</li>
 </ul></div>
 		<div class="svelte-18e05zv"><ul class="svelte-r5jo0a"><li class="slug svelte-r5jo0a"><div class="snapoptions svelte-r5jo0a"><div class="snaplink svelte-r5jo0a"><input type="text" name="slug" id="slug" style="width: 95%" placeholder="Slug o URL de panel" value=""></div>
-			<div class="snapload"><button class="orange">Import from Urbo</button></div></div></li>
+			<div class="snapload"><button class="orange">Download</button></div>
+			<div class="snapload"><button class="green">New</button></div></div></li>
 	<li><hr></li>
 	
 	
 </ul></div></div>
 </div></div></div></div>
 
-<div class="nodisplay"><dialog class="diff svelte-6mtct3"><div class="diff svelte-6mtct3"><div id="scroller" class="scroller svelte-6mtct3"><div id="diffView" class="diffView svelte-1kplg9a"></div></div>
+<div class="nodisplay"><dialog class="diff svelte-1xfkj1h"><div class="diff svelte-1xfkj1h"><div id="scroller" class="scroller svelte-1xfkj1h"><div id="diffView" class="diffView svelte-1kplg9a"></div></div>
     	<button>Cerrar</button></div></dialog>
 </div>
 
@@ -101,7 +104,7 @@
 			
 			<script>
 				{
-					__sveltekit_7scqpg = {
+					__sveltekit_kdxh1a = {
 						base: new URL(".", location).pathname.slice(0, -1),
 						env: {"PUBLIC_FIWARE_API_URL":"/api"}
 					};
@@ -111,8 +114,8 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.c4899bd3.js"),
-						import("./_app/immutable/entry/app.a8855d28.js")
+						import("./_app/immutable/entry/start.53dd3881.js"),
+						import("./_app/immutable/entry/app.5f069583.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],

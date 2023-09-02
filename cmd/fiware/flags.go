@@ -180,6 +180,13 @@ var (
 		Usage: "Request expiration timeout for requests (in seconds)",
 		Value: 15,
 	}
+
+	batchSizeFlag = &cli.IntFlag{
+		Name:    "batch",
+		Aliases: []string{"b"},
+		Usage:   "Size of the batch of requests to send to orion",
+		Value:   50,
+	}
 )
 
 // verbosity combines info from all verbose flags

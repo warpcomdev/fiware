@@ -58,6 +58,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 		return err
 	}
 
+	batchSize := c.Int(batchSizeFlag.Name)
 	useDescription := !c.Bool(useExactIdFlag.Name)
 	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, arg := range c.Args().Slice() {
@@ -106,7 +107,7 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if err != nil {
 				return err
 			}
-			if err := postEntities(selected, client, header, filterManifest); err != nil {
+			if err := postEntities(selected, client, header, filterManifest, batchSize); err != nil {
 				return err
 			}
 		case "verticals":
@@ -178,7 +179,7 @@ func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header
 	return api.PostRules(client, header, fiware.ValuesOf(vertical.Rules))
 }
 
-func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, batchSize int) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -187,7 +188,7 @@ func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Hea
 	listMessage("POSTing entities with names", merged,
 		func(g orion.Entity) string { return fmt.Sprintf("%s/%s", g.Type(), g.ID()) },
 	)
-	return api.UpdateEntities(client, header, merged)
+	return api.UpdateEntities(client, header, merged, batchSize)
 }
 
 func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Manifest) error {

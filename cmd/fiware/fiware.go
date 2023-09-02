@@ -356,6 +356,7 @@ func main() {
 					useExactIdFlag,
 					filterTypeFlag,
 					timeoutFlag,
+					batchSizeFlag,
 				}, verboseFlags...),
 			},
 
@@ -378,6 +379,7 @@ func main() {
 					useExactIdFlag,
 					filterTypeFlag,
 					timeoutFlag,
+					batchSizeFlag,
 				}, verboseFlags...),
 			},
 
