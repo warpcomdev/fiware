@@ -25,6 +25,7 @@ var canGet []string = []string{
 	"suscriptions",
 	"rules",
 	"projects",
+	"domains",
 	"panels",
 	"verticals",
 	"entities",
@@ -215,6 +216,13 @@ func getResource(c *cli.Context, store *config.Store) error {
 					log.Printf("failed to refresh cache of %s: %s", selected.Name, err)
 				}
 			}
+		case "domains":
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := getDomains(selected, client, k, header, vertical); err != nil {
+				return err
+			}
 		case "panels":
 			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
@@ -334,6 +342,15 @@ func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone,
 		return err
 	}
 	vertical.Projects = projects
+	return nil
+}
+
+func getDomains(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+	domains, err := k.Domains(c, header, false)
+	if err != nil {
+		return err
+	}
+	vertical.Domains = domains
 	return nil
 }
 

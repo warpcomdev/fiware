@@ -44,6 +44,7 @@ type Manifest struct {
 	// Otros datos de estado no asociados al manifest
 	ServiceMappings []ServiceMapping     `json:"serviceMappings,omitempty"`
 	Projects        []Project            `json:"projects,omitempty"`
+	Domains         []Domain             `json:"domains,omitempty"`
 	Panels          map[string]UrboPanel `json:"urboPanels,omitempty"`
 	Tables          []Table              `json:"tables,omitempty"`
 	Views           []View               `json:"views,omitempty"`
@@ -550,6 +551,18 @@ type Project struct {
 }
 
 type ProjectStatus struct {
+	Links json.RawMessage `json:"links,omitempty"`
+}
+
+type Domain struct {
+	Description string `json:"description,omitempty"`
+	Enabled     bool   `json:"enabled"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	DomainStatus
+}
+
+type DomainStatus struct {
 	Links json.RawMessage `json:"links,omitempty"`
 }
 

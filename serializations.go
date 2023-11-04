@@ -134,6 +134,15 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.Domains) > 0 {
+		s.BeginList("domains")
+		for _, y := range x.Domains {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
 	if len(x.Panels) > 0 {
 		s.BeginBlock("urboPanels")
 		for _, k := range serialize.Keys(x.Panels) {
@@ -1069,6 +1078,30 @@ func (x ProjectStatus) MarshalJSON() ([]byte, error) {
 }
 
 func (x ProjectStatus) Serialize(s serialize.Serializer) {
+	if len(x.Links) > 0 {
+		s.KeyRaw("links", x.Links, false)
+	}
+}
+
+func (x Domain) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Domain) Serialize(s serialize.Serializer) {
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
+	s.KeyBool("enabled", x.Enabled)
+	s.KeyString("id", string(x.ID))
+	s.KeyString("name", string(x.Name))
+	x.DomainStatus.Serialize(s)
+}
+
+func (x DomainStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x DomainStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}

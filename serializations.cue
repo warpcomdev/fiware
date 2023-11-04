@@ -18,6 +18,7 @@ cdas?: #Json
 etls?: #Json
 serviceMappings?: [...#ServiceMapping]
 projects?: [...#Project]
+domains?: [...#Domain]
 urboPanels?: [string]: #UrboPanel
 tables?: [...#Table]
 views?: [...#View]
@@ -290,6 +291,14 @@ views?: [...#View]
 	domain_id?:   string
 	name:         string
 	links?:       #Json @anonymous(ProjectStatus)
+}
+
+#Domain: {
+	description?: string
+	enabled:      bool
+	id:           string
+	name:         string
+	links?:       #Json @anonymous(DomainStatus)
 }
 
 #Table: {

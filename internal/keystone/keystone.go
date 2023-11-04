@@ -450,3 +450,23 @@ func (k *Keystone) Projects(client HTTPClient, headers http.Header) ([]fiware.Pr
 	}
 	return projects.Projects, nil
 }
+
+type keystoneDomains struct {
+	Links   json.RawMessage `json:"links,omitempty"`
+	Domains []fiware.Domain `json:"domains"`
+}
+
+func (k *Keystone) Domains(client HTTPClient, headers http.Header, enabled bool) ([]fiware.Domain, error) {
+	urlProjects, err := k.URL.Parse("/v3/auth/domains")
+	if err != nil {
+		return nil, err
+	}
+	if !enabled {
+		urlProjects.Query().Add("enabled", "false")
+	}
+	var projects keystoneDomains
+	if _, err := Query(client, http.MethodGet, headers, urlProjects, &projects, true); err != nil {
+		return nil, err
+	}
+	return projects.Domains, nil
+}
