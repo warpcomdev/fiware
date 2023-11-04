@@ -457,7 +457,7 @@ type keystoneDomains struct {
 }
 
 func (k *Keystone) Domains(client HTTPClient, headers http.Header, enabled bool) ([]fiware.Domain, error) {
-	urlProjects, err := k.URL.Parse("/v3/auth/domains")
+	urlProjects, err := k.URL.Parse("/v3/domains")
 	if err != nil {
 		return nil, err
 	}
