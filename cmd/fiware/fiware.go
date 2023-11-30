@@ -361,6 +361,7 @@ func main() {
 					filterTypeFlag,
 					timeoutFlag,
 					batchSizeFlag,
+					overrideMetadataFlag,
 				}, verboseFlags...),
 			},
 

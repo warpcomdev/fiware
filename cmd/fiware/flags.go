@@ -123,6 +123,12 @@ var (
 		Value: false,
 	}
 
+	overrideMetadataFlag = &cli.BoolFlag{
+		Name:  "overrideMetadata",
+		Usage: "Override entities metadata",
+		Value: false,
+	}
+
 	useExactIdFlag = &cli.BoolFlag{
 		Name:    "exact",
 		Aliases: []string{"x"},

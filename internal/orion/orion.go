@@ -422,7 +422,7 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 }
 
 // UpdateEntities updates a list of entities
-func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, ents []Entity, batchSize int) error {
+func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, ents []Entity, batchSize int, overrideMetadata bool) error {
 	if batchSize <= 0 {
 		batchSize = defaultBatchSize
 	}
@@ -446,6 +446,11 @@ func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, 
 		path, err := o.URL.Parse("v2/op/update")
 		if err != nil {
 			return err
+		}
+		if overrideMetadata {
+			values := path.Query()
+			values.Add("options", "overrideMetadata")
+			path.RawQuery = values.Encode()
 		}
 		if _, _, err := keystone.Update(client, http.MethodPost, headers, path, req); err != nil {
 			return err
