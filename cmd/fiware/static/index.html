@@ -16,95 +16,23 @@
 		
 		<link href="./_app/immutable/assets/0.aba3793f.css" rel="stylesheet">
 		<link href="./_app/immutable/assets/2.a3804aee.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.02f1daaa.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.e5b8cf1f.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.0d75cae6.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.6ab8c0af.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.7ae6212d.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.fadee67f.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/preferDark.cf841c41.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.8c427ec5.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.cfa256f7.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/scheduler.f428da77.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.37121ffb.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.6b4437ed.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.e1d60120.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.31e625db.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.9ce612b6.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/preferDark.3bec6e09.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.c91f3fa5.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">
-
-
-<div class="viewport svelte-1xfkj1h"><div class="grid svelte-1xfkj1h"><div class="topbar svelte-1xfkj1h">
-			<div class="topbar svelte-fq8lvr"><label for="tabs" class="svelte-fq8lvr">Contexts:</label>
-	<div class="tabs svelte-fq8lvr"><button class="shy" title="connect">[Login]</button>
-		
-		</div>
-
-	<dialog class="credentials svelte-fq8lvr"><form method="dialog"><div class="authcontrol svelte-fq8lvr"><label for="context" class="svelte-fq8lvr">Contexto:</label>
-				<select id="context" name="context"><option value="">--</option></select></div>
-			<div class="authcontrol svelte-fq8lvr"><span class="servicehint svelte-fq8lvr">service: @</span></div>
-			<div class="authcontrol svelte-fq8lvr"><label for="password" class="svelte-fq8lvr">Password:</label>
-				<input type="password" id="username" name="username" value=""></div>
-			<div class="authcontrol svelte-fq8lvr"><button name="authenticate" value="authenticate" class="svelte-fq8lvr">Authenticate</button>
-				<button name="skip" value="skip" class="svelte-fq8lvr">Close</button></div></form></dialog>
-</div></div>
-
-		<div class="slugbar svelte-1xfkj1h">
-			<div class="slugbar svelte-i2idx"><label for="tabs" class="svelte-i2idx">Slugs:</label>
-	<div class="tabs svelte-i2idx" id="tabs"></div>
-	<div class="icons"><button name="snap" value="snap" class="green">Snapshot</button>
-		<button name="save" value="save" class="red">Upload</button>
-		<select title="theme" class="svelte-i2idx"><option value="default-light">default-light</option><option value="default-dark">default-dark</option><option value="cm6-theme-solarized-dark">cm6-theme-solarized-dark</option><option value="cm6-theme-gruvbox-dark">cm6-theme-gruvbox-dark</option><option value="cm6-theme-material-dark">cm6-theme-material-dark</option><option value="cm6-theme-basic-dark">cm6-theme-basic-dark</option><option value="cm6-theme-nord">cm6-theme-nord</option><option value="cm6-theme-solarized-light">cm6-theme-solarized-light</option><option value="cm6-theme-gruvbox-light">cm6-theme-gruvbox-light</option><option value="cm6-theme-basic-light">cm6-theme-basic-light</option></select></div>
-</div></div>
-
-		<div class="statusbar svelte-1xfkj1h">
-			<div class="statusbar svelte-gfreoh"><label for="notifications" class="svelte-gfreoh">» info:</label>
-	<div class="notifications svelte-gfreoh"><span class="info svelte-gfreoh"></span></div>
-	<div class="buttons"><button class="shy">atajos</button>
-		<button class="shy">histórico</button>
-		<button class="shy">dar formato</button></div></div>
-
-<dialog class="history svelte-gfreoh" id="history"><div class="history svelte-gfreoh"><div class="scroller svelte-gfreoh"><table class="svelte-gfreoh"><thead class="svelte-gfreoh"><tr class="svelte-gfreoh"><th class="svelte-gfreoh">Date</th><th class="svelte-gfreoh">Level</th><th class="svelte-gfreoh">Message</th></tr></thead>
-				<tbody class="svelte-gfreoh"></tbody></table></div>
-		<button>Cerrar</button></div></dialog>
-
-<dialog class="help" id="help"><div class="history svelte-gfreoh"><div class="scroller svelte-gfreoh"><table class="svelte-gfreoh"><thead class="svelte-gfreoh"><tr class="svelte-gfreoh"><th class="svelte-gfreoh">Teclas</th><th class="svelte-gfreoh">Acción</th></tr></thead>
-				<tbody class="svelte-gfreoh"><tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + UP</td><td class="svelte-gfreoh">Ir a la ocurrencia anterior de un bloque<br>Por ejemplo, si estás en el <emph>&quot;pulls&quot;</emph> de un widget y pulsas <emph>Ctrl + UP</emph>, irás al <emph>&quot;pulls&quot;</emph> del widget anterior</td></tr>
-					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + DOWN</td><td class="svelte-gfreoh">Ir a la ocurrencia siguiente de un bloque</td></tr>
-					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + DEL</td><td class="svelte-gfreoh">Colapsar o abrir el bloque de código actual</td></tr>
-					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + ENTER</td><td class="svelte-gfreoh">Cambiar entre el editor y el árbol</td></tr>
-					<tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + FIN</td><td class="svelte-gfreoh">Seleccionar desde la posición del cursor hasta el fin de línea</td></tr></tbody></table></div>
-		<button>Cerrar</button></div>
-</dialog></div>
-
-		<div class="editor svelte-1xfkj1h">
-			
-<div class="editor svelte-bkpf3s"></div></div>
-
-		<div class="featurebar svelte-1xfkj1h"><div class="featurebar svelte-g69m7z"><button class="shy svelte-g69m7z highlight">Snapshots</button>
-	<button class="shy svelte-g69m7z">Browse</button>
-</div></div>
-
-		<div class="sidebar svelte-1xfkj1h"><div class="sidebar svelte-18e05zv"><div class="control"><div class="shortcuts svelte-18e05zv offline">&lt;Ctrl-Enter para alternar editor y árbol&gt;
-			<hr></div></div>
-	<div class="content svelte-18e05zv"><div class="svelte-18e05zv offline"><ul class="svelte-17l2jy7">
-	<li class="svelte-17l2jy7"><div class="svelte-17l2jy7"><button class="reallyshy svelte-17l2jy7" tabindex="-1" disabled>-</button>
-			<input type="text" readonly value="<root>" class="svelte-17l2jy7"></div>
-		</li>
-</ul></div>
-		<div class="svelte-18e05zv"><ul class="svelte-r5jo0a"><li class="slug svelte-r5jo0a"><div class="snapoptions svelte-r5jo0a"><div class="snaplink svelte-r5jo0a"><input type="text" name="slug" id="slug" style="width: 95%" placeholder="Slug o URL de panel" value=""></div>
-			<div class="snapload"><button class="orange">Download</button></div>
-			<div class="snapload"><button class="green">New</button></div></div></li>
-	<li><hr></li>
-	
-	
-</ul></div></div>
-</div></div></div></div>
-
-<div class="nodisplay"><dialog class="diff svelte-1xfkj1h"><div class="diff svelte-1xfkj1h"><div id="scroller" class="scroller svelte-1xfkj1h"><div id="diffView" class="diffView svelte-1kplg9a"></div></div>
-    	<button>Cerrar</button></div></dialog>
-</div>
-
-
+		<div style="display: contents">  <div class="viewport svelte-1xfkj1h"><div class="grid svelte-1xfkj1h"><div class="topbar svelte-1xfkj1h"> <div class="topbar svelte-fq8lvr"><label for="tabs" class="svelte-fq8lvr" data-svelte-h="svelte-8dphs4">Contexts:</label> <div class="tabs svelte-fq8lvr"><button class="shy" title="connect" data-svelte-h="svelte-1timh6v">[Login]</button>  </div> <dialog class="credentials svelte-fq8lvr"><form method="dialog"><div class="authcontrol svelte-fq8lvr"><label for="context" class="svelte-fq8lvr" data-svelte-h="svelte-43oc9d">Contexto:</label> <select id="context" name="context"><option value="" data-svelte-h="svelte-12gpbiw">--</option></select></div> <div class="authcontrol svelte-fq8lvr"><span class="servicehint svelte-fq8lvr">service: @</span></div> <div class="authcontrol svelte-fq8lvr"><label for="password" class="svelte-fq8lvr" data-svelte-h="svelte-bhu94">Password:</label> <input type="password" id="username" name="username" value=""></div> <div class="authcontrol svelte-fq8lvr"><button name="authenticate" value="authenticate" class="svelte-fq8lvr" data-svelte-h="svelte-1efc3aa">Authenticate</button> <button name="skip" value="skip" class="svelte-fq8lvr" data-svelte-h="svelte-sjp38j">Close</button></div></form></dialog> </div></div> <div class="slugbar svelte-1xfkj1h"> <div class="slugbar svelte-i2idx"><label for="tabs" class="svelte-i2idx" data-svelte-h="svelte-gm8co">Slugs:</label> <div class="tabs svelte-i2idx" id="tabs"></div> <div class="icons"><button name="snap" value="snap" class="green" data-svelte-h="svelte-qd9rmb">Snapshot</button> <button name="save" value="save" class="red" data-svelte-h="svelte-opeq1">Upload</button> <select title="theme" class="svelte-i2idx"><option value="default-light">default-light</option><option value="default-dark">default-dark</option><option value="cm6-theme-solarized-dark">cm6-theme-solarized-dark</option><option value="cm6-theme-gruvbox-dark">cm6-theme-gruvbox-dark</option><option value="cm6-theme-material-dark">cm6-theme-material-dark</option><option value="cm6-theme-basic-dark">cm6-theme-basic-dark</option><option value="cm6-theme-nord">cm6-theme-nord</option><option value="cm6-theme-solarized-light">cm6-theme-solarized-light</option><option value="cm6-theme-gruvbox-light">cm6-theme-gruvbox-light</option><option value="cm6-theme-basic-light">cm6-theme-basic-light</option></select></div> </div></div> <div class="statusbar svelte-1xfkj1h"> <div class="statusbar svelte-gfreoh"><label for="notifications" class="svelte-gfreoh">» info:</label> <div class="notifications svelte-gfreoh"><span class="info svelte-gfreoh"></span></div> <div class="buttons"><button class="shy" data-svelte-h="svelte-12jbn27">atajos</button> <button class="shy" data-svelte-h="svelte-3nx8co">histórico</button> <button class="shy" data-svelte-h="svelte-1lzj7q4">dar formato</button></div></div> <dialog class="history svelte-gfreoh" id="history"><div class="history svelte-gfreoh"><div class="scroller svelte-gfreoh"><table class="svelte-gfreoh"><thead class="svelte-gfreoh" data-svelte-h="svelte-6cuv84"><tr class="svelte-gfreoh"><th class="svelte-gfreoh">Date</th><th class="svelte-gfreoh">Level</th><th class="svelte-gfreoh">Message</th></tr></thead> <tbody class="svelte-gfreoh"></tbody></table></div> <button data-svelte-h="svelte-1s19gc7">Cerrar</button></div></dialog> <dialog class="help" id="help"><div class="history svelte-gfreoh"><div class="scroller svelte-gfreoh" data-svelte-h="svelte-1gh7pgi"><table class="svelte-gfreoh"><thead class="svelte-gfreoh"><tr class="svelte-gfreoh"><th class="svelte-gfreoh">Teclas</th><th class="svelte-gfreoh">Acción</th></tr></thead> <tbody class="svelte-gfreoh"><tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + UP</td><td class="svelte-gfreoh">Ir a la ocurrencia anterior de un bloque<br>Por ejemplo, si estás en el <emph>&quot;pulls&quot;</emph> de un widget y pulsas <emph>Ctrl + UP</emph>, irás al <emph>&quot;pulls&quot;</emph> del widget anterior</td></tr> <tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + DOWN</td><td class="svelte-gfreoh">Ir a la ocurrencia siguiente de un bloque</td></tr> <tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + DEL</td><td class="svelte-gfreoh">Colapsar o abrir el bloque de código actual</td></tr> <tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + ENTER</td><td class="svelte-gfreoh">Cambiar entre el editor y el árbol</td></tr> <tr class="svelte-gfreoh"><td class="svelte-gfreoh">Ctrl + FIN</td><td class="svelte-gfreoh">Seleccionar desde la posición del cursor hasta el fin de línea</td></tr></tbody></table></div> <button data-svelte-h="svelte-17qhx1i">Cerrar</button></div> </dialog></div> <div class="editor svelte-1xfkj1h">  <div class="editor svelte-bkpf3s"></div></div> <div class="featurebar svelte-1xfkj1h"><div class="featurebar svelte-g69m7z"><button class="shy svelte-g69m7z highlight" data-svelte-h="svelte-16tcl3c">Snapshots</button> <button class="shy svelte-g69m7z" data-svelte-h="svelte-1dm3vyb">Browse</button> </div></div> <div class="sidebar svelte-1xfkj1h"><div class="sidebar svelte-18e05zv"><div class="control"><div class="shortcuts svelte-18e05zv offline" data-svelte-h="svelte-8hzdwy">&lt;Ctrl-Enter para alternar editor y árbol&gt;
+			<hr></div></div> <div class="content svelte-18e05zv"><div class="svelte-18e05zv offline"><ul class="svelte-17l2jy7"> <li class="svelte-17l2jy7"><div class="svelte-17l2jy7"><button class="reallyshy svelte-17l2jy7" tabindex="-1" disabled>-</button> <input type="text" readonly value="<root>" class="svelte-17l2jy7"></div> </li> </ul></div> <div class="svelte-18e05zv"><ul class="svelte-r5jo0a"><li class="slug svelte-r5jo0a"><div class="snapoptions svelte-r5jo0a"><div class="snaplink svelte-r5jo0a"><input type="text" name="slug" id="slug" style="width: 95%" placeholder="Slug o URL de panel" value=""></div> <div class="snapload"><button class="orange" data-svelte-h="svelte-1ucv4sb">Download</button></div> <div class="snapload"><button class="green" data-svelte-h="svelte-1yftvln">New</button></div></div></li> <li data-svelte-h="svelte-1lzqstv"><hr></li>   </ul></div></div> </div></div></div></div> <div class="nodisplay"><dialog class="diff svelte-1xfkj1h"><div class="diff svelte-1xfkj1h"><div id="scroller" class="scroller svelte-1xfkj1h"><div id="diffView" class="diffView svelte-1kplg9a"></div></div> <button data-svelte-h="svelte-55q2u6">Cerrar</button></div></dialog> </div> 
 			
 			<script>
 				{
-					__sveltekit_1v5d0wp = {
+					__sveltekit_1ks6is3 = {
 						base: new URL(".", location).pathname.slice(0, -1),
 						env: {"PUBLIC_FIWARE_API_URL":"/api"}
 					};
@@ -114,8 +42,8 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.02f1daaa.js"),
-						import("./_app/immutable/entry/app.7ae6212d.js")
+						import("./_app/immutable/entry/start.cfa256f7.js"),
+						import("./_app/immutable/entry/app.e1d60120.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],
