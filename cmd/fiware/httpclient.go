@@ -29,7 +29,6 @@ func (lc loggingClient) Do(req *http.Request) (*http.Response, error) {
 				command = append(command, fmt.Sprintf("-H '%s: %s'", k, v))
 			}
 		}
-		command = append(command)
 		command = append(command, fmt.Sprintf("'%s'", req.URL))
 
 		var (

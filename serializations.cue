@@ -214,6 +214,7 @@ views?: [...#View]
 	type?:        string
 	value?:       #Json
 	expression?:  string
+	skipValue?:   bool
 	entity_name?: string
 	entity_type?: string
 }

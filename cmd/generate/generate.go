@@ -13,10 +13,15 @@ import (
 
 	cueformat "cuelang.org/go/cue/format"
 	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/internal/serialize"
 )
 
 type isEmpty interface {
 	IsEmpty() bool
+}
+
+type isHook interface {
+	SerializeHook(string, serialize.Serializer)
 }
 
 type generator struct {
@@ -153,18 +158,23 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 				w.WriteString("}\n")
 			}
 		case _typ.Kind() == reflect.Struct:
-			pending = append(pending, pendingData{Name: _typ.Name(), Type: _typ})
 			conditional := false
 			if _typ.Implements(reflect.TypeOf((*isEmpty)(nil)).Elem()) {
 				w.WriteString("if !x." + name + ".IsEmpty() {\n")
 				conditional = true
 			}
-			if !f.Anonymous {
-				w.WriteString("s.BeginBlock(\"" + jsonName + "\")\n")
-			}
-			w.WriteString("x." + name + ".Serialize(s)\n")
-			if !f.Anonymous {
-				w.WriteString("s.EndBlock()\n")
+			if _typ.Implements(reflect.TypeOf((*isHook)(nil)).Elem()) {
+				// Hooked types know how to serialize themselves
+				w.WriteString("x." + name + ".SerializeHook(\"" + jsonName + "\", s)\n")
+			} else {
+				pending = append(pending, pendingData{Name: _typ.Name(), Type: _typ})
+				if !f.Anonymous {
+					w.WriteString("s.BeginBlock(\"" + jsonName + "\")\n")
+				}
+				w.WriteString("x." + name + ".Serialize(s)\n")
+				if !f.Anonymous {
+					w.WriteString("s.EndBlock()\n")
+				}
 			}
 			if conditional {
 				w.WriteString("}\n")
@@ -290,8 +300,13 @@ func (g *generator) serializeCue(t reflect.Type, w io.StringWriter, anonymous, t
 			if f.Anonymous {
 				g.serializeCue(_typ, w, true, true)
 			} else {
-				w.WriteString(jsonName + omitempty + ": #" + innerName + "\n")
-				pending = append(pending, pendingData{Name: innerName, Type: _typ})
+				switch innerName {
+				case "OptionalBool":
+					w.WriteString(jsonName + "?: bool\n")
+				default:
+					w.WriteString(jsonName + omitempty + ": #" + innerName + "\n")
+					pending = append(pending, pendingData{Name: innerName, Type: _typ})
+				}
 			}
 		}
 	}

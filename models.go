@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/warpcomdev/fiware/internal/serialize"
 )
 
 // Tipos de datos que se usan para relacionarse con la vertical.
@@ -105,13 +107,13 @@ func (e Environment) IsEmpty() bool {
 
 // UrboPanel representa un panel de Urbo
 type UrboPanel struct {
-	Name          string `json:"name"`
-	Description   string `json:"description,omitempty"`
-	Slug          string `json:"slug"`
-	LowercaseSlug string `json:"lowercaseSlug,omitempty"`
-	WidgetCount   int    `json:"widgetCount,omitempty"`
-	IsShadow      bool   `json:"isShadow,omitempty"`
-	Section       string `json:"section,omitempty"`
+	Name          string                 `json:"name"`
+	Description   string                 `json:"description,omitempty"`
+	Slug          string                 `json:"slug"`
+	LowercaseSlug string                 `json:"lowercaseSlug,omitempty"`
+	WidgetCount   int                    `json:"widgetCount,omitempty"`
+	IsShadow      serialize.OptionalBool `json:"isShadow,omitempty"`
+	Section       string                 `json:"section,omitempty"`
 }
 
 // Vertical representa una vertical de Urbo
@@ -169,7 +171,7 @@ type Attribute struct {
 	// como parte de la identidad del singleton, y se añadirá a la
 	// primary key de la tabla.
 	SingletonKey bool `json:"singletonKey,omitempty"`
-	// Indica si este atributo forma parte d ela simulación
+	// Indica si este atributo forma parte de la simulación
 	Simulated bool `json:"simulated,omitempty"`
 	// Indica si este atributo debe conservarse de alguna forma en longterm
 	Longterm LongtermKind `json:"longterm,omitempty"`
@@ -286,8 +288,8 @@ type Notification struct {
 	HTTPCustom       NotificationCustom     `json:"httpCustom,omitempty"`
 	MQTT             NotificationMQTT       `json:"mqtt,omitempty"`
 	MQTTCustom       NotificationMQTTCustom `json:"mqttCustom,omitempty"`
-	OnlyChangedAttrs bool                   `json:"onlyChangedAttrs,omitempty"`
-	Covered          bool                   `json:"covered,omitempty"`
+	OnlyChangedAttrs serialize.OptionalBool `json:"onlyChangedAttrs,omitempty"`
+	Covered          serialize.OptionalBool `json:"covered,omitempty"`
 	NotificationStatus
 }
 
@@ -365,10 +367,10 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs                  []string          `json:"attrs" sort:"true"`
-	Expression             SubjectExpression `json:"expression,omitempty"`
-	AlterationTypes        []string          `json:"alterationTypes,omitempty"`
-	NotifyOnMetadataChange bool              `json:"notifyOnMetadataChange,omitempty"`
+	Attrs                  []string               `json:"attrs" sort:"true"`
+	Expression             SubjectExpression      `json:"expression,omitempty"`
+	AlterationTypes        []string               `json:"alterationTypes,omitempty"`
+	NotifyOnMetadataChange serialize.OptionalBool `json:"notifyOnMetadataChange,omitempty"`
 }
 
 // SubjectExpression es la expresion en la condicion
@@ -429,21 +431,21 @@ type TableIndex struct {
 
 // Service describe la provisión de un grupo de dispositivos
 type Service struct {
-	Resource           string            `json:"resource"`
-	APIKey             string            `json:"apikey"`
-	EntityType         string            `json:"entity_type"`
-	Description        string            `json:"description,omitempty"`
-	Protocol           string            `json:"protocol"`
-	Transport          string            `json:"transport,omitempty"`
-	Timestamp          bool              `json:"timestamp,omitempty"`
-	ExplicitAttrs      json.RawMessage   `json:"explicitAttrs,omitempty"`
-	InternalAttributes []DeviceAttribute `json:"internal_attributes,omitempty"`
-	Attributes         []DeviceAttribute `json:"attributes"`
-	Lazy               []DeviceAttribute `json:"lazy,omitempty"`
-	StaticAttributes   []DeviceAttribute `json:"static_attributes,omitempty"`
-	Commands           []DeviceCommand   `json:"commands,omitempty"`
-	ExpressionLanguage string            `json:"expressionLanguage,omitempty"`
-	EntityNameExp      string            `json:"entityNameExp,omitempty"`
+	Resource           string                 `json:"resource"`
+	APIKey             string                 `json:"apikey"`
+	EntityType         string                 `json:"entity_type"`
+	Description        string                 `json:"description,omitempty"`
+	Protocol           string                 `json:"protocol"`
+	Transport          string                 `json:"transport,omitempty"`
+	Timestamp          serialize.OptionalBool `json:"timestamp,omitempty"`
+	ExplicitAttrs      json.RawMessage        `json:"explicitAttrs,omitempty"`
+	InternalAttributes []DeviceAttribute      `json:"internal_attributes,omitempty"`
+	Attributes         []DeviceAttribute      `json:"attributes"`
+	Lazy               []DeviceAttribute      `json:"lazy,omitempty"`
+	StaticAttributes   []DeviceAttribute      `json:"static_attributes,omitempty"`
+	Commands           []DeviceCommand        `json:"commands,omitempty"`
+	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
+	EntityNameExp      string                 `json:"entityNameExp,omitempty"`
 	GroupStatus
 }
 
@@ -459,21 +461,21 @@ type GroupStatus struct {
 
 // Device representa un dispositivo
 type Device struct {
-	DeviceId           string            `json:"device_id"`
-	APIKey             string            `json:"apikey,omitempty"`
-	EntityName         string            `json:"entity_name,omitempty"`
-	EntityType         string            `json:"entity_type"`
-	Polling            bool              `json:"polling,omitempty"`
-	Transport          string            `json:"transport"`
-	Timestamp          bool              `json:"timestamp,omitempty"`
-	Endpoint           string            `json:"endpoint,omitempty"`
-	Attributes         []DeviceAttribute `json:"attributes,omitempty"`
-	Lazy               []DeviceAttribute `json:"lazy,omitempty"`
-	Commands           []DeviceCommand   `json:"commands,omitempty"`
-	StaticAttributes   []DeviceAttribute `json:"static_attributes,omitempty"`
-	Protocol           string            `json:"protocol"`
-	ExpressionLanguage string            `json:"expressionLanguage,omitempty"`
-	ExplicitAttrs      json.RawMessage   `json:"explicitAttrs,omitempty"`
+	DeviceId           string                 `json:"device_id"`
+	APIKey             string                 `json:"apikey,omitempty"`
+	EntityName         string                 `json:"entity_name,omitempty"`
+	EntityType         string                 `json:"entity_type"`
+	Polling            serialize.OptionalBool `json:"polling,omitempty"`
+	Transport          string                 `json:"transport"`
+	Timestamp          serialize.OptionalBool `json:"timestamp,omitempty"`
+	Endpoint           string                 `json:"endpoint,omitempty"`
+	Attributes         []DeviceAttribute      `json:"attributes,omitempty"`
+	Lazy               []DeviceAttribute      `json:"lazy,omitempty"`
+	Commands           []DeviceCommand        `json:"commands,omitempty"`
+	StaticAttributes   []DeviceAttribute      `json:"static_attributes,omitempty"`
+	Protocol           string                 `json:"protocol"`
+	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
+	ExplicitAttrs      json.RawMessage        `json:"explicitAttrs,omitempty"`
 	DeviceStatus
 }
 
@@ -485,13 +487,14 @@ type DeviceStatus struct {
 
 // DeviceAttribute describe un atributo de dispositivo
 type DeviceAttribute struct {
-	ObjectId   string          `json:"object_id"`
-	Name       string          `json:"name"`
-	Type       string          `json:"type,omitempty"`
-	Value      json.RawMessage `json:"value,omitempty"` // para los staticAttribs
-	Expression string          `json:"expression,omitempty"`
-	EntityName string          `json:"entity_name,omitempty"`
-	EntityType string          `json:"entity_type,omitempty"`
+	ObjectId   string                 `json:"object_id"`
+	Name       string                 `json:"name"`
+	Type       string                 `json:"type,omitempty"`
+	Value      json.RawMessage        `json:"value,omitempty"` // para los staticAttribs
+	Expression string                 `json:"expression,omitempty"`
+	SkipValue  serialize.OptionalBool `json:"skipValue,omitempty"`
+	EntityName string                 `json:"entity_name,omitempty"`
+	EntityType string                 `json:"entity_type,omitempty"`
 }
 
 // DeviceCommand describe un comando de dispositivo

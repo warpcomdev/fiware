@@ -379,11 +379,11 @@ func (x Notification) Serialize(s serialize.Serializer) {
 		x.MQTTCustom.Serialize(s)
 		s.EndBlock()
 	}
-	if x.OnlyChangedAttrs {
-		s.KeyBool("onlyChangedAttrs", x.OnlyChangedAttrs)
+	if !x.OnlyChangedAttrs.IsEmpty() {
+		x.OnlyChangedAttrs.SerializeHook("onlyChangedAttrs", s)
 	}
-	if x.Covered {
-		s.KeyBool("covered", x.Covered)
+	if !x.Covered.IsEmpty() {
+		x.Covered.SerializeHook("covered", s)
 	}
 	x.NotificationStatus.Serialize(s)
 }
@@ -550,8 +550,8 @@ func (x SubjectCondition) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	if x.NotifyOnMetadataChange {
-		s.KeyBool("notifyOnMetadataChange", x.NotifyOnMetadataChange)
+	if !x.NotifyOnMetadataChange.IsEmpty() {
+		x.NotifyOnMetadataChange.SerializeHook("notifyOnMetadataChange", s)
 	}
 }
 
@@ -706,8 +706,8 @@ func (x UrboPanel) Serialize(s serialize.Serializer) {
 	if x.WidgetCount != 0 {
 		s.KeyInt("widgetCount", x.WidgetCount)
 	}
-	if x.IsShadow {
-		s.KeyBool("isShadow", x.IsShadow)
+	if !x.IsShadow.IsEmpty() {
+		x.IsShadow.SerializeHook("isShadow", s)
 	}
 	if x.Section != "" {
 		s.KeyString("section", string(x.Section))
@@ -729,8 +729,8 @@ func (x Service) Serialize(s serialize.Serializer) {
 	if x.Transport != "" {
 		s.KeyString("transport", string(x.Transport))
 	}
-	if x.Timestamp {
-		s.KeyBool("timestamp", x.Timestamp)
+	if !x.Timestamp.IsEmpty() {
+		x.Timestamp.SerializeHook("timestamp", s)
 	}
 	if len(x.ExplicitAttrs) > 0 {
 		s.KeyRaw("explicitAttrs", x.ExplicitAttrs, false)
@@ -803,6 +803,9 @@ func (x DeviceAttribute) Serialize(s serialize.Serializer) {
 	if x.Expression != "" {
 		s.KeyString("expression", string(x.Expression))
 	}
+	if !x.SkipValue.IsEmpty() {
+		x.SkipValue.SerializeHook("skipValue", s)
+	}
 	if x.EntityName != "" {
 		s.KeyString("entity_name", string(x.EntityName))
 	}
@@ -871,12 +874,12 @@ func (x Device) Serialize(s serialize.Serializer) {
 		s.KeyString("entity_name", string(x.EntityName))
 	}
 	s.KeyString("entity_type", string(x.EntityType))
-	if x.Polling {
-		s.KeyBool("polling", x.Polling)
+	if !x.Polling.IsEmpty() {
+		x.Polling.SerializeHook("polling", s)
 	}
 	s.KeyString("transport", string(x.Transport))
-	if x.Timestamp {
-		s.KeyBool("timestamp", x.Timestamp)
+	if !x.Timestamp.IsEmpty() {
+		x.Timestamp.SerializeHook("timestamp", s)
 	}
 	if x.Endpoint != "" {
 		s.KeyString("endpoint", string(x.Endpoint))
