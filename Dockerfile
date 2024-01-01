@@ -1,4 +1,4 @@
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 # -------------------------
 
 WORKDIR /src
@@ -6,7 +6,7 @@ COPY . .
 
 env CGO_ENABLED=0
 RUN go mod download
-RUN go generate
+RUN go generate ./...
 
 WORKDIR /src/cmd/fiware
 RUN go build -o /bin/app

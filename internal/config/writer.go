@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -37,7 +36,7 @@ func (rootFolder FolderWriter) AtomicSave(path string, tmpPrefix string, byteDat
 			return err
 		}
 	}
-	tmpFile, err := ioutil.TempFile(fullFolder, tmpPrefix)
+	tmpFile, err := os.CreateTemp(fullFolder, tmpPrefix)
 	if err != nil {
 		return err
 	}

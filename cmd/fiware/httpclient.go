@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -36,7 +35,7 @@ func (lc loggingClient) Do(req *http.Request) (*http.Response, error) {
 			err  error
 		)
 		if req.Body != nil {
-			if body, err = ioutil.ReadAll(req.Body); err != nil {
+			if body, err = io.ReadAll(req.Body); err != nil {
 				return nil, err
 			}
 		}
@@ -62,7 +61,7 @@ func (lc loggingClient) Do(req *http.Request) (*http.Response, error) {
 		}
 		if lc.verbosity > 2 && resp.Body != nil {
 			fmt.Fprintln(os.Stderr, "\n-- response body -- ")
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			if err != nil {
 				return nil, err

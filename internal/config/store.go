@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -70,7 +70,7 @@ func (s *Store) migrate(dirPath string) (string, error) {
 	}
 	// If the file does exist, try to read as string
 	var selection string
-	byteData, err := ioutil.ReadAll(file)
+	byteData, err := io.ReadAll(file)
 	closeErr := file.Close()
 	if err != nil {
 		return "", err

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -45,7 +44,7 @@ func New(keystoneURL string, username, service string) (*Keystone, error) {
 // Exhaust reads the response body until completion, and closes it.
 func Exhaust(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
-		io.Copy(ioutil.Discard, resp.Body)
+		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 	}
 }
@@ -99,7 +98,7 @@ func newNetError(req *http.Request, resp *http.Response, err error) error {
 		if resp.Body != nil {
 			// Only override err if nil
 			var newErr error
-			payload, newErr = ioutil.ReadAll(resp.Body)
+			payload, newErr = io.ReadAll(resp.Body)
 			if newErr != nil {
 				err = newErr
 			}
@@ -335,7 +334,7 @@ func Query(client HTTPClient, method string, headers http.Header, path *url.URL,
 	if data == nil { // payload not required
 		return resp.Header, nil
 	}
-	raw, err := ioutil.ReadAll(io.LimitReader(resp.Body, maximumPayload))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, maximumPayload))
 	if err != nil {
 		return nil, newNetError(req, resp, err)
 	}
@@ -425,7 +424,7 @@ func Update(client HTTPClient, method string, headers http.Header, path *url.URL
 		return nil, nil, newNetError(req, resp, nil)
 	}
 	if resp.StatusCode != 204 {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, nil, newNetError(req, resp, err)
 		}

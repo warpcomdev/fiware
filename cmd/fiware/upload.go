@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -51,7 +51,7 @@ func uploadPanel(u *urbo.Urbo, client keystone.HTTPClient, header http.Header, f
 		return err
 	}
 	defer file.Close()
-	bytes, err := ioutil.ReadAll(file)
+	bytes, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}

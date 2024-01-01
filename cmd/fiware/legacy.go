@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -41,7 +40,7 @@ func legacyHandler() http.Handler {
 func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if r.Body == nil {
-			io.Copy(ioutil.Discard, r.Body)
+			io.Copy(io.Discard, r.Body)
 			r.Body.Close()
 		}
 	}()
@@ -71,7 +70,7 @@ func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {
 		ext = "md"
 	}
 	// Create temporary directory and file
-	tmpDir, err := ioutil.TempDir("", "fiware")
+	tmpDir, err := os.MkdirTemp("", "fiware")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to create temp folder: %s", err.Error()), http.StatusInternalServerError)
 		return

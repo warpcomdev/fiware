@@ -3,7 +3,7 @@ package importer
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"cuelang.org/go/cue"
@@ -19,7 +19,7 @@ func loadCue(datafile string, params map[string]string, pathLib string) (string,
 		return "", err
 	}
 	defer handle.Close()
-	databytes, err := ioutil.ReadAll(handle)
+	databytes, err := io.ReadAll(handle)
 	if err != nil {
 		return "", err
 	}

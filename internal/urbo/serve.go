@@ -3,7 +3,6 @@ package urbo
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -20,7 +19,7 @@ func Serve(client keystone.HTTPClient, store *config.Store) http.Handler {
 func servePanels(client keystone.HTTPClient, store *config.Store, w http.ResponseWriter, r *http.Request) {
 	if r.Body != nil {
 		defer func() {
-			io.Copy(ioutil.Discard, r.Body)
+			io.Copy(io.Discard, r.Body)
 			r.Body.Close()
 		}()
 	}
@@ -64,7 +63,7 @@ func servePanels(client keystone.HTTPClient, store *config.Store, w http.Respons
 		return
 	}
 	if r.Method == http.MethodPost {
-		panel, err := ioutil.ReadAll(r.Body)
+		panel, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
