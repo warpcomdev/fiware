@@ -352,33 +352,6 @@ func Query(client HTTPClient, method string, headers http.Header, path *url.URL,
 	return resp.Header, nil
 }
 
-type pager interface {
-	Next() interface{} // Return a buffer for next page
-	Done() int         // Must return number of items received in interface{}
-}
-
-// Query performs an HTTP request without payload, loads the result into `data`
-func page(client HTTPClient, method string, headers http.Header, path *url.URL, data pager, allowUnknownFields bool) error {
-	q := path.Query()
-	limit := 50
-	offset := 0
-	top := 1000 // this is our hard limit
-	for offset < top {
-		q.Set("limit", strconv.Itoa(limit))
-		q.Set("offset", strconv.Itoa(offset))
-		path.RawQuery = q.Encode()
-		if _, err := Query(client, method, headers, path, data.Next(), allowUnknownFields); err != nil {
-			return err
-		}
-		if recv := data.Done(); recv < limit {
-			return nil
-		}
-		<-time.After(time.Second) // add some delay to avoid overwhelming the CB
-		offset = offset + limit
-	}
-	return nil
-}
-
 // Update performs an HTTP request with JSON payload, returns headers.
 func Update(client HTTPClient, method string, headers http.Header, path *url.URL, data interface{}) (http.Header, []byte, error) {
 
