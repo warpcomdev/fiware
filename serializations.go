@@ -721,6 +721,9 @@ func (x Service) MarshalJSON() ([]byte, error) {
 func (x Service) Serialize(s serialize.Serializer) {
 	s.KeyString("resource", string(x.Resource))
 	s.KeyString("apikey", string(x.APIKey))
+	if x.Token != "" {
+		s.KeyString("token", string(x.Token))
+	}
 	s.KeyString("entity_type", string(x.EntityType))
 	if x.Description != "" {
 		s.KeyString("description", string(x.Description))

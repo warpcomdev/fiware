@@ -188,6 +188,7 @@ views?: [...#View]
 #Service: {
 	resource:       string
 	apikey:         string
+	token?:         string
 	entity_type:    string
 	description?:   string
 	protocol:       string

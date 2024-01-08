@@ -433,6 +433,7 @@ type TableIndex struct {
 type Service struct {
 	Resource           string                 `json:"resource"`
 	APIKey             string                 `json:"apikey"`
+	Token              string                 `json:"token,omitempty"` // fully legacy
 	EntityType         string                 `json:"entity_type"`
 	Description        string                 `json:"description,omitempty"`
 	Protocol           string                 `json:"protocol"`
