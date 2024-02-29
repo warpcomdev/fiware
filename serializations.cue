@@ -202,6 +202,7 @@ views?: [...#View]
 	commands?: [...#DeviceCommand]
 	expressionLanguage?: string
 	entityNameExp?:      string
+	PayloadType?:        string
 	_id?:                string @anonymous(GroupStatus)
 	iotagent?:           string @anonymous(GroupStatus)
 	service_path?:       string @anonymous(GroupStatus)

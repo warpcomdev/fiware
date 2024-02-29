@@ -447,6 +447,7 @@ type Service struct {
 	Commands           []DeviceCommand        `json:"commands,omitempty"`
 	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
 	EntityNameExp      string                 `json:"entityNameExp,omitempty"`
+	PayloadType        string                 `json:"PayloadType,omitempty"`
 	GroupStatus
 }
 

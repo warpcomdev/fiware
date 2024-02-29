@@ -787,6 +787,9 @@ func (x Service) Serialize(s serialize.Serializer) {
 	if x.EntityNameExp != "" {
 		s.KeyString("entityNameExp", string(x.EntityNameExp))
 	}
+	if x.PayloadType != "" {
+		s.KeyString("PayloadType", string(x.PayloadType))
+	}
 	x.GroupStatus.Serialize(s)
 }
 
