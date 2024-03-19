@@ -400,7 +400,7 @@ func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPatt
 		return nil, nil, err
 	}
 	// If filtered, add parameters
-	if idPattern != "" || entityType != "" {
+	if idPattern != "" || entityType != "" || simpleQuery != "" {
 		values := path.Query()
 		if idPattern != "" {
 			values.Add("idPattern", idPattern)
