@@ -1,4 +1,4 @@
-// El paquete deployer define los modelos de datos básicos de urbo-deployer.
+// El paquete fiware define los modelos de datos básicos de warpcom-fiware
 // El principal modelo es el de Vertical, que es el punto de entrada a
 // partir del cual se accede al conjunto de datos de la vertical. El resto
 // de tipos corresponden a sub-atributos dentro de la vertical.
