@@ -790,6 +790,9 @@ func (x Service) Serialize(s serialize.Serializer) {
 	if x.PayloadType != "" {
 		s.KeyString("PayloadType", string(x.PayloadType))
 	}
+	if x.AutoProvision {
+		s.KeyBool("autoprovision", x.AutoProvision)
+	}
 	x.GroupStatus.Serialize(s)
 }
 

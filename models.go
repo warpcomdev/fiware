@@ -448,6 +448,7 @@ type Service struct {
 	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
 	EntityNameExp      string                 `json:"entityNameExp,omitempty"`
 	PayloadType        string                 `json:"PayloadType,omitempty"`
+	AutoProvision      bool `json:"autoprovision,omitempty"`
 	GroupStatus
 }
 

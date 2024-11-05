@@ -203,6 +203,7 @@ views?: [...#View]
 	expressionLanguage?: string
 	entityNameExp?:      string
 	PayloadType?:        string
+	autoprovision?:      bool
 	_id?:                string @anonymous(GroupStatus)
 	iotagent?:           string @anonymous(GroupStatus)
 	service_path?:       string @anonymous(GroupStatus)
