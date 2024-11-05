@@ -11,7 +11,7 @@ Este repositorio es el hogar de la aplicación [warpcom-fiware](cmd/fiware/READM
 
 ## Modelo de datos
 
-La apicación utiliza las APIs públicas de la plataforma FIWARE para implementar sus funcionalidades. Cada recurso de la plataforma se modela como un objeto son, descrito por el módulo golang [github.com/warpcomdev/fiware](./models.go). Este modelo está representa reecursos como:
+La apicación utiliza las APIs públicas de la plataforma FIWARE para implementar sus funcionalidades. Cada recurso de la plataforma se modela como un objeto json, descrito por el módulo golang [github.com/warpcomdev/fiware](./models.go). Este modelo está representa reecursos como:
 
 - Name-mappings de cygnus
 - Suscripciones de Context-Broker
