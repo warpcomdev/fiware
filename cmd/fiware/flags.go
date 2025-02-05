@@ -193,6 +193,18 @@ var (
 		Usage:   "Size of the batch of requests to send to orion",
 		Value:   50,
 	}
+
+	userIdFlag = &cli.StringFlag{
+		Name:    "userid",
+		Aliases: []string{"uid"},
+		Usage:   "User ID",
+	}
+
+	groupIdFlag = &cli.StringFlag{
+		Name:    "groupid",
+		Aliases: []string{"gid"},
+		Usage:   "Group ID",
+	}
 )
 
 // verbosity combines info from all verbose flags

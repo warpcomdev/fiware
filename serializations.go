@@ -171,6 +171,42 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
+	if len(x.Users) > 0 {
+		s.BeginList("users")
+		for _, y := range x.Users {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
+	if len(x.Groups) > 0 {
+		s.BeginList("groups")
+		for _, y := range x.Groups {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
+	if len(x.Roles) > 0 {
+		s.BeginList("roles")
+		for _, y := range x.Roles {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
+	if len(x.Assignments) > 0 {
+		s.BeginList("assignments")
+		for _, y := range x.Assignments {
+			s.BeginBlock("")
+			s.Serialize(y)
+			s.EndBlock()
+		}
+		s.EndList()
+	}
 }
 
 func (x EntityType) MarshalJSON() ([]byte, error) {
@@ -793,7 +829,7 @@ func (x Service) Serialize(s serialize.Serializer) {
 	if x.AutoProvision {
 		s.KeyBool("autoprovision", x.AutoProvision)
 	}
-	x.GroupStatus.Serialize(s)
+	x.ServiceStatus.Serialize(s)
 }
 
 func (x DeviceAttribute) MarshalJSON() ([]byte, error) {
@@ -845,11 +881,11 @@ func (x DeviceCommand) Serialize(s serialize.Serializer) {
 	}
 }
 
-func (x GroupStatus) MarshalJSON() ([]byte, error) {
+func (x ServiceStatus) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
 
-func (x GroupStatus) Serialize(s serialize.Serializer) {
+func (x ServiceStatus) Serialize(s serialize.Serializer) {
 	if x.ID != "" {
 		s.KeyString("_id", string(x.ID))
 	}
@@ -1216,4 +1252,131 @@ func (x ViewColumn) MarshalJSON() ([]byte, error) {
 func (x ViewColumn) Serialize(s serialize.Serializer) {
 	s.KeyString("name", string(x.Name))
 	s.KeyString("expression", string(x.Expression))
+}
+
+func (x User) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x User) Serialize(s serialize.Serializer) {
+	s.KeyString("name", string(x.Name))
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
+	s.KeyBool("enabled", x.Enabled)
+	if x.Email != "" {
+		s.KeyString("email", string(x.Email))
+	}
+	if len(x.Options) > 0 {
+		s.KeyRaw("options", x.Options, false)
+	}
+	if len(x.Expires) > 0 {
+		s.KeyRaw("password_expires_at", x.Expires, false)
+	}
+	s.KeyString("domain_id", string(x.DomainID))
+	x.UserStatus.Serialize(s)
+}
+
+func (x UserStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x UserStatus) Serialize(s serialize.Serializer) {
+	if len(x.Links) > 0 {
+		s.KeyRaw("links", x.Links, false)
+	}
+	s.KeyString("id", string(x.ID))
+}
+
+func (x Group) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Group) Serialize(s serialize.Serializer) {
+	s.KeyString("name", string(x.Name))
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
+	s.KeyString("domain_id", string(x.DomainID))
+	x.GroupStatus.Serialize(s)
+}
+
+func (x GroupStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x GroupStatus) Serialize(s serialize.Serializer) {
+	if len(x.Links) > 0 {
+		s.KeyRaw("links", x.Links, false)
+	}
+	s.KeyString("id", string(x.ID))
+	if len(x.Users) > 0 {
+		s.BeginList("users")
+		for _, y := range x.Users {
+			s.String(y, false)
+		}
+		s.EndList()
+	}
+}
+
+func (x Role) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x Role) Serialize(s serialize.Serializer) {
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
+	s.KeyString("name", string(x.Name))
+	s.KeyString("domain_id", string(x.DomainID))
+	x.RoleStatus.Serialize(s)
+}
+
+func (x RoleStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x RoleStatus) Serialize(s serialize.Serializer) {
+	if len(x.Links) > 0 {
+		s.KeyRaw("links", x.Links, false)
+	}
+	s.KeyString("id", string(x.ID))
+}
+
+func (x RoleAssignment) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x RoleAssignment) Serialize(s serialize.Serializer) {
+	if len(x.Scope) > 0 {
+		s.KeyRaw("scope", x.Scope, false)
+	}
+	s.BeginBlock("role")
+	x.Role.Serialize(s)
+	s.EndBlock()
+	s.BeginBlock("user")
+	x.User.Serialize(s)
+	s.EndBlock()
+	s.BeginBlock("group")
+	x.Group.Serialize(s)
+	s.EndBlock()
+	x.RoleAssignmentStatus.Serialize(s)
+}
+
+func (x AssignmentID) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x AssignmentID) Serialize(s serialize.Serializer) {
+	s.KeyString("id", string(x.ID))
+}
+
+func (x RoleAssignmentStatus) MarshalJSON() ([]byte, error) {
+	return serialize.MarshalJSON(x)
+}
+
+func (x RoleAssignmentStatus) Serialize(s serialize.Serializer) {
+	if len(x.Links) > 0 {
+		s.KeyRaw("links", x.Links, false)
+	}
 }

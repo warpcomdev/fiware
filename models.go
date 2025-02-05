@@ -50,6 +50,10 @@ type Manifest struct {
 	Panels          map[string]UrboPanel `json:"urboPanels,omitempty"`
 	Tables          []Table              `json:"tables,omitempty"`
 	Views           []View               `json:"views,omitempty"`
+	Users           []User               `json:"users,omitempty"`
+	Groups          []Group              `json:"groups,omitempty"`
+	Roles           []Role               `json:"roles,omitempty"`
+	Assignments     []RoleAssignment     `json:"assignments,omitempty"`
 }
 
 // SummaryOf makes a summary of every item in the list
@@ -80,7 +84,7 @@ func (m *Manifest) ClearStatus() {
 		m.Rules[k] = v
 	}
 	for k, v := range m.Services {
-		v.GroupStatus = GroupStatus{}
+		v.ServiceStatus = ServiceStatus{}
 		m.Services[k] = v
 	}
 	for k, v := range m.Devices {
@@ -448,12 +452,12 @@ type Service struct {
 	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
 	EntityNameExp      string                 `json:"entityNameExp,omitempty"`
 	PayloadType        string                 `json:"PayloadType,omitempty"`
-	AutoProvision      bool `json:"autoprovision,omitempty"`
-	GroupStatus
+	AutoProvision      bool                   `json:"autoprovision,omitempty"`
+	ServiceStatus
 }
 
-// GroupStatus agrupa atributos de estado que no se usan al crear un Service
-type GroupStatus struct {
+// ServiceStatus agrupa atributos de estado que no se usan al crear un Service
+type ServiceStatus struct {
 	ID          string `json:"_id,omitempty"`
 	V           int    `json:"__v,omitempty"`
 	IOTAgent    string `json:"iotagent,omitempty"`
@@ -570,6 +574,96 @@ type Domain struct {
 
 type DomainStatus struct {
 	Links json.RawMessage `json:"links,omitempty"`
+}
+
+type User struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Enabled     bool            `json:"enabled"`
+	Email       string          `json:"email,omitempty"`
+	Options     json.RawMessage `json:"options,omitempty"`
+	Expires     json.RawMessage `json:"password_expires_at,omitempty"`
+	DomainID    string          `json:"domain_id"`
+	UserStatus
+}
+
+type UserStatus struct {
+	Links json.RawMessage `json:"links,omitempty"`
+	ID    string          `json:"id"`
+}
+
+type Group struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	DomainID    string `json:"domain_id"`
+	GroupStatus
+}
+
+type GroupStatus struct {
+	Links json.RawMessage `json:"links,omitempty"`
+	ID    string          `json:"id"`
+	Users []string        `json:"users,omitempty"`
+}
+
+type Role struct {
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name"`
+	DomainID    string `json:"domain_id"`
+	RoleStatus
+}
+
+type RoleStatus struct {
+	Links json.RawMessage `json:"links,omitempty"`
+	ID    string          `json:"id"`
+}
+
+type RoleAssignment struct {
+	Scope json.RawMessage `json:"scope,omitempty"`
+	Role  AssignmentID    `json:"role,omitempty"`
+	User  AssignmentID    `json:"user,omitempty"`
+	Group AssignmentID    `json:"group,omitempty"`
+	RoleAssignmentStatus
+}
+
+type RoleAssignmentStatus struct {
+	Links json.RawMessage `json:"links,omitempty"`
+}
+
+type AssignmentScope struct {
+	Project   string
+	Domain    string
+	Inherited string
+}
+
+func (r RoleAssignment) ParseScope() (AssignmentScope, error) {
+	scope := AssignmentScope{}
+	var items map[string]json.RawMessage
+	if err := json.Unmarshal(r.Scope, &items); err != nil {
+		return scope, err
+	}
+	var assignmentID AssignmentID
+	if project, ok := items["project"]; ok {
+		if err := json.Unmarshal(project, &assignmentID); err != nil {
+			return scope, err
+		}
+		scope.Project = assignmentID.ID
+	}
+	if domain, ok := items["domain"]; ok {
+		if err := json.Unmarshal(domain, &assignmentID); err != nil {
+			return scope, err
+		}
+		scope.Domain = assignmentID.ID
+	}
+	if inherit, ok := items["OS-INHERIT:inherited_to"]; ok {
+		if err := json.Unmarshal(inherit, &scope.Inherited); err != nil {
+			return scope, err
+		}
+	}
+	return scope, nil
+}
+
+type AssignmentID struct {
+	ID string `json:"id"`
 }
 
 type DeploymentManifest struct {

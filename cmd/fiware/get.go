@@ -29,7 +29,12 @@ var canGet []string = []string{
 	"panels",
 	"verticals",
 	"entities",
-	"regitrations",
+	"registrations",
+	"users",
+	"usergroups",
+	"roles",
+	"userroles",
+	"grouproles",
 }
 
 type serializerWithSetup interface {
@@ -223,6 +228,61 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if err := getDomains(selected, client, k, header, vertical); err != nil {
 				return err
 			}
+		case "users":
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := getUsers(selected, client, k, header, vertical); err != nil {
+				return err
+			}
+		case "ug":
+			fallthrough
+		case "usergroups":
+			fallthrough
+		case "user_groups":
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := getGroups(selected, client, k, header, vertical); err != nil {
+				return err
+			}
+		case "roles":
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := getRoles(selected, client, k, header, vertical); err != nil {
+				return err
+			}
+		case "ur":
+			fallthrough
+		case "userroles":
+			fallthrough
+		case "user_roles":
+			userId := c.String(userIdFlag.Name)
+			if userId == "" {
+				return errors.New("no user id provided")
+			}
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := getUserRoles(selected, client, k, header, userId, vertical); err != nil {
+				return err
+			}
+		case "gr":
+			fallthrough
+		case "grouproles":
+			fallthrough
+		case "group_roles":
+			groupId := c.String(groupIdFlag.Name)
+			if groupId == "" {
+				return errors.New("no group id provided")
+			}
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := getGroupRoles(selected, client, k, header, groupId, vertical); err != nil {
+				return err
+			}
 		case "panels":
 			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
@@ -342,6 +402,51 @@ func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone,
 		return err
 	}
 	vertical.Projects = projects
+	return nil
+}
+
+func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+	users, err := k.Users(c, header)
+	if err != nil {
+		return err
+	}
+	vertical.Users = users
+	return nil
+}
+
+func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+	groups, err := k.Groups(c, header)
+	if err != nil {
+		return err
+	}
+	vertical.Groups = groups
+	return nil
+}
+
+func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+	roles, err := k.Roles(c, header)
+	if err != nil {
+		return err
+	}
+	vertical.Roles = roles
+	return nil
+}
+
+func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, uid string, vertical *fiware.Manifest) error {
+	assignments, err := k.UserRoles(c, header, uid)
+	if err != nil {
+		return err
+	}
+	vertical.Assignments = assignments
+	return nil
+}
+
+func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, gid string, vertical *fiware.Manifest) error {
+	assignments, err := k.GroupRoles(c, header, gid)
+	if err != nil {
+		return err
+	}
+	vertical.Assignments = assignments
 	return nil
 }
 
