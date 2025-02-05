@@ -260,6 +260,8 @@ func main() {
 					simpleQueryFlag,
 					maxFlag,
 					timeoutFlag,
+					userIdFlag,
+					groupIdFlag,
 				}, verboseFlags...),
 			},
 

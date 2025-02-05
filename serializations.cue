@@ -22,6 +22,10 @@ domains?: [...#Domain]
 urboPanels?: [string]: #UrboPanel
 tables?: [...#Table]
 views?: [...#View]
+users?: [...#User]
+groups?: [...#Group]
+roles?: [...#Role]
+assignments?: [...#RoleAssignment]
 
 #EntityType: {
 	entityID?:  string
@@ -204,11 +208,11 @@ views?: [...#View]
 	entityNameExp?:      string
 	PayloadType?:        string
 	autoprovision?:      bool
-	_id?:                string @anonymous(GroupStatus)
-	iotagent?:           string @anonymous(GroupStatus)
-	service_path?:       string @anonymous(GroupStatus)
-	service?:            string @anonymous(GroupStatus)
-	cbHost?:             string @anonymous(GroupStatus)
+	_id?:                string @anonymous(ServiceStatus)
+	iotagent?:           string @anonymous(ServiceStatus)
+	service_path?:       string @anonymous(ServiceStatus)
+	service?:            string @anonymous(ServiceStatus)
+	cbHost?:             string @anonymous(ServiceStatus)
 }
 
 #DeviceAttribute: {
@@ -338,6 +342,47 @@ views?: [...#View]
 #ViewColumn: {
 	name:       string
 	expression: string
+}
+
+#User: {
+	name:                 string
+	description?:         string
+	enabled:              bool
+	email?:               string
+	options?:             #Json
+	password_expires_at?: #Json
+	domain_id:            string
+	links?:               #Json  @anonymous(UserStatus)
+	id:                   string @anonymous(UserStatus)
+}
+
+#Group: {
+	name:         string
+	description?: string
+	domain_id:    string
+	links?:       #Json  @anonymous(GroupStatus)
+	id:           string @anonymous(GroupStatus)
+	users?: [...string] @anonymous(GroupStatus)
+}
+
+#Role: {
+	description?: string
+	name:         string
+	domain_id:    string
+	links?:       #Json  @anonymous(RoleStatus)
+	id:           string @anonymous(RoleStatus)
+}
+
+#RoleAssignment: {
+	scope?: #Json
+	role?:  #AssignmentID
+	user?:  #AssignmentID
+	group?: #AssignmentID
+	links?: #Json @anonymous(RoleAssignmentStatus)
+}
+
+#AssignmentID: {
+	id: string
 }
 
 #Json: _ // cuaquier cosa...

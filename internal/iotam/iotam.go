@@ -62,7 +62,7 @@ func (i *Iotam) Devices(client keystone.HTTPClient, headers http.Header) ([]fiwa
 func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, services []fiware.Service) error {
 	clean := make([]fiware.Service, 0, len(services))
 	for _, service := range services {
-		service.GroupStatus = fiware.GroupStatus{}
+		service.ServiceStatus = fiware.ServiceStatus{}
 		clean = append(clean, service)
 	}
 	// Aggregate Devices by protocol

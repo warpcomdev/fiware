@@ -442,3 +442,173 @@ func (k *Keystone) Domains(client HTTPClient, headers http.Header, enabled bool)
 	}
 	return projects.Domains, nil
 }
+
+type domainList struct {
+	Links   json.RawMessage `json:"links,omitempty"`
+	Domains []domainInfo    `json:"domains"`
+}
+
+type domainInfo struct {
+	Links       json.RawMessage `json:"links,omitempty"`
+	Description string          `json:"description"`
+	Tags        json.RawMessage `json:"tags,omitempty"`
+	Enabled     bool            `json:"enabled"`
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+}
+
+func (k *Keystone) myDomain(client HTTPClient, headers http.Header) (string, string, error) {
+	// Get the domain id for the service
+	urlDomain, err := k.URL.Parse("/v3/auth/domains")
+	if err != nil {
+		return "", "", err
+	}
+	var domain domainList
+	if err := GetJSON(client, headers, urlDomain, &domain, true); err != nil {
+		return "", "", err
+	}
+	if len(domain.Domains) == 0 {
+		return "", "", errors.New("no domains found")
+	}
+	domName := domain.Domains[0].Name
+	domID := domain.Domains[0].ID
+	return domName, domID, nil
+}
+
+type keystoneUsers struct {
+	Links json.RawMessage `json:"links,omitempty"`
+	Users []fiware.User   `json:"users"`
+}
+
+func (k *Keystone) Users(client HTTPClient, headers http.Header) ([]fiware.User, error) {
+	// Get the domain id for the service
+	_, domID, err := k.myDomain(client, headers)
+	if err != nil {
+		return nil, err
+	}
+	urlProjects, err := k.URL.Parse(fmt.Sprintf("/v3/users?domain_id=%s", domID))
+	if err != nil {
+		return nil, err
+	}
+	var users keystoneUsers
+	if _, err := Query(client, http.MethodGet, headers, urlProjects, &users, false); err != nil {
+		return nil, err
+	}
+	return users.Users, nil
+}
+
+type keystoneGroups struct {
+	Links  json.RawMessage `json:"links,omitempty"`
+	Groups []fiware.Group  `json:"groups"`
+}
+
+func (k *Keystone) Groups(client HTTPClient, headers http.Header) ([]fiware.Group, error) {
+	// Get the domain id for the service
+	_, domID, err := k.myDomain(client, headers)
+	if err != nil {
+		return nil, err
+	}
+	urlGroups, err := k.URL.Parse(fmt.Sprintf("/v3/groups?domain_id=%s", domID))
+	if err != nil {
+		return nil, err
+	}
+	var groups keystoneGroups
+	if _, err := Query(client, http.MethodGet, headers, urlGroups, &groups, false); err != nil {
+		return nil, err
+	}
+	for idx, grp := range groups.Groups {
+		urlUsers, err := k.URL.Parse(fmt.Sprintf("/v3/groups/%s/users", grp.ID))
+		if err != nil {
+			return nil, err
+		}
+		var users keystoneUsers
+		if _, err := Query(client, http.MethodGet, headers, urlUsers, &users, false); err != nil {
+			return nil, err
+		}
+		log.Printf("Group %s has %d users", grp.Name, len(users.Users))
+		usrList := make([]string, 0, len(users.Users))
+		for _, user := range users.Users {
+			usrList = append(usrList, user.ID)
+		}
+		groups.Groups[idx].Users = usrList
+	}
+	return groups.Groups, nil
+}
+
+type keystoneRoles struct {
+	Links json.RawMessage `json:"links,omitempty"`
+	Roles []fiware.Role   `json:"roles"`
+}
+
+func (k *Keystone) Roles(client HTTPClient, headers http.Header) ([]fiware.Role, error) {
+	// Get the domain id for the service
+	// domName, domID, err := k.myDomain(client, headers)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	urlRoles, err := k.URL.Parse("/v3/roles")
+	if err != nil {
+		return nil, err
+	}
+	var roles keystoneRoles
+	if _, err := Query(client, http.MethodGet, headers, urlRoles, &roles, false); err != nil {
+		return nil, err
+	}
+	// for idx := range roles.Roles {
+	// 	roles.Roles[idx].Domain = domName
+	// }
+	return roles.Roles, nil
+}
+
+type keystoneRoleAssignments struct {
+	Links       json.RawMessage         `json:"links,omitempty"`
+	Assignments []fiware.RoleAssignment `json:"role_assignments"`
+}
+
+func (k *Keystone) UserRoles(client HTTPClient, headers http.Header, uid string) ([]fiware.RoleAssignment, error) {
+	return k.assignments(client, headers, "user.id", uid)
+}
+
+func (k *Keystone) GroupRoles(client HTTPClient, headers http.Header, gid string) ([]fiware.RoleAssignment, error) {
+	return k.assignments(client, headers, "group.id", gid)
+}
+
+func (k *Keystone) assignments(client HTTPClient, headers http.Header, param, val string) ([]fiware.RoleAssignment, error) {
+	urlAssignments, err := k.URL.Parse(fmt.Sprintf("/v3/role_assignments?%s=%s", param, val))
+	if err != nil {
+		return nil, err
+	}
+	var assignments keystoneRoleAssignments
+	if _, err := Query(client, http.MethodGet, headers, urlAssignments, &assignments, false); err != nil {
+		return nil, err
+	}
+	// Tomo nota de todos los roles heredados
+	inherit := make(map[string]string)
+	scopes := make([]fiware.AssignmentScope, 0, len(assignments.Assignments))
+	for _, assign := range assignments.Assignments {
+		scope, err := assign.ParseScope()
+		if err != nil {
+			return nil, err
+		}
+		scopes = append(scopes, scope)
+		if scope.Domain != "" && scope.Inherited != "" && scope.Inherited == "projects" {
+			inherit[assign.Role.ID] = scope.Inherited
+		}
+	}
+	// Y elimino del resultado las asignaciones redundantes
+	result := make([]fiware.RoleAssignment, 0, len(assignments.Assignments))
+	for idx, assign := range assignments.Assignments {
+		skip_assign := false
+		scope := scopes[idx]
+		if scope.Project != "" && assign.Role.ID != "" {
+			_, found := inherit[assign.Role.ID]
+			if found {
+				skip_assign = true
+			}
+		}
+		if !skip_assign {
+			result = append(result, assign)
+		}
+	}
+	return result, nil
+}
