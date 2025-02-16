@@ -167,7 +167,7 @@ func setContext(s *config.Store, c *cli.Context, contextName string, pairs []str
 		return err
 	}
 	fmt.Printf("using context %s\nupdated fields: {\n", s.Current.Name)
-	sort.Sort(sort.StringSlice(keys))
+	sort.Strings(keys)
 	finalPairs := s.Current.Pairs()
 	for _, k := range keys {
 		fmt.Printf("  %s: %s\n", k, finalPairs[k])

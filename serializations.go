@@ -994,7 +994,9 @@ func (x Registration) MarshalJSON() ([]byte, error) {
 
 func (x Registration) Serialize(s serialize.Serializer) {
 	s.KeyString("id", string(x.ID))
-	s.KeyString("description", string(x.Description))
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
 	if len(x.DataProvided) > 0 {
 		s.KeyRaw("dataProvided", x.DataProvided, false)
 	}
@@ -1110,14 +1112,13 @@ func (x Project) Serialize(s serialize.Serializer) {
 		s.KeyRaw("tags", x.Tags, false)
 	}
 	s.KeyBool("enabled", x.Enabled)
-	s.KeyString("id", string(x.ID))
+	s.KeyString("name", string(x.Name))
 	if x.ParentId != "" {
 		s.KeyString("parent_id", string(x.ParentId))
 	}
 	if x.DomainId != "" {
 		s.KeyString("domain_id", string(x.DomainId))
 	}
-	s.KeyString("name", string(x.Name))
 	x.ProjectStatus.Serialize(s)
 }
 
@@ -1129,6 +1130,9 @@ func (x ProjectStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
+	s.KeyString("id", string(x.ID))
+	s.KeyString("parent", string(x.Parent))
+	s.KeyString("domain", string(x.Domain))
 }
 
 func (x Domain) MarshalJSON() ([]byte, error) {
@@ -1140,7 +1144,6 @@ func (x Domain) Serialize(s serialize.Serializer) {
 		s.KeyString("description", string(x.Description))
 	}
 	s.KeyBool("enabled", x.Enabled)
-	s.KeyString("id", string(x.ID))
 	s.KeyString("name", string(x.Name))
 	x.DomainStatus.Serialize(s)
 }
@@ -1153,6 +1156,7 @@ func (x DomainStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
+	s.KeyString("id", string(x.ID))
 }
 
 func (x Table) MarshalJSON() ([]byte, error) {
@@ -1286,6 +1290,7 @@ func (x UserStatus) Serialize(s serialize.Serializer) {
 		s.KeyRaw("links", x.Links, false)
 	}
 	s.KeyString("id", string(x.ID))
+	s.KeyString("domain", string(x.Domain))
 }
 
 func (x Group) MarshalJSON() ([]byte, error) {
@@ -1298,6 +1303,13 @@ func (x Group) Serialize(s serialize.Serializer) {
 		s.KeyString("description", string(x.Description))
 	}
 	s.KeyString("domain_id", string(x.DomainID))
+	if len(x.Users) > 0 {
+		s.BeginList("users")
+		for _, y := range x.Users {
+			s.String(y, false)
+		}
+		s.EndList()
+	}
 	x.GroupStatus.Serialize(s)
 }
 
@@ -1310,9 +1322,10 @@ func (x GroupStatus) Serialize(s serialize.Serializer) {
 		s.KeyRaw("links", x.Links, false)
 	}
 	s.KeyString("id", string(x.ID))
-	if len(x.Users) > 0 {
-		s.BeginList("users")
-		for _, y := range x.Users {
+	s.KeyString("domain", string(x.Domain))
+	if len(x.UserNames) > 0 {
+		s.BeginList("userNames")
+		for _, y := range x.UserNames {
 			s.String(y, false)
 		}
 		s.EndList()
@@ -1341,6 +1354,7 @@ func (x RoleStatus) Serialize(s serialize.Serializer) {
 		s.KeyRaw("links", x.Links, false)
 	}
 	s.KeyString("id", string(x.ID))
+	s.KeyString("domain", string(x.Domain))
 }
 
 func (x RoleAssignment) MarshalJSON() ([]byte, error) {
@@ -1378,5 +1392,12 @@ func (x RoleAssignmentStatus) MarshalJSON() ([]byte, error) {
 func (x RoleAssignmentStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
+	}
+	s.KeyString("inherited", string(x.Inherited))
+	if x.Project != "" {
+		s.KeyString("project", string(x.Project))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
 	}
 }

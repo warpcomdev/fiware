@@ -256,7 +256,7 @@ assignments?: [...#RoleAssignment]
 
 #Registration: {
 	id:            string
-	description:   string
+	description?:  string
 	dataProvided?: #Json
 	provider?:     #Json
 	status:        string @anonymous(RegistrationStatus)
@@ -294,19 +294,21 @@ assignments?: [...#RoleAssignment]
 	description?: string
 	tags?:        #Json
 	enabled:      bool
-	id:           string
+	name:         string
 	parent_id?:   string
 	domain_id?:   string
-	name:         string
-	links?:       #Json @anonymous(ProjectStatus)
+	links?:       #Json  @anonymous(ProjectStatus)
+	id:           string @anonymous(ProjectStatus)
+	parent:       string @anonymous(ProjectStatus)
+	domain:       string @anonymous(ProjectStatus)
 }
 
 #Domain: {
 	description?: string
 	enabled:      bool
-	id:           string
 	name:         string
-	links?:       #Json @anonymous(DomainStatus)
+	links?:       #Json  @anonymous(DomainStatus)
+	id:           string @anonymous(DomainStatus)
 }
 
 #Table: {
@@ -354,15 +356,18 @@ assignments?: [...#RoleAssignment]
 	domain_id:            string
 	links?:               #Json  @anonymous(UserStatus)
 	id:                   string @anonymous(UserStatus)
+	domain:               string @anonymous(UserStatus)
 }
 
 #Group: {
 	name:         string
 	description?: string
 	domain_id:    string
-	links?:       #Json  @anonymous(GroupStatus)
-	id:           string @anonymous(GroupStatus)
-	users?: [...string] @anonymous(GroupStatus)
+	users?: [...string]
+	links?: #Json  @anonymous(GroupStatus)
+	id:     string @anonymous(GroupStatus)
+	domain: string @anonymous(GroupStatus)
+	userNames?: [...string] @anonymous(GroupStatus)
 }
 
 #Role: {
@@ -371,14 +376,18 @@ assignments?: [...#RoleAssignment]
 	domain_id:    string
 	links?:       #Json  @anonymous(RoleStatus)
 	id:           string @anonymous(RoleStatus)
+	domain:       string @anonymous(RoleStatus)
 }
 
 #RoleAssignment: {
-	scope?: #Json
-	role?:  #AssignmentID
-	user?:  #AssignmentID
-	group?: #AssignmentID
-	links?: #Json @anonymous(RoleAssignmentStatus)
+	scope?:    #Json
+	role?:     #AssignmentID
+	user?:     #AssignmentID
+	group?:    #AssignmentID
+	links?:    #Json  @anonymous(RoleAssignmentStatus)
+	inherited: string @anonymous(RoleAssignmentStatus)
+	project?:  string @anonymous(RoleAssignmentStatus)
+	domain?:   string @anonymous(RoleAssignmentStatus)
 }
 
 #AssignmentID: {

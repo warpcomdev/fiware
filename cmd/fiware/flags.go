@@ -194,13 +194,13 @@ var (
 		Value:   50,
 	}
 
-	userIdFlag = &cli.StringFlag{
+	userIdFlag = &cli.StringSliceFlag{
 		Name:    "userid",
 		Aliases: []string{"uid"},
 		Usage:   "User ID",
 	}
 
-	groupIdFlag = &cli.StringFlag{
+	groupIdFlag = &cli.StringSliceFlag{
 		Name:    "groupid",
 		Aliases: []string{"gid"},
 		Usage:   "Group ID",
