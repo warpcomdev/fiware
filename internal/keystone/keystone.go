@@ -503,6 +503,49 @@ func (k *Keystone) Users(client HTTPClient, headers http.Header) ([]fiware.User,
 	return users.Users, nil
 }
 
+type userWithPassword struct {
+	Password string `json:"password"`
+	fiware.User
+}
+
+type postUserBody struct {
+	User userWithPassword `json:"user"`
+}
+
+func (k *Keystone) PostUsers(client HTTPClient, headers http.Header, users []fiware.User) error {
+	urlCreate, err := k.URL.Parse("/v3/users")
+	if err != nil {
+		return err
+	}
+	_, domID, err := k.myDomain(client, headers)
+	if err != nil {
+		return err
+	}
+	errList := make([]error, 0, 16)
+	for _, user := range users {
+		userBody := postUserBody{
+			User: userWithPassword{
+				User:     user,
+				Password: "Ch4ng3m3!",
+			},
+		}
+		userBody.User.UserStatus = fiware.UserStatus{}
+		userBody.User.DomainID = domID
+		if userBody.User.Options == nil {
+			userBody.User.Options = make(map[string]json.RawMessage)
+		}
+		userBody.User.Options["ignore_change_password_upon_first_use"] = json.RawMessage("true")
+		userBody.User.Options["ignore_password_expiry"] = json.RawMessage("true")
+		if _, _, err := Update(client, http.MethodPost, headers, urlCreate, userBody); err != nil {
+			errList = append(errList, fmt.Errorf("failed to create user %s: %w", user.Name, err))
+		}
+	}
+	if len(errList) > 0 {
+		return errors.Join(errList...)
+	}
+	return nil
+}
+
 type keystoneGroups struct {
 	Links  json.RawMessage `json:"links,omitempty"`
 	Groups []fiware.Group  `json:"groups"`
@@ -673,7 +716,7 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 	allAssignments := make([]fiware.RoleAssignment, 0, 32)
 	inherit := make(map[string]string)
 	for _, val := range vals {
-		urlAssignments, err := k.URL.Parse(fmt.Sprintf("/v3/role_assignments?%s=%s", param, val))
+		urlAssignments, err := k.URL.Parse(fmt.Sprintf("/v3/role_assignments?include_names=true&%s=%s", param, val))
 		if err != nil {
 			return nil, err
 		}
@@ -705,6 +748,13 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 			}
 		}
 		if !skip_assign {
+			// Role names here also come prefixed by the project id
+			if assign.Role.Name != "" {
+				parts := strings.Split(assign.Role.Name, "#")
+				if len(parts) == 2 {
+					assign.Role.Name = parts[1]
+				}
+			}
 			result = append(result, assign)
 		}
 	}

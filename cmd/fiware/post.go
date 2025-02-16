@@ -24,6 +24,7 @@ var canPost []string = []string{
 	"rules",
 	"entities",
 	"verticals",
+	"users",
 }
 
 func filterEntities(c *cli.Context, manifest fiware.Manifest) (fiware.Manifest, error) {
@@ -111,6 +112,14 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if err := postEntities(selected, client, header, filterManifest, batchSize, overrideMetadata); err != nil {
 				return err
 			}
+		case "users":
+			var k *keystone.Keystone
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := postUsers(k, client, header, manifest); err != nil {
+				return err
+			}
 		case "verticals":
 			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
@@ -178,6 +187,12 @@ func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header
 		},
 	)
 	return api.PostRules(client, header, fiware.ValuesOf(vertical.Rules))
+}
+
+func postUsers(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+	listMessage("POSTing users with names ", vertical.Users,
+		func(u fiware.User) string { return u.Name })
+	return k.PostUsers(client, header, vertical.Users)
 }
 
 func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, batchSize int, overrideMetadata bool) error {

@@ -205,6 +205,20 @@ var (
 		Aliases: []string{"gid"},
 		Usage:   "Group ID",
 	}
+
+	srcMapFlag = &cli.StringFlag{
+		Name:     "srcmap",
+		Aliases:  []string{"src"},
+		Usage:    "Source RoleMap path",
+		Required: true,
+	}
+
+	dstMapFlag = &cli.StringFlag{
+		Name:     "dstmap",
+		Aliases:  []string{"dst"},
+		Usage:    "Destination RoleMap path",
+		Required: true,
+	}
 )
 
 // verbosity combines info from all verbose flags

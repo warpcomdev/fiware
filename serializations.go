@@ -1272,10 +1272,12 @@ func (x User) Serialize(s serialize.Serializer) {
 		s.KeyString("email", string(x.Email))
 	}
 	if len(x.Options) > 0 {
-		s.KeyRaw("options", x.Options, false)
-	}
-	if len(x.Expires) > 0 {
-		s.KeyRaw("password_expires_at", x.Expires, false)
+		s.BeginBlock("options")
+		for _, k := range serialize.Keys(x.Options) {
+			v := x.Options[k]
+			s.KeyRaw(k, v, false)
+		}
+		s.EndBlock()
 	}
 	s.KeyString("domain_id", string(x.DomainID))
 	x.UserStatus.Serialize(s)
@@ -1289,8 +1291,15 @@ func (x UserStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
-	s.KeyString("id", string(x.ID))
-	s.KeyString("domain", string(x.Domain))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
+	}
+	if len(x.Expires) > 0 {
+		s.KeyRaw("password_expires_at", x.Expires, false)
+	}
 }
 
 func (x Group) MarshalJSON() ([]byte, error) {
@@ -1382,7 +1391,18 @@ func (x AssignmentID) MarshalJSON() ([]byte, error) {
 }
 
 func (x AssignmentID) Serialize(s serialize.Serializer) {
-	s.KeyString("id", string(x.ID))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Name != "" {
+		s.KeyString("name", string(x.Name))
+	}
+	if len(x.Domain) > 0 {
+		s.KeyRaw("domain", x.Domain, false)
+	}
+	if len(x.Project) > 0 {
+		s.KeyRaw("project", x.Project, false)
+	}
 }
 
 func (x RoleAssignmentStatus) MarshalJSON() ([]byte, error) {
@@ -1399,5 +1419,8 @@ func (x RoleAssignmentStatus) Serialize(s serialize.Serializer) {
 	}
 	if x.Domain != "" {
 		s.KeyString("domain", string(x.Domain))
+	}
+	if x.ScopeName != "" {
+		s.KeyString("scope_name", string(x.ScopeName))
 	}
 }

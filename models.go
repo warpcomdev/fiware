@@ -579,20 +579,20 @@ type DomainStatus struct {
 }
 
 type User struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description,omitempty"`
-	Enabled     bool            `json:"enabled"`
-	Email       string          `json:"email,omitempty"`
-	Options     json.RawMessage `json:"options,omitempty"`
-	Expires     json.RawMessage `json:"password_expires_at,omitempty"`
-	DomainID    string          `json:"domain_id"`
+	Name        string                     `json:"name"`
+	Description string                     `json:"description,omitempty"`
+	Enabled     bool                       `json:"enabled"`
+	Email       string                     `json:"email,omitempty"`
+	Options     map[string]json.RawMessage `json:"options,omitempty"`
+	DomainID    string                     `json:"domain_id"`
 	UserStatus
 }
 
 type UserStatus struct {
-	Links  json.RawMessage `json:"links,omitempty"`
-	ID     string          `json:"id"`
-	Domain string          `json:"domain"`
+	Links   json.RawMessage `json:"links,omitempty"`
+	ID      string          `json:"id,omitempty"`
+	Domain  string          `json:"domain,omitempty"`
+	Expires json.RawMessage `json:"password_expires_at,omitempty"`
 }
 
 type Group struct {
@@ -636,6 +636,7 @@ type RoleAssignmentStatus struct {
 	Inherited string          `json:"inherited"`
 	Project   string          `json:"project,omitempty"`
 	Domain    string          `json:"domain,omitempty"`
+	ScopeName string          `json:"scope_name,omitempty"`
 }
 
 func (r *RoleAssignment) ParseScope() error {
@@ -649,12 +650,14 @@ func (r *RoleAssignment) ParseScope() error {
 			return err
 		}
 		r.Project = assignmentID.ID
+		r.ScopeName = assignmentID.Name
 	}
 	if domain, ok := items["domain"]; ok {
 		if err := json.Unmarshal(domain, &assignmentID); err != nil {
 			return err
 		}
 		r.Domain = assignmentID.ID
+		r.ScopeName = assignmentID.Name
 	}
 	if inherit, ok := items["OS-INHERIT:inherited_to"]; ok {
 		if err := json.Unmarshal(inherit, &r.Inherited); err != nil {
@@ -665,7 +668,10 @@ func (r *RoleAssignment) ParseScope() error {
 }
 
 type AssignmentID struct {
-	ID string `json:"id"`
+	ID      string          `json:"id,omitempty"`
+	Name    string          `json:"name,omitempty"`
+	Domain  json.RawMessage `json:"domain,omitempty"`
+	Project json.RawMessage `json:"project,omitempty"`
 }
 
 type DeploymentManifest struct {

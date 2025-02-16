@@ -347,16 +347,16 @@ assignments?: [...#RoleAssignment]
 }
 
 #User: {
-	name:                 string
-	description?:         string
-	enabled:              bool
-	email?:               string
-	options?:             #Json
-	password_expires_at?: #Json
+	name:         string
+	description?: string
+	enabled:      bool
+	email?:       string
+	options?: [string]: #Json
 	domain_id:            string
 	links?:               #Json  @anonymous(UserStatus)
-	id:                   string @anonymous(UserStatus)
-	domain:               string @anonymous(UserStatus)
+	id?:                  string @anonymous(UserStatus)
+	domain?:              string @anonymous(UserStatus)
+	password_expires_at?: #Json  @anonymous(UserStatus)
 }
 
 #Group: {
@@ -380,18 +380,22 @@ assignments?: [...#RoleAssignment]
 }
 
 #RoleAssignment: {
-	scope?:    #Json
-	role?:     #AssignmentID
-	user?:     #AssignmentID
-	group?:    #AssignmentID
-	links?:    #Json  @anonymous(RoleAssignmentStatus)
-	inherited: string @anonymous(RoleAssignmentStatus)
-	project?:  string @anonymous(RoleAssignmentStatus)
-	domain?:   string @anonymous(RoleAssignmentStatus)
+	scope?:      #Json
+	role?:       #AssignmentID
+	user?:       #AssignmentID
+	group?:      #AssignmentID
+	links?:      #Json  @anonymous(RoleAssignmentStatus)
+	inherited:   string @anonymous(RoleAssignmentStatus)
+	project?:    string @anonymous(RoleAssignmentStatus)
+	domain?:     string @anonymous(RoleAssignmentStatus)
+	scope_name?: string @anonymous(RoleAssignmentStatus)
 }
 
 #AssignmentID: {
-	id: string
+	id?:      string
+	name?:    string
+	domain?:  #Json
+	project?: #Json
 }
 
 #Json: _ // cuaquier cosa...

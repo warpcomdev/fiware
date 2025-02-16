@@ -391,6 +391,29 @@ func main() {
 			},
 
 			{
+				Name:     "migrate",
+				Category: "platform",
+				Usage:    fmt.Sprintf("Migrate resources amongst services (%s)", strings.Join(canMigrate, ", ")),
+				BashComplete: func(c *cli.Context) {
+					fmt.Println(strings.Join(canMigrate, "\n"))
+				},
+				Action: func(c *cli.Context) error {
+					return migrateResource(c, currentStore)
+				},
+				Flags: append([]cli.Flag{
+					tokenFlag,
+					urboTokenFlag,
+					subServiceFlag,
+					dataFlag,
+					libFlag,
+					timeoutFlag,
+					batchSizeFlag,
+					srcMapFlag,
+					dstMapFlag,
+				}, verboseFlags...),
+			},
+
+			{
 				Name:     "context",
 				Category: "config",
 				Aliases:  []string{"ctx"},
