@@ -25,6 +25,8 @@ var canPost []string = []string{
 	"entities",
 	"verticals",
 	"users",
+	"usergroups",
+	"projects",
 }
 
 func filterEntities(c *cli.Context, manifest fiware.Manifest) (fiware.Manifest, error) {
@@ -120,6 +122,22 @@ func postResource(c *cli.Context, config *config.Store) error {
 			if err := postUsers(k, client, header, manifest); err != nil {
 				return err
 			}
+		case "usergroups":
+			var k *keystone.Keystone
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := postGroups(k, client, header, manifest); err != nil {
+				return err
+			}
+		case "projects":
+			var k *keystone.Keystone
+			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
+				return err
+			}
+			if err := postProjects(k, client, header, manifest); err != nil {
+				return err
+			}
 		case "verticals":
 			if u, header, err = getUrboHeaders(c, &selected); err != nil {
 				return err
@@ -193,6 +211,18 @@ func postUsers(k *keystone.Keystone, client keystone.HTTPClient, header http.Hea
 	listMessage("POSTing users with names ", vertical.Users,
 		func(u fiware.User) string { return u.Name })
 	return k.PostUsers(client, header, vertical.Users)
+}
+
+func postGroups(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+	listMessage("POSTing groups with names ", vertical.Groups,
+		func(g fiware.Group) string { return g.Name })
+	return k.PostGroups(client, header, vertical.Groups)
+}
+
+func postProjects(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+	listMessage("POSTing projects with names ", vertical.Projects,
+		func(p fiware.Project) string { return p.Name })
+	return k.PostProjects(client, header, vertical.Projects)
 }
 
 func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, batchSize int, overrideMetadata bool) error {

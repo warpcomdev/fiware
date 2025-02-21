@@ -1111,6 +1111,9 @@ func (x Project) Serialize(s serialize.Serializer) {
 	if len(x.Tags) > 0 {
 		s.KeyRaw("tags", x.Tags, false)
 	}
+	if len(x.Options) > 0 {
+		s.KeyRaw("options", x.Options, false)
+	}
 	s.KeyBool("enabled", x.Enabled)
 	s.KeyString("name", string(x.Name))
 	if x.ParentId != "" {
@@ -1130,9 +1133,15 @@ func (x ProjectStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
-	s.KeyString("id", string(x.ID))
-	s.KeyString("parent", string(x.Parent))
-	s.KeyString("domain", string(x.Domain))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Parent != "" {
+		s.KeyString("parent", string(x.Parent))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
+	}
 }
 
 func (x Domain) MarshalJSON() ([]byte, error) {
@@ -1312,13 +1321,6 @@ func (x Group) Serialize(s serialize.Serializer) {
 		s.KeyString("description", string(x.Description))
 	}
 	s.KeyString("domain_id", string(x.DomainID))
-	if len(x.Users) > 0 {
-		s.BeginList("users")
-		for _, y := range x.Users {
-			s.String(y, false)
-		}
-		s.EndList()
-	}
 	x.GroupStatus.Serialize(s)
 }
 
@@ -1330,8 +1332,19 @@ func (x GroupStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
-	s.KeyString("id", string(x.ID))
-	s.KeyString("domain", string(x.Domain))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
+	}
+	if len(x.Users) > 0 {
+		s.BeginList("users")
+		for _, y := range x.Users {
+			s.String(y, false)
+		}
+		s.EndList()
+	}
 	if len(x.UserNames) > 0 {
 		s.BeginList("userNames")
 		for _, y := range x.UserNames {
@@ -1351,6 +1364,9 @@ func (x Role) Serialize(s serialize.Serializer) {
 	}
 	s.KeyString("name", string(x.Name))
 	s.KeyString("domain_id", string(x.DomainID))
+	if len(x.Options) > 0 {
+		s.KeyRaw("options", x.Options, false)
+	}
 	x.RoleStatus.Serialize(s)
 }
 
@@ -1414,11 +1430,11 @@ func (x RoleAssignmentStatus) Serialize(s serialize.Serializer) {
 		s.KeyRaw("links", x.Links, false)
 	}
 	s.KeyString("inherited", string(x.Inherited))
-	if x.Project != "" {
-		s.KeyString("project", string(x.Project))
+	if x.ProjectID != "" {
+		s.KeyString("project_id", string(x.ProjectID))
 	}
-	if x.Domain != "" {
-		s.KeyString("domain", string(x.Domain))
+	if x.DomainID != "" {
+		s.KeyString("domain_id", string(x.DomainID))
 	}
 	if x.ScopeName != "" {
 		s.KeyString("scope_name", string(x.ScopeName))

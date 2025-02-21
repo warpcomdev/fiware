@@ -262,6 +262,7 @@ func main() {
 					timeoutFlag,
 					userIdFlag,
 					groupIdFlag,
+					continueFlag,
 				}, verboseFlags...),
 			},
 

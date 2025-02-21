@@ -219,6 +219,12 @@ var (
 		Usage:    "Destination RoleMap path",
 		Required: true,
 	}
+
+	continueFlag = &cli.BoolFlag{
+		Name:  "continue",
+		Usage: "Do not stop on errors",
+		Value: false,
+	}
 )
 
 // verbosity combines info from all verbose flags

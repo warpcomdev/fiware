@@ -357,15 +357,17 @@ func Update(client HTTPClient, method string, headers http.Header, path *url.URL
 
 	// Serialize request to bytes
 	var dataBytes []byte
-	switch data := data.(type) {
-	case string:
-		dataBytes = []byte(data)
-	case []byte:
-		dataBytes = data
-	default:
-		var err error
-		if dataBytes, err = json.Marshal(data); err != nil {
-			return nil, nil, err
+	if data != nil {
+		switch data := data.(type) {
+		case string:
+			dataBytes = []byte(data)
+		case []byte:
+			dataBytes = data
+		default:
+			var err error
+			if dataBytes, err = json.Marshal(data); err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 
@@ -383,8 +385,10 @@ func Update(client HTTPClient, method string, headers http.Header, path *url.URL
 		Header:        newHeaders,
 		URL:           path,
 		Method:        method,
-		Body:          io.NopCloser(bytes.NewReader(dataBytes)),
 		ContentLength: int64(len(dataBytes)),
+	}
+	if len(dataBytes) > 0 {
+		req.Body = io.NopCloser(bytes.NewReader(dataBytes))
 	}
 	resp, err := client.Do(req)
 	defer Exhaust(resp)
@@ -423,6 +427,40 @@ func (k *Keystone) Projects(client HTTPClient, headers http.Header) ([]fiware.Pr
 	return projects.Projects, nil
 }
 
+type postProjectBody struct {
+	Project fiware.Project `json:"project"`
+}
+
+func (k *Keystone) PostProjects(client HTTPClient, headers http.Header, projects []fiware.Project) error {
+	_, domId, err := k.MyDomain(client, headers)
+	if err != nil {
+		return err
+	}
+	urlProjects, err := k.URL.Parse("/v3/projects")
+	if err != nil {
+		return err
+	}
+	errList := make([]error, 0, len(projects))
+	for _, proj := range projects {
+		if !proj.IsDomain {
+			projBody := postProjectBody{
+				Project: proj,
+			}
+			projBody.Project.ProjectStatus = fiware.ProjectStatus{}
+			projBody.Project.DomainId = domId
+			projBody.Project.ParentId = ""
+			_, _, err := PostJSON(client, headers, urlProjects, projBody)
+			if err != nil {
+				errList = append(errList, fmt.Errorf("while creating project %s: %w", proj.Name, err))
+			}
+		}
+	}
+	if len(errList) > 0 {
+		return errors.Join(errList...)
+	}
+	return nil
+}
+
 type keystoneDomains struct {
 	Links   json.RawMessage `json:"links,omitempty"`
 	Domains []fiware.Domain `json:"domains"`
@@ -459,7 +497,7 @@ type domainInfo struct {
 	Name        string          `json:"name"`
 }
 
-func (k *Keystone) myDomain(client HTTPClient, headers http.Header) (string, string, error) {
+func (k *Keystone) MyDomain(client HTTPClient, headers http.Header) (string, string, error) {
 	// Get the domain id for the service
 	urlDomain, err := k.URL.Parse("/v3/auth/domains")
 	if err != nil {
@@ -484,7 +522,7 @@ type keystoneUsers struct {
 
 func (k *Keystone) Users(client HTTPClient, headers http.Header) ([]fiware.User, error) {
 	// Get the domain id for the service
-	domName, domID, err := k.myDomain(client, headers)
+	domName, domID, err := k.MyDomain(client, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +555,7 @@ func (k *Keystone) PostUsers(client HTTPClient, headers http.Header, users []fiw
 	if err != nil {
 		return err
 	}
-	_, domID, err := k.myDomain(client, headers)
+	_, domID, err := k.MyDomain(client, headers)
 	if err != nil {
 		return err
 	}
@@ -537,7 +575,7 @@ func (k *Keystone) PostUsers(client HTTPClient, headers http.Header, users []fiw
 		userBody.User.Options["ignore_change_password_upon_first_use"] = json.RawMessage("true")
 		userBody.User.Options["ignore_password_expiry"] = json.RawMessage("true")
 		if _, _, err := Update(client, http.MethodPost, headers, urlCreate, userBody); err != nil {
-			errList = append(errList, fmt.Errorf("failed to create user %s: %w", user.Name, err))
+			errList = append(errList, fmt.Errorf("while creating user %s: %w", user.Name, err))
 		}
 	}
 	if len(errList) > 0 {
@@ -553,7 +591,7 @@ type keystoneGroups struct {
 
 func (k *Keystone) Groups(client HTTPClient, headers http.Header) ([]fiware.Group, error) {
 	// Get the domain id for the service
-	domName, domID, err := k.myDomain(client, headers)
+	domName, domID, err := k.MyDomain(client, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -589,6 +627,36 @@ func (k *Keystone) Groups(client HTTPClient, headers http.Header) ([]fiware.Grou
 	return groups.Groups, nil
 }
 
+type postUserGroup struct {
+	Group fiware.Group `json:"group"`
+}
+
+func (k *Keystone) PostGroups(client HTTPClient, headers http.Header, groups []fiware.Group) error {
+	urlCreate, err := k.URL.Parse("/v3/groups")
+	if err != nil {
+		return err
+	}
+	_, domID, err := k.MyDomain(client, headers)
+	if err != nil {
+		return err
+	}
+	errList := make([]error, 0, 16)
+	for _, group := range groups {
+		groupBody := postUserGroup{
+			Group: group,
+		}
+		groupBody.Group.GroupStatus = fiware.GroupStatus{}
+		groupBody.Group.DomainID = domID
+		if _, _, err := Update(client, http.MethodPost, headers, urlCreate, groupBody); err != nil {
+			errList = append(errList, fmt.Errorf("while creating group %s: %w", group.Name, err))
+		}
+	}
+	if len(errList) > 0 {
+		return errors.Join(errList...)
+	}
+	return nil
+}
+
 type keystoneRoles struct {
 	Links json.RawMessage `json:"links,omitempty"`
 	Roles []fiware.Role   `json:"roles"`
@@ -596,7 +664,7 @@ type keystoneRoles struct {
 
 func (k *Keystone) Roles(client HTTPClient, headers http.Header) ([]fiware.Role, error) {
 	// Get the domain id for the service
-	domName, domID, err := k.myDomain(client, headers)
+	domName, domID, err := k.MyDomain(client, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -631,88 +699,20 @@ func (k *Keystone) Roles(client HTTPClient, headers http.Header) ([]fiware.Role,
 	return filtered, nil
 }
 
-// RoleMap contains the information needed to make a migration
-type RoleMap struct {
-	Projects []fiware.Project
-	Roles    []fiware.Role
-	Users    []fiware.User
-	Groups   []fiware.Group
-	// Populated ID maps
-	IDToProject map[string]string
-	IDToRole    map[string]string
-	IDToUser    map[string]string
-	IDToGroup   map[string]string
-}
-
-func (k *Keystone) RoleMap(c HTTPClient, header http.Header) (*RoleMap, error) {
-	var err error
-	m := RoleMap{
-		IDToProject: make(map[string]string),
-		IDToRole:    make(map[string]string),
-		IDToUser:    make(map[string]string),
-		IDToGroup:   make(map[string]string),
-	}
-	m.Projects, err = k.Projects(c, header)
-	if err != nil {
-		return nil, err
-	}
-	m.Roles, err = k.Roles(c, header)
-	if err != nil {
-		return nil, err
-	}
-	m.Users, err = k.Users(c, header)
-	if err != nil {
-		return nil, err
-	}
-	m.Groups, err = k.Groups(c, header)
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
-}
-
-func (m *RoleMap) IDToLabel() *RoleMap {
-	if m.IDToProject == nil {
-		m.IDToProject = make(map[string]string, len(m.Projects))
-		for _, project := range m.Projects {
-			m.IDToProject[project.ID] = project.Name
-		}
-	}
-	if m.IDToRole == nil {
-		m.IDToRole = make(map[string]string, len(m.Roles))
-		for _, role := range m.Roles {
-			m.IDToRole[role.ID] = role.Name
-		}
-	}
-	if m.IDToUser == nil {
-		m.IDToUser = make(map[string]string, len(m.Users))
-		for _, user := range m.Users {
-			m.IDToUser[user.ID] = user.Name
-		}
-	}
-	if m.IDToGroup == nil {
-		m.IDToGroup = make(map[string]string, len(m.Groups))
-		for _, group := range m.Groups {
-			m.IDToGroup[group.ID] = group.Name
-		}
-	}
-	return m
-}
-
 type keystoneRoleAssignments struct {
 	Links       json.RawMessage         `json:"links,omitempty"`
 	Assignments []fiware.RoleAssignment `json:"role_assignments"`
 }
 
-func (k *Keystone) UserRoles(client HTTPClient, headers http.Header, uids []string) ([]fiware.RoleAssignment, error) {
-	return k.assignments(client, headers, "user.id", uids)
+func (k *Keystone) UserRoles(client HTTPClient, headers http.Header, uids []string, skipErrors bool) ([]fiware.RoleAssignment, error) {
+	return k.assignments(client, headers, "user.id", uids, skipErrors)
 }
 
-func (k *Keystone) GroupRoles(client HTTPClient, headers http.Header, gids []string) ([]fiware.RoleAssignment, error) {
-	return k.assignments(client, headers, "group.id", gids)
+func (k *Keystone) GroupRoles(client HTTPClient, headers http.Header, gids []string, skipErrors bool) ([]fiware.RoleAssignment, error) {
+	return k.assignments(client, headers, "group.id", gids, skipErrors)
 }
 
-func (k *Keystone) assignments(client HTTPClient, headers http.Header, param string, vals []string) ([]fiware.RoleAssignment, error) {
+func (k *Keystone) assignments(client HTTPClient, headers http.Header, param string, vals []string, skipErrors bool) ([]fiware.RoleAssignment, error) {
 	allAssignments := make([]fiware.RoleAssignment, 0, 32)
 	inherit := make(map[string]string)
 	for _, val := range vals {
@@ -722,7 +722,12 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 		}
 		var assignments keystoneRoleAssignments
 		if _, err := Query(client, http.MethodGet, headers, urlAssignments, &assignments, false); err != nil {
-			return nil, err
+			if skipErrors {
+				log.Printf("while getting asignments for %s %s: %s", param, val, err.Error())
+				assignments.Assignments = nil
+			} else {
+				return nil, err
+			}
 		}
 		// Tomo nota de todos los roles heredados
 		for _, assign := range assignments.Assignments {
@@ -730,7 +735,7 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 				return nil, err
 			}
 			// If the role is assigned domain-level and inherited, track it
-			if assign.Domain != "" && assign.Inherited != "" && assign.Inherited == "projects" {
+			if assign.DomainID != "" && assign.Inherited != "" && assign.Inherited == "projects" {
 				inherit[assign.Role.ID] = assign.Inherited
 			}
 			allAssignments = append(allAssignments, assign)
@@ -741,7 +746,7 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 	for _, assign := range allAssignments {
 		skip_assign := false
 		// remove roles assigned project-level that match an inherited role
-		if assign.Project != "" && assign.Role.ID != "" {
+		if assign.ProjectID != "" && assign.Role.ID != "" {
 			_, found := inherit[assign.Role.ID]
 			if found {
 				skip_assign = true
@@ -759,4 +764,50 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 		}
 	}
 	return result, nil
+}
+
+func (k *Keystone) PostAssignments(client HTTPClient, headers http.Header, assignments []fiware.RoleAssignment) error {
+	_, domId, err := k.MyDomain(client, headers)
+	if err != nil {
+		return err
+	}
+	errList := make([]error, 0, 16)
+	for _, assign := range assignments {
+		var (
+			urlCreate *url.URL
+			assignErr error
+		)
+		if assign.Inherited == "projects" {
+			if assign.DomainID == "" {
+				assignErr = fmt.Errorf("don't know how to handle inherit to non-domain %s", assign.ScopeName)
+			} else {
+				urlCreate, assignErr = k.URL.Parse(fmt.Sprintf("/v3/OS-INHERIT/domains/%s/users/%s/roles/%s/inherited_to_projects", domId, assign.User.ID, assign.Role.ID))
+			}
+		} else {
+			if assign.Inherited == "" {
+				if assign.DomainID != "" {
+					urlCreate, assignErr = k.URL.Parse(fmt.Sprintf("/v3/domains/%s/users/%s/roles/%s", domId, assign.User.ID, assign.Role.ID))
+				} else {
+					if assign.ProjectID != "" {
+						urlCreate, assignErr = k.URL.Parse(fmt.Sprintf("/v3/projects/%s/users/%s/roles/%s", assign.ProjectID, assign.User.ID, assign.Role.ID))
+					} else {
+						assignErr = fmt.Errorf("don't know how to handle assignment at scope %s", assign.ScopeName)
+					}
+				}
+			} else {
+				assignErr = fmt.Errorf("don't know how to handle inherited role %s", assign.Inherited)
+			}
+		}
+		if assignErr != nil {
+			errList = append(errList, fmt.Errorf("while assigning role %s to usr %s at scope %s: %w", assign.Role.Name, assign.User.Name, assign.ScopeName, assignErr))
+		} else {
+			if _, _, err := PutJSON(client, headers, urlCreate, nil); err != nil {
+				errList = append(errList, fmt.Errorf("while assigning role %s to usr %s at scope %s: %w", assign.Role.Name, assign.User.Name, assign.ScopeName, err))
+			}
+		}
+	}
+	if len(errList) > 0 {
+		return errors.Join(errList...)
+	}
+	return nil
 }

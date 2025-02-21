@@ -293,14 +293,15 @@ assignments?: [...#RoleAssignment]
 	is_domain:    bool
 	description?: string
 	tags?:        #Json
+	options?:     #Json
 	enabled:      bool
 	name:         string
 	parent_id?:   string
 	domain_id?:   string
 	links?:       #Json  @anonymous(ProjectStatus)
-	id:           string @anonymous(ProjectStatus)
-	parent:       string @anonymous(ProjectStatus)
-	domain:       string @anonymous(ProjectStatus)
+	id?:          string @anonymous(ProjectStatus)
+	parent?:      string @anonymous(ProjectStatus)
+	domain?:      string @anonymous(ProjectStatus)
 }
 
 #Domain: {
@@ -363,10 +364,10 @@ assignments?: [...#RoleAssignment]
 	name:         string
 	description?: string
 	domain_id:    string
-	users?: [...string]
-	links?: #Json  @anonymous(GroupStatus)
-	id:     string @anonymous(GroupStatus)
-	domain: string @anonymous(GroupStatus)
+	links?:       #Json  @anonymous(GroupStatus)
+	id?:          string @anonymous(GroupStatus)
+	domain?:      string @anonymous(GroupStatus)
+	users?: [...string] @anonymous(GroupStatus)
 	userNames?: [...string] @anonymous(GroupStatus)
 }
 
@@ -374,6 +375,7 @@ assignments?: [...#RoleAssignment]
 	description?: string
 	name:         string
 	domain_id:    string
+	options?:     #Json
 	links?:       #Json  @anonymous(RoleStatus)
 	id:           string @anonymous(RoleStatus)
 	domain:       string @anonymous(RoleStatus)
@@ -386,8 +388,8 @@ assignments?: [...#RoleAssignment]
 	group?:      #AssignmentID
 	links?:      #Json  @anonymous(RoleAssignmentStatus)
 	inherited:   string @anonymous(RoleAssignmentStatus)
-	project?:    string @anonymous(RoleAssignmentStatus)
-	domain?:     string @anonymous(RoleAssignmentStatus)
+	project_id?: string @anonymous(RoleAssignmentStatus)
+	domain_id?:  string @anonymous(RoleAssignmentStatus)
 	scope_name?: string @anonymous(RoleAssignmentStatus)
 }
 

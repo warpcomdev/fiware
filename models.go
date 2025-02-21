@@ -552,6 +552,7 @@ type Project struct {
 	IsDomain    bool            `json:"is_domain"`
 	Description string          `json:"description,omitempty"`
 	Tags        json.RawMessage `json:"tags,omitempty"`
+	Options     json.RawMessage `json:"options,omitempty"`
 	Enabled     bool            `json:"enabled"`
 	Name        string          `json:"name"`
 	ParentId    string          `json:"parent_id,omitempty"`
@@ -561,9 +562,9 @@ type Project struct {
 
 type ProjectStatus struct {
 	Links  json.RawMessage `json:"links,omitempty"`
-	ID     string          `json:"id"`
-	Parent string          `json:"parent"`
-	Domain string          `json:"domain"`
+	ID     string          `json:"id,omitempty"`
+	Parent string          `json:"parent,omitempty"`
+	Domain string          `json:"domain,omitempty"`
 }
 
 type Domain struct {
@@ -596,24 +597,25 @@ type UserStatus struct {
 }
 
 type Group struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	DomainID    string   `json:"domain_id"`
-	Users       []string `json:"users,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	DomainID    string `json:"domain_id"`
 	GroupStatus
 }
 
 type GroupStatus struct {
 	Links     json.RawMessage `json:"links,omitempty"`
-	ID        string          `json:"id"`
-	Domain    string          `json:"domain"`
+	ID        string          `json:"id,omitempty"`
+	Domain    string          `json:"domain,omitempty"`
+	Users     []string        `json:"users,omitempty"`
 	UserNames []string        `json:"userNames,omitempty"`
 }
 
 type Role struct {
-	Description string `json:"description,omitempty"`
-	Name        string `json:"name"`
-	DomainID    string `json:"domain_id"`
+	Description string          `json:"description,omitempty"`
+	Name        string          `json:"name"`
+	DomainID    string          `json:"domain_id"`
+	Options     json.RawMessage `json:"options,omitempty"`
 	RoleStatus
 }
 
@@ -634,8 +636,8 @@ type RoleAssignment struct {
 type RoleAssignmentStatus struct {
 	Links     json.RawMessage `json:"links,omitempty"`
 	Inherited string          `json:"inherited"`
-	Project   string          `json:"project,omitempty"`
-	Domain    string          `json:"domain,omitempty"`
+	ProjectID string          `json:"project_id,omitempty"`
+	DomainID  string          `json:"domain_id,omitempty"`
 	ScopeName string          `json:"scope_name,omitempty"`
 }
 
@@ -649,14 +651,14 @@ func (r *RoleAssignment) ParseScope() error {
 		if err := json.Unmarshal(project, &assignmentID); err != nil {
 			return err
 		}
-		r.Project = assignmentID.ID
+		r.ProjectID = assignmentID.ID
 		r.ScopeName = assignmentID.Name
 	}
 	if domain, ok := items["domain"]; ok {
 		if err := json.Unmarshal(domain, &assignmentID); err != nil {
 			return err
 		}
-		r.Domain = assignmentID.ID
+		r.DomainID = assignmentID.ID
 		r.ScopeName = assignmentID.Name
 	}
 	if inherit, ok := items["OS-INHERIT:inherited_to"]; ok {

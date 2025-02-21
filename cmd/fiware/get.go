@@ -132,6 +132,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 		},
 	}
 	maximum := c.Int(maxFlag.Name)
+	skipErrors := c.Bool(continueFlag.Name)
 	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
@@ -266,7 +267,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getUserRoles(selected, client, k, header, userIds, vertical); err != nil {
+			if err := getUserRoles(selected, client, k, header, userIds, skipErrors, vertical); err != nil {
 				return err
 			}
 		case "gr":
@@ -281,7 +282,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getGroupRoles(selected, client, k, header, groupIds, vertical); err != nil {
+			if err := getGroupRoles(selected, client, k, header, groupIds, skipErrors, vertical); err != nil {
 				return err
 			}
 		case "rolemap":
@@ -440,8 +441,8 @@ func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, he
 	return nil
 }
 
-func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, uids []string, vertical *fiware.Manifest) error {
-	assignments, err := k.UserRoles(c, header, uids)
+func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, uids []string, skipErrors bool, vertical *fiware.Manifest) error {
+	assignments, err := k.UserRoles(c, header, uids, skipErrors)
 	if err != nil {
 		return err
 	}
@@ -449,8 +450,8 @@ func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone
 	return nil
 }
 
-func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, gids []string, vertical *fiware.Manifest) error {
-	assignments, err := k.GroupRoles(c, header, gids)
+func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, gids []string, skipErrors bool, vertical *fiware.Manifest) error {
+	assignments, err := k.GroupRoles(c, header, gids, skipErrors)
 	if err != nil {
 		return err
 	}
@@ -459,14 +460,23 @@ func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keyston
 }
 
 func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
-	roleMap, err := k.RoleMap(c, header)
+	var err error
+	vertical.Projects, err = k.Projects(c, header)
 	if err != nil {
 		return err
 	}
-	vertical.Projects = roleMap.Projects
-	vertical.Roles = roleMap.Roles
-	vertical.Users = roleMap.Users
-	vertical.Groups = roleMap.Groups
+	vertical.Roles, err = k.Roles(c, header)
+	if err != nil {
+		return err
+	}
+	vertical.Users, err = k.Users(c, header)
+	if err != nil {
+		return err
+	}
+	vertical.Groups, err = k.Groups(c, header)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
