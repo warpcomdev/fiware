@@ -17,17 +17,17 @@ builds:
     goarch:
       - amd64
 archives:
-  - format: gz
+  - formats: ['gz']
     files:
-    - none*
+      - none*
     format_overrides:
-    - goos: windows
-      format: zip
+      - goos: windows
+        formats: ['zip']
     name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
