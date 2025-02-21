@@ -157,11 +157,11 @@ type LongtermKind string
 
 const (
 	LongtermNone      LongtermKind = ""
-	LongtermCounter                = "counter"
-	LongtermGauge                  = "gauge"
-	LongtermEnum                   = "enum"
-	LongtermModal                  = "modal"
-	LongtermDimension              = "dimension"
+	LongtermCounter   LongtermKind = "counter"
+	LongtermGauge     LongtermKind = "gauge"
+	LongtermEnum      LongtermKind = "enum"
+	LongtermModal     LongtermKind = "modal"
+	LongtermDimension LongtermKind = "dimension"
 )
 
 // Attribute representa un atributo de una entidad
@@ -230,7 +230,7 @@ type AttributeMapping struct {
 // Registration representa un registro
 type Registration struct {
 	ID           string          `json:"id"`
-	Description  string          `json:"description,omitemty"`
+	Description  string          `json:"description,omitempty"`
 	DataProvided json.RawMessage `json:"dataProvided,omitempty"`
 	Provider     json.RawMessage `json:"provider,omitempty"`
 	RegistrationStatus
@@ -527,7 +527,7 @@ type Rule struct {
 // ActionList converts the action field into list of actions
 func (rule Rule) ActionList() []interface{} {
 	var actionList []interface{}
-	if rule.Action != nil && len(rule.Action) > 0 {
+	if len(rule.Action) > 0 {
 		var action interface{}
 		if err := json.Unmarshal(rule.Action, &action); err == nil {
 			switch action := action.(type) {
@@ -552,44 +552,48 @@ type Project struct {
 	IsDomain    bool            `json:"is_domain"`
 	Description string          `json:"description,omitempty"`
 	Tags        json.RawMessage `json:"tags,omitempty"`
+	Options     json.RawMessage `json:"options,omitempty"`
 	Enabled     bool            `json:"enabled"`
-	ID          string          `json:"id"`
+	Name        string          `json:"name"`
 	ParentId    string          `json:"parent_id,omitempty"`
 	DomainId    string          `json:"domain_id,omitempty"`
-	Name        string          `json:"name"`
 	ProjectStatus
 }
 
 type ProjectStatus struct {
-	Links json.RawMessage `json:"links,omitempty"`
+	Links  json.RawMessage `json:"links,omitempty"`
+	ID     string          `json:"id,omitempty"`
+	Parent string          `json:"parent,omitempty"`
+	Domain string          `json:"domain,omitempty"`
 }
 
 type Domain struct {
 	Description string `json:"description,omitempty"`
 	Enabled     bool   `json:"enabled"`
-	ID          string `json:"id"`
 	Name        string `json:"name"`
 	DomainStatus
 }
 
 type DomainStatus struct {
 	Links json.RawMessage `json:"links,omitempty"`
+	ID    string          `json:"id"`
 }
 
 type User struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description,omitempty"`
-	Enabled     bool            `json:"enabled"`
-	Email       string          `json:"email,omitempty"`
-	Options     json.RawMessage `json:"options,omitempty"`
-	Expires     json.RawMessage `json:"password_expires_at,omitempty"`
-	DomainID    string          `json:"domain_id"`
+	Name        string                     `json:"name"`
+	Description string                     `json:"description,omitempty"`
+	Enabled     bool                       `json:"enabled"`
+	Email       string                     `json:"email,omitempty"`
+	Options     map[string]json.RawMessage `json:"options,omitempty"`
+	DomainID    string                     `json:"domain_id"`
 	UserStatus
 }
 
 type UserStatus struct {
-	Links json.RawMessage `json:"links,omitempty"`
-	ID    string          `json:"id"`
+	Links   json.RawMessage `json:"links,omitempty"`
+	ID      string          `json:"id,omitempty"`
+	Domain  string          `json:"domain,omitempty"`
+	Expires json.RawMessage `json:"password_expires_at,omitempty"`
 }
 
 type Group struct {
@@ -600,21 +604,25 @@ type Group struct {
 }
 
 type GroupStatus struct {
-	Links json.RawMessage `json:"links,omitempty"`
-	ID    string          `json:"id"`
-	Users []string        `json:"users,omitempty"`
+	Links     json.RawMessage `json:"links,omitempty"`
+	ID        string          `json:"id,omitempty"`
+	Domain    string          `json:"domain,omitempty"`
+	Users     []string        `json:"users,omitempty"`
+	UserNames []string        `json:"userNames,omitempty"`
 }
 
 type Role struct {
-	Description string `json:"description,omitempty"`
-	Name        string `json:"name"`
-	DomainID    string `json:"domain_id"`
+	Description string          `json:"description,omitempty"`
+	Name        string          `json:"name"`
+	DomainID    string          `json:"domain_id"`
+	Options     json.RawMessage `json:"options,omitempty"`
 	RoleStatus
 }
 
 type RoleStatus struct {
-	Links json.RawMessage `json:"links,omitempty"`
-	ID    string          `json:"id"`
+	Links  json.RawMessage `json:"links,omitempty"`
+	ID     string          `json:"id"`
+	Domain string          `json:"domain"`
 }
 
 type RoleAssignment struct {
@@ -626,44 +634,46 @@ type RoleAssignment struct {
 }
 
 type RoleAssignmentStatus struct {
-	Links json.RawMessage `json:"links,omitempty"`
+	Links     json.RawMessage `json:"links,omitempty"`
+	Inherited string          `json:"inherited"`
+	ProjectID string          `json:"project_id,omitempty"`
+	DomainID  string          `json:"domain_id,omitempty"`
+	ScopeName string          `json:"scope_name,omitempty"`
 }
 
-type AssignmentScope struct {
-	Project   string
-	Domain    string
-	Inherited string
-}
-
-func (r RoleAssignment) ParseScope() (AssignmentScope, error) {
-	scope := AssignmentScope{}
+func (r *RoleAssignment) ParseScope() error {
 	var items map[string]json.RawMessage
 	if err := json.Unmarshal(r.Scope, &items); err != nil {
-		return scope, err
+		return err
 	}
 	var assignmentID AssignmentID
 	if project, ok := items["project"]; ok {
 		if err := json.Unmarshal(project, &assignmentID); err != nil {
-			return scope, err
+			return err
 		}
-		scope.Project = assignmentID.ID
+		r.ProjectID = assignmentID.ID
+		r.ScopeName = assignmentID.Name
 	}
 	if domain, ok := items["domain"]; ok {
 		if err := json.Unmarshal(domain, &assignmentID); err != nil {
-			return scope, err
+			return err
 		}
-		scope.Domain = assignmentID.ID
+		r.DomainID = assignmentID.ID
+		r.ScopeName = assignmentID.Name
 	}
 	if inherit, ok := items["OS-INHERIT:inherited_to"]; ok {
-		if err := json.Unmarshal(inherit, &scope.Inherited); err != nil {
-			return scope, err
+		if err := json.Unmarshal(inherit, &r.Inherited); err != nil {
+			return err
 		}
 	}
-	return scope, nil
+	return nil
 }
 
 type AssignmentID struct {
-	ID string `json:"id"`
+	ID      string          `json:"id,omitempty"`
+	Name    string          `json:"name,omitempty"`
+	Domain  json.RawMessage `json:"domain,omitempty"`
+	Project json.RawMessage `json:"project,omitempty"`
 }
 
 type DeploymentManifest struct {

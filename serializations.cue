@@ -256,7 +256,7 @@ assignments?: [...#RoleAssignment]
 
 #Registration: {
 	id:            string
-	description:   string
+	description?:  string
 	dataProvided?: #Json
 	provider?:     #Json
 	status:        string @anonymous(RegistrationStatus)
@@ -293,20 +293,23 @@ assignments?: [...#RoleAssignment]
 	is_domain:    bool
 	description?: string
 	tags?:        #Json
+	options?:     #Json
 	enabled:      bool
-	id:           string
+	name:         string
 	parent_id?:   string
 	domain_id?:   string
-	name:         string
-	links?:       #Json @anonymous(ProjectStatus)
+	links?:       #Json  @anonymous(ProjectStatus)
+	id?:          string @anonymous(ProjectStatus)
+	parent?:      string @anonymous(ProjectStatus)
+	domain?:      string @anonymous(ProjectStatus)
 }
 
 #Domain: {
 	description?: string
 	enabled:      bool
-	id:           string
 	name:         string
-	links?:       #Json @anonymous(DomainStatus)
+	links?:       #Json  @anonymous(DomainStatus)
+	id:           string @anonymous(DomainStatus)
 }
 
 #Table: {
@@ -345,15 +348,16 @@ assignments?: [...#RoleAssignment]
 }
 
 #User: {
-	name:                 string
-	description?:         string
-	enabled:              bool
-	email?:               string
-	options?:             #Json
-	password_expires_at?: #Json
+	name:         string
+	description?: string
+	enabled:      bool
+	email?:       string
+	options?: [string]: #Json
 	domain_id:            string
 	links?:               #Json  @anonymous(UserStatus)
-	id:                   string @anonymous(UserStatus)
+	id?:                  string @anonymous(UserStatus)
+	domain?:              string @anonymous(UserStatus)
+	password_expires_at?: #Json  @anonymous(UserStatus)
 }
 
 #Group: {
@@ -361,28 +365,39 @@ assignments?: [...#RoleAssignment]
 	description?: string
 	domain_id:    string
 	links?:       #Json  @anonymous(GroupStatus)
-	id:           string @anonymous(GroupStatus)
+	id?:          string @anonymous(GroupStatus)
+	domain?:      string @anonymous(GroupStatus)
 	users?: [...string] @anonymous(GroupStatus)
+	userNames?: [...string] @anonymous(GroupStatus)
 }
 
 #Role: {
 	description?: string
 	name:         string
 	domain_id:    string
+	options?:     #Json
 	links?:       #Json  @anonymous(RoleStatus)
 	id:           string @anonymous(RoleStatus)
+	domain:       string @anonymous(RoleStatus)
 }
 
 #RoleAssignment: {
-	scope?: #Json
-	role?:  #AssignmentID
-	user?:  #AssignmentID
-	group?: #AssignmentID
-	links?: #Json @anonymous(RoleAssignmentStatus)
+	scope?:      #Json
+	role?:       #AssignmentID
+	user?:       #AssignmentID
+	group?:      #AssignmentID
+	links?:      #Json  @anonymous(RoleAssignmentStatus)
+	inherited:   string @anonymous(RoleAssignmentStatus)
+	project_id?: string @anonymous(RoleAssignmentStatus)
+	domain_id?:  string @anonymous(RoleAssignmentStatus)
+	scope_name?: string @anonymous(RoleAssignmentStatus)
 }
 
 #AssignmentID: {
-	id: string
+	id?:      string
+	name?:    string
+	domain?:  #Json
+	project?: #Json
 }
 
 #Json: _ // cuaquier cosa...

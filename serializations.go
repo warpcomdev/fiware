@@ -994,7 +994,9 @@ func (x Registration) MarshalJSON() ([]byte, error) {
 
 func (x Registration) Serialize(s serialize.Serializer) {
 	s.KeyString("id", string(x.ID))
-	s.KeyString("description", string(x.Description))
+	if x.Description != "" {
+		s.KeyString("description", string(x.Description))
+	}
 	if len(x.DataProvided) > 0 {
 		s.KeyRaw("dataProvided", x.DataProvided, false)
 	}
@@ -1109,15 +1111,17 @@ func (x Project) Serialize(s serialize.Serializer) {
 	if len(x.Tags) > 0 {
 		s.KeyRaw("tags", x.Tags, false)
 	}
+	if len(x.Options) > 0 {
+		s.KeyRaw("options", x.Options, false)
+	}
 	s.KeyBool("enabled", x.Enabled)
-	s.KeyString("id", string(x.ID))
+	s.KeyString("name", string(x.Name))
 	if x.ParentId != "" {
 		s.KeyString("parent_id", string(x.ParentId))
 	}
 	if x.DomainId != "" {
 		s.KeyString("domain_id", string(x.DomainId))
 	}
-	s.KeyString("name", string(x.Name))
 	x.ProjectStatus.Serialize(s)
 }
 
@@ -1128,6 +1132,15 @@ func (x ProjectStatus) MarshalJSON() ([]byte, error) {
 func (x ProjectStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
+	}
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Parent != "" {
+		s.KeyString("parent", string(x.Parent))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
 	}
 }
 
@@ -1140,7 +1153,6 @@ func (x Domain) Serialize(s serialize.Serializer) {
 		s.KeyString("description", string(x.Description))
 	}
 	s.KeyBool("enabled", x.Enabled)
-	s.KeyString("id", string(x.ID))
 	s.KeyString("name", string(x.Name))
 	x.DomainStatus.Serialize(s)
 }
@@ -1153,6 +1165,7 @@ func (x DomainStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
+	s.KeyString("id", string(x.ID))
 }
 
 func (x Table) MarshalJSON() ([]byte, error) {
@@ -1268,10 +1281,12 @@ func (x User) Serialize(s serialize.Serializer) {
 		s.KeyString("email", string(x.Email))
 	}
 	if len(x.Options) > 0 {
-		s.KeyRaw("options", x.Options, false)
-	}
-	if len(x.Expires) > 0 {
-		s.KeyRaw("password_expires_at", x.Expires, false)
+		s.BeginBlock("options")
+		for _, k := range serialize.Keys(x.Options) {
+			v := x.Options[k]
+			s.KeyRaw(k, v, false)
+		}
+		s.EndBlock()
 	}
 	s.KeyString("domain_id", string(x.DomainID))
 	x.UserStatus.Serialize(s)
@@ -1285,7 +1300,15 @@ func (x UserStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
-	s.KeyString("id", string(x.ID))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
+	}
+	if len(x.Expires) > 0 {
+		s.KeyRaw("password_expires_at", x.Expires, false)
+	}
 }
 
 func (x Group) MarshalJSON() ([]byte, error) {
@@ -1309,10 +1332,22 @@ func (x GroupStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
 	}
-	s.KeyString("id", string(x.ID))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Domain != "" {
+		s.KeyString("domain", string(x.Domain))
+	}
 	if len(x.Users) > 0 {
 		s.BeginList("users")
 		for _, y := range x.Users {
+			s.String(y, false)
+		}
+		s.EndList()
+	}
+	if len(x.UserNames) > 0 {
+		s.BeginList("userNames")
+		for _, y := range x.UserNames {
 			s.String(y, false)
 		}
 		s.EndList()
@@ -1329,6 +1364,9 @@ func (x Role) Serialize(s serialize.Serializer) {
 	}
 	s.KeyString("name", string(x.Name))
 	s.KeyString("domain_id", string(x.DomainID))
+	if len(x.Options) > 0 {
+		s.KeyRaw("options", x.Options, false)
+	}
 	x.RoleStatus.Serialize(s)
 }
 
@@ -1341,6 +1379,7 @@ func (x RoleStatus) Serialize(s serialize.Serializer) {
 		s.KeyRaw("links", x.Links, false)
 	}
 	s.KeyString("id", string(x.ID))
+	s.KeyString("domain", string(x.Domain))
 }
 
 func (x RoleAssignment) MarshalJSON() ([]byte, error) {
@@ -1368,7 +1407,18 @@ func (x AssignmentID) MarshalJSON() ([]byte, error) {
 }
 
 func (x AssignmentID) Serialize(s serialize.Serializer) {
-	s.KeyString("id", string(x.ID))
+	if x.ID != "" {
+		s.KeyString("id", string(x.ID))
+	}
+	if x.Name != "" {
+		s.KeyString("name", string(x.Name))
+	}
+	if len(x.Domain) > 0 {
+		s.KeyRaw("domain", x.Domain, false)
+	}
+	if len(x.Project) > 0 {
+		s.KeyRaw("project", x.Project, false)
+	}
 }
 
 func (x RoleAssignmentStatus) MarshalJSON() ([]byte, error) {
@@ -1378,5 +1428,15 @@ func (x RoleAssignmentStatus) MarshalJSON() ([]byte, error) {
 func (x RoleAssignmentStatus) Serialize(s serialize.Serializer) {
 	if len(x.Links) > 0 {
 		s.KeyRaw("links", x.Links, false)
+	}
+	s.KeyString("inherited", string(x.Inherited))
+	if x.ProjectID != "" {
+		s.KeyString("project_id", string(x.ProjectID))
+	}
+	if x.DomainID != "" {
+		s.KeyString("domain_id", string(x.DomainID))
+	}
+	if x.ScopeName != "" {
+		s.KeyString("scope_name", string(x.ScopeName))
 	}
 }

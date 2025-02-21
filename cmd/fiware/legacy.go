@@ -120,9 +120,12 @@ func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	zw := zip.NewWriter(w)
 	defer zw.Close()
-	if err := filepath.Walk(outDir, func(path string, info os.FileInfo, err error) error {
+	if walkErr := filepath.Walk(outDir, func(path string, info os.FileInfo, err error) error {
 		if !strings.HasSuffix(path, ".json") {
 			return nil
+		}
+		if err != nil {
+			return err
 		}
 		input, err := os.Open(path)
 		if err != nil {
@@ -138,7 +141,7 @@ func onPostRenderRequest(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		return nil
-	}); err != nil {
-		http.Error(w, fmt.Sprintf("failed to compress folder: %s", err.Error()), http.StatusInternalServerError)
+	}); walkErr != nil {
+		http.Error(w, fmt.Sprintf("failed to compress folder: %s", walkErr.Error()), http.StatusInternalServerError)
 	}
 }

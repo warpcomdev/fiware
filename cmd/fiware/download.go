@@ -88,7 +88,7 @@ func (dld *verticalDownloader) Download(c *cli.Context, store *config.Store) err
 		}
 		if len(matchingSlugs) <= 0 {
 			names := dld.List()
-			return fmt.Errorf("No matching slug or vertical for '%s'. Select from: %s", target, strings.Join(names, "\n"))
+			return fmt.Errorf("no matching slug or vertical for '%s'. Select from: %s", target, strings.Join(names, "\n"))
 		}
 		for _, slug := range matchingSlugs {
 			targetSlugs[slug] = false
@@ -229,10 +229,10 @@ func ensureDir(outdir string) error {
 	stat, err := os.Stat(outdir)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return fmt.Errorf("Failed to check folder %s: %w", outdir, err)
+			return fmt.Errorf("failed to check folder %s: %w", outdir, err)
 		}
 		if err := os.MkdirAll(outdir, 0750); err != nil {
-			return fmt.Errorf("Failed to create folder %s: %w", outdir, err)
+			return fmt.Errorf("failed to create folder %s: %w", outdir, err)
 		}
 	} else {
 		if !stat.IsDir() {

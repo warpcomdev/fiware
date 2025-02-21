@@ -194,16 +194,36 @@ var (
 		Value:   50,
 	}
 
-	userIdFlag = &cli.StringFlag{
+	userIdFlag = &cli.StringSliceFlag{
 		Name:    "userid",
 		Aliases: []string{"uid"},
 		Usage:   "User ID",
 	}
 
-	groupIdFlag = &cli.StringFlag{
+	groupIdFlag = &cli.StringSliceFlag{
 		Name:    "groupid",
 		Aliases: []string{"gid"},
 		Usage:   "Group ID",
+	}
+
+	srcMapFlag = &cli.StringFlag{
+		Name:     "srcmap",
+		Aliases:  []string{"src"},
+		Usage:    "Source RoleMap path",
+		Required: true,
+	}
+
+	dstMapFlag = &cli.StringFlag{
+		Name:     "dstmap",
+		Aliases:  []string{"dst"},
+		Usage:    "Destination RoleMap path",
+		Required: true,
+	}
+
+	continueFlag = &cli.BoolFlag{
+		Name:  "continue",
+		Usage: "Do not stop on errors",
+		Value: false,
 	}
 )
 

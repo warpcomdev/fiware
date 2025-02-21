@@ -262,6 +262,7 @@ func main() {
 					timeoutFlag,
 					userIdFlag,
 					groupIdFlag,
+					continueFlag,
 				}, verboseFlags...),
 			},
 
@@ -269,13 +270,13 @@ func main() {
 				Name:     "download",
 				Aliases:  []string{"down", "dld"},
 				Category: "platform",
-				Usage:    fmt.Sprintf("Download vertical or subservice"),
+				Usage:    "Download vertical or subservice",
 				Subcommands: []*cli.Command{
 
 					&(cli.Command{
 						Name:    "verticals",
 						Aliases: []string{"vertical", "v"},
-						Usage:   fmt.Sprintf("Download panels from vertical(s)"),
+						Usage:   "Download panels from vertical(s)",
 						BashComplete: func(c *cli.Context) {
 							v, err := newVerticalDownloader(c, currentStore)
 							if err != nil {
@@ -302,7 +303,7 @@ func main() {
 					&(cli.Command{
 						Name:    "subservices",
 						Aliases: []string{"subservice", "ss", "s"},
-						Usage:   fmt.Sprintf("Download resources from subservice(s)"),
+						Usage:   "Download resources from subservice(s)",
 						BashComplete: func(c *cli.Context) {
 							v, err := newProjectDownloader(c, currentStore)
 							if err != nil {
@@ -331,7 +332,7 @@ func main() {
 			{
 				Name:    "upload",
 				Aliases: []string{"up"},
-				Usage:   fmt.Sprintf("Upload panels to urbo"),
+				Usage:   "Upload panels to urbo",
 				Action: func(c *cli.Context) error {
 					return uploadResource(c, currentStore)
 				},
@@ -387,6 +388,29 @@ func main() {
 					filterTypeFlag,
 					timeoutFlag,
 					batchSizeFlag,
+				}, verboseFlags...),
+			},
+
+			{
+				Name:     "migrate",
+				Category: "platform",
+				Usage:    fmt.Sprintf("Migrate resources amongst services (%s)", strings.Join(canMigrate, ", ")),
+				BashComplete: func(c *cli.Context) {
+					fmt.Println(strings.Join(canMigrate, "\n"))
+				},
+				Action: func(c *cli.Context) error {
+					return migrateResource(c, currentStore)
+				},
+				Flags: append([]cli.Flag{
+					tokenFlag,
+					urboTokenFlag,
+					subServiceFlag,
+					dataFlag,
+					libFlag,
+					timeoutFlag,
+					batchSizeFlag,
+					srcMapFlag,
+					dstMapFlag,
 				}, verboseFlags...),
 			},
 
@@ -503,7 +527,7 @@ func main() {
 			{
 				Name:     "serve",
 				Category: "platform",
-				Usage:    fmt.Sprintf("Turn on http server"),
+				Usage:    "Turn on http server",
 				Action: func(c *cli.Context) error {
 					mux, addr, err := prepareServer(currentStore, c, backoff)
 					if err != nil {
