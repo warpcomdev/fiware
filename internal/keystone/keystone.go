@@ -564,7 +564,7 @@ func (k *Keystone) PostUsers(client HTTPClient, headers http.Header, users []fiw
 		userBody := postUserBody{
 			User: userWithPassword{
 				User:     user,
-				Password: "Ch4ng3m3!",
+				Password: "Ch4ng3m3.2025!",
 			},
 		}
 		userBody.User.UserStatus = fiware.UserStatus{}
