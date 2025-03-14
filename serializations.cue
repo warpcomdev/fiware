@@ -227,11 +227,12 @@ assignments?: [...#RoleAssignment]
 }
 
 #DeviceCommand: {
-	object_id?: string
-	name?:      string
-	type?:      string
-	value?:     string
-	mqtt?:      #Json
+	object_id?:  string
+	name?:       string
+	type?:       string
+	value?:      string
+	expression?: string
+	mqtt?:       #Json
 }
 
 #Device: {

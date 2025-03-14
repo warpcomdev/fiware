@@ -876,6 +876,9 @@ func (x DeviceCommand) Serialize(s serialize.Serializer) {
 	if x.Value != "" {
 		s.KeyString("value", string(x.Value))
 	}
+	if x.Expression != "" {
+		s.KeyString("expression", string(x.Expression))
+	}
 	if len(x.MQTT) > 0 {
 		s.KeyRaw("mqtt", x.MQTT, false)
 	}

@@ -506,11 +506,12 @@ type DeviceAttribute struct {
 
 // DeviceCommand describe un comando de dispositivo
 type DeviceCommand struct {
-	ObjectId string          `json:"object_id,omitempty"`
-	Name     string          `json:"name,omitempty"`
-	Type     string          `json:"type,omitempty"`
-	Value    string          `json:"value,omitempty"`
-	MQTT     json.RawMessage `json:"mqtt,omitempty"`
+	ObjectId   string          `json:"object_id,omitempty"`
+	Name       string          `json:"name,omitempty"`
+	Type       string          `json:"type,omitempty"`
+	Value      string          `json:"value,omitempty"`
+	Expression string          `json:"expression,omitempty"`
+	MQTT       json.RawMessage `json:"mqtt,omitempty"`
 }
 
 type Rule struct {
