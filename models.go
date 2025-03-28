@@ -247,6 +247,7 @@ type Subscription struct {
 	Expires      string       `json:"expires,omitempty"`
 	Notification Notification `json:"notification"`
 	Subject      Subject      `json:"subject"`
+	Throttling   int          `json:"throttling,omitempty"`
 	SubscriptionStatus
 }
 

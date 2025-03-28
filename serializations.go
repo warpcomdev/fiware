@@ -370,6 +370,9 @@ func (x Subscription) Serialize(s serialize.Serializer) {
 	s.BeginBlock("subject")
 	x.Subject.Serialize(s)
 	s.EndBlock()
+	if x.Throttling != 0 {
+		s.KeyInt("throttling", x.Throttling)
+	}
 	x.SubscriptionStatus.Serialize(s)
 }
 

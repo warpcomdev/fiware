@@ -75,6 +75,7 @@ assignments?: [...#RoleAssignment]
 	expires?:       string
 	notification:   #Notification
 	subject:        #Subject
+	throttling?:    int
 	id?:            string @anonymous(SubscriptionStatus)
 	documentation?: string @anonymous(SubscriptionStatus)
 }
