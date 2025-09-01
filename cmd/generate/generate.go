@@ -251,7 +251,7 @@ func (g *generator) serializeCue(t reflect.Type, w io.StringWriter, anonymous, t
 			continue
 		}
 		omitempty := ""
-		if len(jsonTags) > 1 && jsonTags[1] == "omitempty" {
+		if len(jsonTags) > 1 && (jsonTags[1] == "omitempty" || jsonTags[1] == "omitzero") {
 			omitempty = "?"
 		}
 		switch {
