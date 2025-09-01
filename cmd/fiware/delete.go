@@ -116,10 +116,10 @@ func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.H
 	if err != nil {
 		return err
 	}
-	listMessage("DELETing groups with API Keys", vertical.Services,
-		func(g models.Service) string { return g.APIKey },
+	listMessage("DELETing device groups with API Keys", vertical.DeviceGroups,
+		func(g models.DeviceGroup) string { return g.APIKey },
 	)
-	return api.DeleteServices(client, header, vertical.Services)
+	return api.DeleteServices(client, header, vertical.DeviceGroups)
 }
 
 func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest, useDescription bool) error {

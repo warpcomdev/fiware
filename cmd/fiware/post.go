@@ -170,10 +170,10 @@ func postServices(ctx config.Config, client keystone.HTTPClient, header http.Hea
 	if err != nil {
 		return err
 	}
-	listMessage("POSTing groups with API Keys", vertical.Services,
-		func(g models.Service) string { return g.APIKey },
+	listMessage("POSTing device groups with API Keys", vertical.DeviceGroups,
+		func(g models.DeviceGroup) string { return g.APIKey },
 	)
-	return api.PostServices(client, header, vertical.Services)
+	return api.PostServices(client, header, vertical.DeviceGroups)
 }
 
 func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest, useDescription bool) error {

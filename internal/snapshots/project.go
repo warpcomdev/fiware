@@ -110,11 +110,11 @@ func Project(client keystone.HTTPClient, api *keystone.Keystone, selected config
 
 	// Dump iotam: groups and devices
 	if assetMap["services"] {
-		groups, err := iotamServer.Services(client, headers)
+		groups, err := iotamServer.DeviceGroups(client, headers)
 		if err != nil {
 			return result, err
 		}
-		result.Services = groups
+		result.DeviceGroups = groups
 	}
 	if assetMap["devices"] {
 		devices, err := iotamServer.Devices(client, headers)

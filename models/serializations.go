@@ -84,9 +84,9 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 		}
 		s.EndBlock()
 	}
-	if len(x.Services) > 0 {
-		s.BeginList("services")
-		for _, y := range x.Services {
+	if len(x.DeviceGroups) > 0 {
+		s.BeginList("deviceGroups")
+		for _, y := range x.DeviceGroups {
 			s.BeginBlock("")
 			y.Serialize(s)
 			s.EndBlock()
@@ -761,11 +761,11 @@ func (x UrboPanel) Serialize(s serialize.Serializer) {
 	}
 }
 
-func (x Service) MarshalJSON() ([]byte, error) {
+func (x DeviceGroup) MarshalJSON() ([]byte, error) {
 	return serialize.MarshalJSON(x)
 }
 
-func (x Service) Serialize(s serialize.Serializer) {
+func (x DeviceGroup) Serialize(s serialize.Serializer) {
 	s.KeyString("resource", string(x.Resource))
 	s.KeyString("apikey", string(x.APIKey))
 	if x.Token != "" {

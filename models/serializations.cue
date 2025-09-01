@@ -10,7 +10,7 @@ panels?:      #PanelManifest
 subscriptions?: [string]: #Subscription
 rules?: [string]:         #Rule
 verticals?: [string]:     #Vertical
-services?: [...#Service]
+deviceGroups?: [...#DeviceGroup]
 devices?: [...#Device]
 registrations?: [...#Registration]
 sql?:  #Json
@@ -190,7 +190,7 @@ assignments?: [...#RoleAssignment]
 	}
 }
 
-#Service: {
+#DeviceGroup: {
 	resource:       string
 	apikey:         string
 	token?:         string

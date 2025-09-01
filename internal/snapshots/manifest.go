@@ -49,8 +49,8 @@ func WriteManifest(manifest models.Manifest, panels map[string]json.RawMessage, 
 		return result, err
 	}
 
-	if err := conditionalSave("groups", len(manifest.Services) > 0, models.Manifest{
-		Services: manifest.Services,
+	if err := conditionalSave("groups", len(manifest.DeviceGroups) > 0, models.Manifest{
+		DeviceGroups: manifest.DeviceGroups,
 	}); err != nil {
 		return result, err
 	}

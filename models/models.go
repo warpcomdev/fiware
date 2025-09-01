@@ -46,7 +46,7 @@ type Manifest struct {
 	Subscriptions  map[string]Subscription `json:"subscriptions,omitempty,omitzero"`
 	Rules          map[string]Rule         `json:"rules,omitempty,omitzero"`
 	Verticals      map[string]Vertical     `json:"verticals,omitempty,omitzero"`
-	Services       []Service               `json:"services,omitempty,omitzero"`
+	DeviceGroups   []DeviceGroup           `json:"deviceGroups,omitempty,omitzero"`
 	Devices        []Device                `json:"devices,omitempty,omitzero"`
 	Registrations  []Registration          `json:"registrations,omitempty,omitzero"`
 	// Solo por compatibilidad con urbo-deployer, no se usan
@@ -85,9 +85,9 @@ func (m *Manifest) ClearStatus() {
 		v.RuleStatus = RuleStatus{}
 		m.Rules[k] = v
 	}
-	for k, v := range m.Services {
+	for k, v := range m.DeviceGroups {
 		v.ServiceStatus = ServiceStatus{}
-		m.Services[k] = v
+		m.DeviceGroups[k] = v
 	}
 	for k, v := range m.Devices {
 		v.DeviceStatus = DeviceStatus{}
@@ -436,8 +436,8 @@ type TableIndex struct {
 	Geometry bool     `json:"geometry,omitempty,omitzero"`
 }
 
-// Service describe la provisión de un grupo de dispositivos
-type Service struct {
+// DeviceGroup describe la provisión de un grupo de dispositivos
+type DeviceGroup struct {
 	Resource           string            `json:"resource"`
 	APIKey             string            `json:"apikey"`
 	Token              string            `json:"token,omitempty,omitzero"` // fully legacy

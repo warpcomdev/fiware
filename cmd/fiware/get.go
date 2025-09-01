@@ -337,11 +337,11 @@ func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, v
 	if err != nil {
 		return err
 	}
-	groups, err := api.Services(c, header)
+	groups, err := api.DeviceGroups(c, header)
 	if err != nil {
 		return err
 	}
-	vertical.Services = groups
+	vertical.DeviceGroups = groups
 	return nil
 }
 
