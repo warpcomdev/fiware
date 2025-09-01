@@ -62,7 +62,7 @@ func main() {
 		log.Print("Failed to locate user config dir, defaulting to /tmp")
 		dirname = "/tmp"
 	}
-	defaultStore := path.Join(dirname, "models.json")
+	defaultStore := path.Join(dirname, "fiware.json")
 	currentStore := &config.Store{}
 
 	// Backoff policy
@@ -84,7 +84,7 @@ func main() {
 				Aliases:     []string{"c"},
 				Usage:       "Path to the context configuration file",
 				Value:       defaultStore,
-				DefaultText: "${XDG_CONFIG_DIR}/models.json",
+				DefaultText: "${XDG_CONFIG_DIR}/fiware.json",
 				EnvVars:     []string{"FIWARE_CONTEXT"},
 			},
 		},
