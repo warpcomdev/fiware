@@ -77,10 +77,10 @@ func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, n
 		}
 	}
 	for idx, sub := range pages.Slice {
-		simplify(sub.Notification.HTTP.IsEmpty(), &sub.Notification.HTTP.URL)
-		simplify(sub.Notification.HTTPCustom.IsEmpty(), &sub.Notification.HTTPCustom.URL)
-		simplify(sub.Notification.MQTT.IsEmpty(), &sub.Notification.MQTT.URL)
-		simplify(sub.Notification.MQTTCustom.IsEmpty(), &sub.Notification.MQTTCustom.URL)
+		simplify(sub.Notification.HTTP.IsZero(), &sub.Notification.HTTP.URL)
+		simplify(sub.Notification.HTTPCustom.IsZero(), &sub.Notification.HTTPCustom.URL)
+		simplify(sub.Notification.MQTT.IsZero(), &sub.Notification.MQTT.URL)
+		simplify(sub.Notification.MQTTCustom.IsZero(), &sub.Notification.MQTTCustom.URL)
 		pages.Slice[idx] = sub
 	}
 	return pages.Slice, nil

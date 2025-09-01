@@ -87,7 +87,7 @@ func Decode(outfile, verticalName, subserviceName string, paths []string, format
 				instances = localInstances
 			}
 		default:
-			return fmt.Errorf("Unrecognized import format for %s", path)
+			return fmt.Errorf("unrecognized import format for %s", path)
 		}
 	}
 	indent := "    "

@@ -193,9 +193,9 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		metadatas := make(map[string]json.RawMessage)
 		for index, attr := range entity.Attrs {
 			h := headers[index]
-			if attr.Value != nil && len(attr.Value) > 0 {
+			if len(attr.Value) > 0 {
 				values[h.Name] = attr.Value
-				if attr.Metadatas != nil && len(attr.Metadatas) > 0 {
+				if len(attr.Metadatas) > 0 {
 					metadatas[h.Name] = attr.Metadatas
 				}
 			}

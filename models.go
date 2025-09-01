@@ -4,13 +4,23 @@
 // de tipos corresponden a sub-atributos dentro de la vertical.
 package fiware
 
+// Some bools in the IoTA APIs have different behaviour if they are
+// undefined versus false. For instance, "timestamp === false" might
+// not be the same as "timestamp === undefined", there is a global config
+// parameter for that.
+//
+// For this reason, all those bools that are marked as `omitempty,omitzero`
+// cannot be just omitted when set to 'false'. They must only be omitted
+// if they are actually not defined.
+//
+// I achieve this using `*bool` instead of `bool` as the type for
+// these settings, and using `omitempty` but not `omitzero`.
+
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/warpcomdev/fiware/internal/serialize"
 )
 
 // Tipos de datos que se usan para relacionarse con la vertical.
@@ -22,38 +32,38 @@ import (
 
 // Manifest representa un manifiesto de vertical
 type Manifest struct {
-	Name       string `json:"name,omitempty"`       // `tourism`, `wifi`, `watermeter`, etc
-	Subservice string `json:"subservice,omitempty"` // `turismo`, `wifi`, `contadores`, etc.
+	Name       string `json:"name,omitempty,omitzero"`       // `tourism`, `wifi`, `watermeter`, etc
+	Subservice string `json:"subservice,omitempty,omitzero"` // `turismo`, `wifi`, `contadores`, etc.
 	// Tipos de entidad definidos en la vertical.
 	// El ID y los valores de los atributos son opcionales.
-	EntityTypes []EntityType `json:"entityTypes,omitempty"`
+	EntityTypes []EntityType `json:"entityTypes,omitempty,omitzero"`
 	// Entidades específicas de alguno de los tipos anteriores
-	Entities []Entity `json:"entities,omitempty"`
+	Entities []Entity `json:"entities,omitempty,omitzero"`
 	// Contenidos compatibles con urbo-deployer
-	Environment    Environment             `json:"environment,omitempty"`
-	Deployment     DeploymentManifest      `json:"deployment,omitempty"`
-	ManifestPanels PanelManifest           `json:"panels,omitempty"`
-	Subscriptions  map[string]Subscription `json:"subscriptions,omitempty"`
-	Rules          map[string]Rule         `json:"rules,omitempty"`
-	Verticals      map[string]Vertical     `json:"verticals,omitempty"`
-	Services       []Service               `json:"services,omitempty"`
-	Devices        []Device                `json:"devices,omitempty"`
-	Registrations  []Registration          `json:"registrations,omitempty"`
+	Environment    Environment             `json:"environment,omitempty,omitzero"`
+	Deployment     DeploymentManifest      `json:"deployment,omitempty,omitzero"`
+	ManifestPanels PanelManifest           `json:"panels,omitempty,omitzero"`
+	Subscriptions  map[string]Subscription `json:"subscriptions,omitempty,omitzero"`
+	Rules          map[string]Rule         `json:"rules,omitempty,omitzero"`
+	Verticals      map[string]Vertical     `json:"verticals,omitempty,omitzero"`
+	Services       []Service               `json:"services,omitempty,omitzero"`
+	Devices        []Device                `json:"devices,omitempty,omitzero"`
+	Registrations  []Registration          `json:"registrations,omitempty,omitzero"`
 	// Solo por compatibilidad con urbo-deployer, no se usan
-	SQL  json.RawMessage `json:"sql,omitempty"`
-	Cdas json.RawMessage `json:"cdas,omitempty"`
-	Etls json.RawMessage `json:"etls,omitempty"`
+	SQL  json.RawMessage `json:"sql,omitempty,omitzero"`
+	Cdas json.RawMessage `json:"cdas,omitempty,omitzero"`
+	Etls json.RawMessage `json:"etls,omitempty,omitzero"`
 	// Otros datos de estado no asociados al manifest
-	ServiceMappings []ServiceMapping     `json:"serviceMappings,omitempty"`
-	Projects        []Project            `json:"projects,omitempty"`
-	Domains         []Domain             `json:"domains,omitempty"`
-	Panels          map[string]UrboPanel `json:"urboPanels,omitempty"`
-	Tables          []Table              `json:"tables,omitempty"`
-	Views           []View               `json:"views,omitempty"`
-	Users           []User               `json:"users,omitempty"`
-	Groups          []Group              `json:"groups,omitempty"`
-	Roles           []Role               `json:"roles,omitempty"`
-	Assignments     []RoleAssignment     `json:"assignments,omitempty"`
+	ServiceMappings []ServiceMapping     `json:"serviceMappings,omitempty,omitzero"`
+	Projects        []Project            `json:"projects,omitempty,omitzero"`
+	Domains         []Domain             `json:"domains,omitempty,omitzero"`
+	Panels          map[string]UrboPanel `json:"urboPanels,omitempty,omitzero"`
+	Tables          []Table              `json:"tables,omitempty,omitzero"`
+	Views           []View               `json:"views,omitempty,omitzero"`
+	Users           []User               `json:"users,omitempty,omitzero"`
+	Groups          []Group              `json:"groups,omitempty,omitzero"`
+	Roles           []Role               `json:"roles,omitempty,omitzero"`
+	Assignments     []RoleAssignment     `json:"assignments,omitempty,omitzero"`
 }
 
 // SummaryOf makes a summary of every item in the list
@@ -105,29 +115,29 @@ type Environment struct {
 }
 
 // Environment is empty?
-func (e Environment) IsEmpty() bool {
+func (e Environment) IsZero() bool {
 	return len(e.NotificationEndpoints) <= 0
 }
 
 // UrboPanel representa un panel de Urbo
 type UrboPanel struct {
-	Name          string                 `json:"name"`
-	Description   string                 `json:"description,omitempty"`
-	Slug          string                 `json:"slug"`
-	LowercaseSlug string                 `json:"lowercaseSlug,omitempty"`
-	WidgetCount   int                    `json:"widgetCount,omitempty"`
-	IsShadow      serialize.OptionalBool `json:"isShadow,omitempty"`
-	Section       string                 `json:"section,omitempty"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty,omitzero"`
+	Slug          string `json:"slug"`
+	LowercaseSlug string `json:"lowercaseSlug,omitempty,omitzero"`
+	WidgetCount   int    `json:"widgetCount,omitempty,omitzero"`
+	IsShadow      *bool  `json:"isShadow,omitempty"`
+	Section       string `json:"section,omitempty,omitzero"`
 }
 
 // Vertical representa una vertical de Urbo
 type Vertical struct {
-	Panels       []string        `json:"panels,omitempty" compact:"true"`
-	ShadowPanels []string        `json:"shadowPanels,omitempty" compact:"true"`
+	Panels       []string        `json:"panels,omitempty,omitzero" compact:"true"`
+	ShadowPanels []string        `json:"shadowPanels,omitempty,omitzero" compact:"true"`
 	Slug         string          `json:"slug"`
 	Name         string          `json:"name"`
-	Icon         string          `json:"icon,omitempty"`
-	I18n         json.RawMessage `json:"i18n,omitempty"`
+	Icon         string          `json:"icon,omitempty,omitzero"`
+	I18n         json.RawMessage `json:"i18n,omitempty,omitzero"`
 	UrboVerticalStatus
 }
 
@@ -139,13 +149,13 @@ func (v Vertical) AllPanels() []string {
 
 // UrboVerticalStatus contains detailed vertical status
 type UrboVerticalStatus struct {
-	PanelsObjects       []UrboPanel `json:"panelsObjects,omitempty"`
-	ShadowPanelsObjects []UrboPanel `json:"shadowPanelsObjects,omitempty"`
+	PanelsObjects       []UrboPanel `json:"panelsObjects,omitempty,omitzero"`
+	ShadowPanelsObjects []UrboPanel `json:"shadowPanelsObjects,omitempty,omitzero"`
 }
 
 // EntityType representa un tipo de entidad
 type EntityType struct {
-	ID   string `json:"entityID,omitempty"`
+	ID   string `json:"entityID,omitempty,omitzero"`
 	Type string `json:"entityType"`
 	// Usamos una lista en vez de un map para poder
 	// establecer un orden específico, por si nos interesa
@@ -168,19 +178,19 @@ const (
 type Attribute struct {
 	Name        string          `json:"name"`
 	Type        string          `json:"type"`
-	Description []string        `json:"description,omitempty"`
-	Value       json.RawMessage `json:"value,omitempty" compact:"true"`
-	Metadatas   json.RawMessage `json:"metadatas,omitempty" compact:"true"`
+	Description []string        `json:"description,omitempty,omitzero"`
+	Value       json.RawMessage `json:"value,omitempty,omitzero" compact:"true"`
+	Metadatas   json.RawMessage `json:"metadatas,omitempty,omitzero" compact:"true"`
 	// Si la entidad es Singleton, este atributo se puede marcar
 	// como parte de la identidad del singleton, y se añadirá a la
 	// primary key de la tabla.
-	SingletonKey bool `json:"singletonKey,omitempty"`
+	SingletonKey bool `json:"singletonKey,omitempty,omitzero"`
 	// Indica si este atributo forma parte de la simulación
-	Simulated bool `json:"simulated,omitempty"`
+	Simulated bool `json:"simulated,omitempty,omitzero"`
 	// Indica si este atributo debe conservarse de alguna forma en longterm
-	Longterm LongtermKind `json:"longterm,omitempty"`
+	Longterm LongtermKind `json:"longterm,omitempty,omitzero"`
 	// Si longterm == LongtermEnum, estas serían las opciones
-	LongtermOptions []string `json:"longtermOptions,omitempty" sort:"true"`
+	LongtermOptions []string `json:"longtermOptions,omitempty,omitzero" sort:"true"`
 }
 
 // Entity representa una instancia de EntityType
@@ -193,46 +203,46 @@ type Entity struct {
 	// Los Metadatas se sacan aparte porque generalmente
 	// el json generado es más tratable de esta forma
 	Attrs     map[string]json.RawMessage `json:"attrs" compact:"true"`
-	MetaDatas map[string]json.RawMessage `json:"metadatas,omitempty" compact:"true"`
+	MetaDatas map[string]json.RawMessage `json:"metadatas,omitempty,omitzero" compact:"true"`
 }
 
 // ServiceMapping es cada uno de los serviceMappings de cygnus
 type ServiceMapping struct {
-	OriginalService     string               `json:"originalService,omitempty"`
-	NewService          string               `json:"newService,omitempty"`
+	OriginalService     string               `json:"originalService,omitempty,omitzero"`
+	NewService          string               `json:"newService,omitempty,omitzero"`
 	ServicePathMappings []ServicePathMapping `json:"servicePathMappings"`
 }
 
 // ServicePathMapping es cada uno de los servicePathMappings de un serviceMapping
 type ServicePathMapping struct {
-	OriginalServicePath string          `json:"originalServicePath,omitempty"`
-	NewServicePath      string          `json:"newServicePath,omitempty"`
+	OriginalServicePath string          `json:"originalServicePath,omitempty,omitzero"`
+	NewServicePath      string          `json:"newServicePath,omitempty,omitzero"`
 	EntityMappings      []EntityMapping `json:"entityMappings"`
 }
 
 // EntityMaping es cada uno de los EntityMappings de un servicePathMapping
 type EntityMapping struct {
-	OriginalEntityId   string             `json:"originalEntityId,omitempty"`
-	NewEntityId        string             `json:"newEntityId,omitempty"`
-	OriginalEntityType string             `json:"originalEntityType,omitempty"`
-	NewEntityType      string             `json:"newEntityType,omitempty"`
+	OriginalEntityId   string             `json:"originalEntityId,omitempty,omitzero"`
+	NewEntityId        string             `json:"newEntityId,omitempty,omitzero"`
+	OriginalEntityType string             `json:"originalEntityType,omitempty,omitzero"`
+	NewEntityType      string             `json:"newEntityType,omitempty,omitzero"`
 	AttributeMappings  []AttributeMapping `json:"attributeMappings"`
 }
 
 // AttributeMapping es cada uno de los AttributeMappings de un EntityMapping
 type AttributeMapping struct {
-	OriginalAttributeName string `json:"originalAttributeName,omitempty"`
-	OriginalAttributeType string `json:"originalAttributeType,omitempty"`
-	NewAttributeName      string `json:"newAttributeName,omitempty"`
-	NewAttributeType      string `json:"newAttributeType,omitempty"`
+	OriginalAttributeName string `json:"originalAttributeName,omitempty,omitzero"`
+	OriginalAttributeType string `json:"originalAttributeType,omitempty,omitzero"`
+	NewAttributeName      string `json:"newAttributeName,omitempty,omitzero"`
+	NewAttributeType      string `json:"newAttributeType,omitempty,omitzero"`
 }
 
 // Registration representa un registro
 type Registration struct {
 	ID           string          `json:"id"`
-	Description  string          `json:"description,omitempty"`
-	DataProvided json.RawMessage `json:"dataProvided,omitempty"`
-	Provider     json.RawMessage `json:"provider,omitempty"`
+	Description  string          `json:"description,omitempty,omitzero"`
+	DataProvided json.RawMessage `json:"dataProvided,omitempty,omitzero"`
+	Provider     json.RawMessage `json:"provider,omitempty,omitzero"`
 	RegistrationStatus
 }
 
@@ -243,11 +253,11 @@ type RegistrationStatus struct {
 // Subscription representa una suscripcion
 type Subscription struct {
 	Description  string       `json:"description"`
-	Status       string       `json:"status,omitempty"`
-	Expires      string       `json:"expires,omitempty"`
+	Status       string       `json:"status,omitempty,omitzero"`
+	Expires      string       `json:"expires,omitempty,omitzero"`
 	Notification Notification `json:"notification"`
 	Subject      Subject      `json:"subject"`
-	Throttling   int          `json:"throttling,omitempty"`
+	Throttling   int          `json:"throttling,omitempty,omitzero"`
 	SubscriptionStatus
 }
 
@@ -280,58 +290,58 @@ func (subs Subscription) UpdateEndpoint(notificationEndpoints map[string]string)
 
 // SubscriptionStatus agrupa los datos de estado de la suscripción
 type SubscriptionStatus struct {
-	ID            string `json:"id,omitempty"`
-	Documentation string `json:"documentation,omitempty"`
+	ID            string `json:"id,omitempty,omitzero"`
+	Documentation string `json:"documentation,omitempty,omitzero"`
 }
 
 // Notification es la configuración de notificación de la suscripción
 type Notification struct {
-	Attrs            []string               `json:"attrs,omitempty" sort:"true" compact:"true"`
-	ExceptAttrs      []string               `json:"exceptAttrs,omitempty" sort:"true" compact:"true"`
-	AttrsFormat      string                 `json:"attrsFormat,omitempty"`
-	HTTP             NotificationHTTP       `json:"http,omitempty"`
-	HTTPCustom       NotificationCustom     `json:"httpCustom,omitempty"`
-	MQTT             NotificationMQTT       `json:"mqtt,omitempty"`
-	MQTTCustom       NotificationMQTTCustom `json:"mqttCustom,omitempty"`
-	OnlyChangedAttrs serialize.OptionalBool `json:"onlyChangedAttrs,omitempty"`
-	Covered          serialize.OptionalBool `json:"covered,omitempty"`
+	Attrs            []string               `json:"attrs,omitempty,omitzero" sort:"true" compact:"true"`
+	ExceptAttrs      []string               `json:"exceptAttrs,omitempty,omitzero" sort:"true" compact:"true"`
+	AttrsFormat      string                 `json:"attrsFormat,omitempty,omitzero"`
+	HTTP             NotificationHTTP       `json:"http,omitempty,omitzero"`
+	HTTPCustom       NotificationCustom     `json:"httpCustom,omitempty,omitzero"`
+	MQTT             NotificationMQTT       `json:"mqtt,omitempty,omitzero"`
+	MQTTCustom       NotificationMQTTCustom `json:"mqttCustom,omitempty,omitzero"`
+	OnlyChangedAttrs *bool                  `json:"onlyChangedAttrs,omitempty"`
+	Covered          *bool                  `json:"covered,omitempty"`
 	NotificationStatus
 }
 
 // NotificationStatus agrupa los datos de estado de la suscripción
 type NotificationStatus struct {
-	LastFailure       string `json:"lastFailure,omitempty"`
-	LastFailureReason string `json:"lastFailureReason,omitempty"`
-	LastNotification  string `json:"lastNotification,omitempty"`
-	LastSuccess       string `json:"lastSuccess,omitempty"`
-	LastSuccessCode   int    `json:"lastSuccessCode,omitempty"`
-	FailsCounter      int    `json:"failsCounter,omitempty"`
-	TimesSent         int    `json:"timesSent,omitempty"`
+	LastFailure       string `json:"lastFailure,omitempty,omitzero"`
+	LastFailureReason string `json:"lastFailureReason,omitempty,omitzero"`
+	LastNotification  string `json:"lastNotification,omitempty,omitzero"`
+	LastSuccess       string `json:"lastSuccess,omitempty,omitzero"`
+	LastSuccessCode   int    `json:"lastSuccessCode,omitempty,omitzero"`
+	FailsCounter      int    `json:"failsCounter,omitempty,omitzero"`
+	TimesSent         int    `json:"timesSent,omitempty,omitzero"`
 }
 
 // NotificationHTTP son los datos de una notificacion
 type NotificationHTTP struct {
 	URL     string `json:"url"`
-	Timeout int    `json:"timeout,omitempty"`
+	Timeout int    `json:"timeout,omitempty,omitzero"`
 }
 
-func (n NotificationHTTP) IsEmpty() bool {
+func (n NotificationHTTP) IsZero() bool {
 	return n.URL == ""
 }
 
 // NotificationHTTP son los datos de una notificacion
 type NotificationCustom struct {
 	URL     string            `json:"url"`
-	Timeout int               `json:"timeout,omitempty"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Qs      map[string]string `json:"qs,omitempty"`
-	Method  string            `json:"method,omitempty"`
-	Payload json.RawMessage   `json:"payload,omitempty" compact:"true"`
-	Json    json.RawMessage   `json:"json,omitempty" compact:"true"`
-	NGSI    json.RawMessage   `json:"ngsi,omitempty" compact:"true"`
+	Timeout int               `json:"timeout,omitempty,omitzero"`
+	Headers map[string]string `json:"headers,omitempty,omitzero"`
+	Qs      map[string]string `json:"qs,omitempty,omitzero"`
+	Method  string            `json:"method,omitempty,omitzero"`
+	Payload json.RawMessage   `json:"payload,omitempty,omitzero" compact:"true"`
+	Json    json.RawMessage   `json:"json,omitempty,omitzero" compact:"true"`
+	NGSI    json.RawMessage   `json:"ngsi,omitempty,omitzero" compact:"true"`
 }
 
-func (n NotificationCustom) IsEmpty() bool {
+func (n NotificationCustom) IsZero() bool {
 	return n.URL == ""
 }
 
@@ -339,12 +349,12 @@ func (n NotificationCustom) IsEmpty() bool {
 type NotificationMQTT struct {
 	URL    string `json:"url"`
 	Topic  string `json:"topic"`
-	QoS    string `json:"qos,omitempty"`
-	User   string `json:"user,omitempty"`
-	Passwd string `json:"passwd,omitempty"`
+	QoS    string `json:"qos,omitempty,omitzero"`
+	User   string `json:"user,omitempty,omitzero"`
+	Passwd string `json:"passwd,omitempty,omitzero"`
 }
 
-func (n NotificationMQTT) IsEmpty() bool {
+func (n NotificationMQTT) IsZero() bool {
 	return n.URL == "" || n.Topic == ""
 }
 
@@ -352,15 +362,15 @@ func (n NotificationMQTT) IsEmpty() bool {
 type NotificationMQTTCustom struct {
 	URL     string          `json:"url"`
 	Topic   string          `json:"topic"`
-	QoS     int             `json:"qos,omitempty"`
-	User    string          `json:"user,omitempty"`
-	Passwd  string          `json:"passwd,omitempty"`
-	Payload json.RawMessage `json:"payload,omitempty" compact:"true"`
-	Json    json.RawMessage `json:"json,omitempty" compact:"true"`
-	NGSI    json.RawMessage `json:"ngsi,omitempty" compact:"true"`
+	QoS     int             `json:"qos,omitempty,omitzero"`
+	User    string          `json:"user,omitempty,omitzero"`
+	Passwd  string          `json:"passwd,omitempty,omitzero"`
+	Payload json.RawMessage `json:"payload,omitempty,omitzero" compact:"true"`
+	Json    json.RawMessage `json:"json,omitempty,omitzero" compact:"true"`
+	NGSI    json.RawMessage `json:"ngsi,omitempty,omitzero" compact:"true"`
 }
 
-func (n NotificationMQTTCustom) IsEmpty() bool {
+func (n NotificationMQTTCustom) IsZero() bool {
 	return n.URL == "" || n.Topic == ""
 }
 
@@ -372,25 +382,25 @@ type Subject struct {
 
 // SubjectCondition es la condicion del sujeto de la suscripcion
 type SubjectCondition struct {
-	Attrs                  []string               `json:"attrs" sort:"true"`
-	Expression             SubjectExpression      `json:"expression,omitempty"`
-	AlterationTypes        []string               `json:"alterationTypes,omitempty"`
-	NotifyOnMetadataChange serialize.OptionalBool `json:"notifyOnMetadataChange,omitempty"`
+	Attrs                  []string          `json:"attrs" sort:"true"`
+	Expression             SubjectExpression `json:"expression,omitempty,omitzero"`
+	AlterationTypes        []string          `json:"alterationTypes,omitempty,omitzero"`
+	NotifyOnMetadataChange *bool             `json:"notifyOnMetadataChange,omitempty"`
 }
 
 // SubjectExpression es la expresion en la condicion
 type SubjectExpression struct {
-	Q string `json:"q,omitempty"`
+	Q string `json:"q,omitempty,omitzero"`
 }
 
-func (s SubjectExpression) IsEmpty() bool {
+func (s SubjectExpression) IsZero() bool {
 	return s.Q == ""
 }
 
 // SubjectEntity es la entidad sujeto de la suscripcion
 type SubjectEntity struct {
-	ID        string `json:"id,omitempty"`
-	IdPattern string `json:"idPattern,omitempty"`
+	ID        string `json:"id,omitempty,omitzero"`
+	IdPattern string `json:"idPattern,omitempty,omitzero"`
 	Type      string `json:"type"`
 }
 
@@ -400,13 +410,13 @@ type Table struct {
 	Columns    []TableColumn `json:"columns"`
 	PrimaryKey []string      `json:"primaryKey"`
 	Indexes    []TableIndex  `json:"indexes"`
-	LastData   bool          `json:"lastdata"`            // True si queremos crear una vista lastdata adicional
-	Singleton  []string      `json:"singleton,omitempty"` // Lista de campos únicos, si la entidad es un singleton.
+	LastData   bool          `json:"lastdata"`                     // True si queremos crear una vista lastdata adicional
+	Singleton  []string      `json:"singleton,omitempty,omitzero"` // Lista de campos únicos, si la entidad es un singleton.
 }
 
 // MaterializedView define los parámetros de las vistas materializadas
 type View struct {
-	Materialized bool         `json:"materialized,omitempty"`
+	Materialized bool         `json:"materialized,omitempty,omitzero"`
 	Name         string       `json:"name"`
 	From         string       `json:"from"`
 	Group        []string     `json:"group"`
@@ -423,106 +433,106 @@ type ViewColumn struct {
 type TableColumn struct {
 	Name    string `json:"name"`
 	Type    string `json:"type"`
-	NotNull bool   `json:"notNull,omitempty"`
-	Default string `json:"default,omitempty"`
+	NotNull bool   `json:"notNull,omitempty,omitzero"`
+	Default string `json:"default,omitempty,omitzero"`
 }
 
 // TableIndex describe un indice
 type TableIndex struct {
 	Name     string   `json:"name"`
 	Columns  []string `json:"columns"`
-	Geometry bool     `json:"geometry,omitempty"`
+	Geometry bool     `json:"geometry,omitempty,omitzero"`
 }
 
 // Service describe la provisión de un grupo de dispositivos
 type Service struct {
-	Resource           string                 `json:"resource"`
-	APIKey             string                 `json:"apikey"`
-	Token              string                 `json:"token,omitempty"` // fully legacy
-	EntityType         string                 `json:"entity_type"`
-	Description        string                 `json:"description,omitempty"`
-	Protocol           string                 `json:"protocol"`
-	Transport          string                 `json:"transport,omitempty"`
-	Timestamp          serialize.OptionalBool `json:"timestamp,omitempty"`
-	ExplicitAttrs      json.RawMessage        `json:"explicitAttrs,omitempty"`
-	InternalAttributes []DeviceAttribute      `json:"internal_attributes,omitempty"`
-	Attributes         []DeviceAttribute      `json:"attributes"`
-	Lazy               []DeviceAttribute      `json:"lazy,omitempty"`
-	StaticAttributes   []DeviceAttribute      `json:"static_attributes,omitempty"`
-	Commands           []DeviceCommand        `json:"commands,omitempty"`
-	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
-	EntityNameExp      string                 `json:"entityNameExp,omitempty"`
-	PayloadType        string                 `json:"PayloadType,omitempty"`
-	AutoProvision      bool                   `json:"autoprovision,omitempty"`
+	Resource           string            `json:"resource"`
+	APIKey             string            `json:"apikey"`
+	Token              string            `json:"token,omitempty,omitzero"` // fully legacy
+	EntityType         string            `json:"entity_type"`
+	Description        string            `json:"description,omitempty,omitzero"`
+	Protocol           string            `json:"protocol"`
+	Transport          string            `json:"transport,omitempty,omitzero"`
+	Timestamp          *bool             `json:"timestamp,omitempty"`
+	ExplicitAttrs      json.RawMessage   `json:"explicitAttrs,omitempty,omitzero"`
+	InternalAttributes []DeviceAttribute `json:"internal_attributes,omitempty,omitzero"`
+	Attributes         []DeviceAttribute `json:"attributes"`
+	Lazy               []DeviceAttribute `json:"lazy,omitempty,omitzero"`
+	StaticAttributes   []DeviceAttribute `json:"static_attributes,omitempty,omitzero"`
+	Commands           []DeviceCommand   `json:"commands,omitempty,omitzero"`
+	ExpressionLanguage string            `json:"expressionLanguage,omitempty,omitzero"`
+	EntityNameExp      string            `json:"entityNameExp,omitempty,omitzero"`
+	PayloadType        string            `json:"PayloadType,omitempty,omitzero"`
+	AutoProvision      bool              `json:"autoprovision,omitempty,omitzero"`
 	ServiceStatus
 }
 
 // ServiceStatus agrupa atributos de estado que no se usan al crear un Service
 type ServiceStatus struct {
-	ID          string `json:"_id,omitempty"`
-	V           int    `json:"__v,omitempty"`
-	IOTAgent    string `json:"iotagent,omitempty"`
-	ServicePath string `json:"service_path,omitempty"`
-	Service     string `json:"service,omitempty"`
-	CBHost      string `json:"cbHost,omitempty"`
+	ID          string `json:"_id,omitempty,omitzero"`
+	V           int    `json:"__v,omitempty,omitzero"`
+	IOTAgent    string `json:"iotagent,omitempty,omitzero"`
+	ServicePath string `json:"service_path,omitempty,omitzero"`
+	Service     string `json:"service,omitempty,omitzero"`
+	CBHost      string `json:"cbHost,omitempty,omitzero"`
 }
 
 // Device representa un dispositivo
 type Device struct {
-	DeviceId           string                 `json:"device_id"`
-	APIKey             string                 `json:"apikey,omitempty"`
-	EntityName         string                 `json:"entity_name,omitempty"`
-	EntityType         string                 `json:"entity_type"`
-	Polling            serialize.OptionalBool `json:"polling,omitempty"`
-	Transport          string                 `json:"transport"`
-	Timestamp          serialize.OptionalBool `json:"timestamp,omitempty"`
-	Endpoint           string                 `json:"endpoint,omitempty"`
-	Attributes         []DeviceAttribute      `json:"attributes,omitempty"`
-	Lazy               []DeviceAttribute      `json:"lazy,omitempty"`
-	Commands           []DeviceCommand        `json:"commands,omitempty"`
-	StaticAttributes   []DeviceAttribute      `json:"static_attributes,omitempty"`
-	Protocol           string                 `json:"protocol"`
-	ExpressionLanguage string                 `json:"expressionLanguage,omitempty"`
-	ExplicitAttrs      json.RawMessage        `json:"explicitAttrs,omitempty"`
+	DeviceId           string            `json:"device_id"`
+	APIKey             string            `json:"apikey,omitempty,omitzero"`
+	EntityName         string            `json:"entity_name,omitempty,omitzero"`
+	EntityType         string            `json:"entity_type"`
+	Polling            *bool             `json:"polling,omitempty"`
+	Transport          string            `json:"transport"`
+	Timestamp          *bool             `json:"timestamp,omitempty"`
+	Endpoint           string            `json:"endpoint,omitempty,omitzero"`
+	Attributes         []DeviceAttribute `json:"attributes,omitempty,omitzero"`
+	Lazy               []DeviceAttribute `json:"lazy,omitempty,omitzero"`
+	Commands           []DeviceCommand   `json:"commands,omitempty,omitzero"`
+	StaticAttributes   []DeviceAttribute `json:"static_attributes,omitempty,omitzero"`
+	Protocol           string            `json:"protocol"`
+	ExpressionLanguage string            `json:"expressionLanguage,omitempty,omitzero"`
+	ExplicitAttrs      json.RawMessage   `json:"explicitAttrs,omitempty,omitzero"`
 	DeviceStatus
 }
 
 // GroupStatus agrupa atributos de estado que no se usan al crear un Device
 type DeviceStatus struct {
-	Service     string `json:"service,omitempty"`
-	ServicePath string `json:"service_path,omitempty"`
+	Service     string `json:"service,omitempty,omitzero"`
+	ServicePath string `json:"service_path,omitempty,omitzero"`
 }
 
 // DeviceAttribute describe un atributo de dispositivo
 type DeviceAttribute struct {
-	ObjectId   string                 `json:"object_id"`
-	Name       string                 `json:"name"`
-	Type       string                 `json:"type,omitempty"`
-	Value      json.RawMessage        `json:"value,omitempty"` // para los staticAttribs
-	Expression string                 `json:"expression,omitempty"`
-	SkipValue  serialize.OptionalBool `json:"skipValue,omitempty"`
-	EntityName string                 `json:"entity_name,omitempty"`
-	EntityType string                 `json:"entity_type,omitempty"`
+	ObjectId   string          `json:"object_id"`
+	Name       string          `json:"name"`
+	Type       string          `json:"type,omitempty,omitzero"`
+	Value      json.RawMessage `json:"value,omitempty,omitzero"` // para los staticAttribs
+	Expression string          `json:"expression,omitempty,omitzero"`
+	SkipValue  *bool           `json:"skipValue,omitempty"`
+	EntityName string          `json:"entity_name,omitempty,omitzero"`
+	EntityType string          `json:"entity_type,omitempty,omitzero"`
 }
 
 // DeviceCommand describe un comando de dispositivo
 type DeviceCommand struct {
-	ObjectId   string          `json:"object_id,omitempty"`
-	Name       string          `json:"name,omitempty"`
-	Type       string          `json:"type,omitempty"`
-	Value      string          `json:"value,omitempty"`
-	Expression string          `json:"expression,omitempty"`
-	MQTT       json.RawMessage `json:"mqtt,omitempty"`
+	ObjectId   string          `json:"object_id,omitempty,omitzero"`
+	Name       string          `json:"name,omitempty,omitzero"`
+	Type       string          `json:"type,omitempty,omitzero"`
+	Value      string          `json:"value,omitempty,omitzero"`
+	Expression string          `json:"expression,omitempty,omitzero"`
+	MQTT       json.RawMessage `json:"mqtt,omitempty,omitzero"`
 }
 
 type Rule struct {
 	Name        string          `json:"name"`
-	Description string          `json:"description,omitempty"`
-	Misc        string          `json:"misc,omitempty"`
-	Text        string          `json:"text,omitempty"`
-	VR          string          `json:"VR,omitempty"`
-	Action      json.RawMessage `json:"action,omitempty"`   // TODO: estructurar de alguna forma?
-	NoSignal    json.RawMessage `json:"nosignal,omitempty"` // TODO: estructurar de alguna forma?
+	Description string          `json:"description,omitempty,omitzero"`
+	Misc        string          `json:"misc,omitempty,omitzero"`
+	Text        string          `json:"text,omitempty,omitzero"`
+	VR          string          `json:"VR,omitempty,omitzero"`
+	Action      json.RawMessage `json:"action,omitempty,omitzero"`   // TODO: estructurar de alguna forma?
+	NoSignal    json.RawMessage `json:"nosignal,omitempty,omitzero"` // TODO: estructurar de alguna forma?
 	RuleStatus
 }
 
@@ -545,102 +555,102 @@ func (rule Rule) ActionList() []interface{} {
 
 // RuleStatus agrupa atributos de estado que no se usan al crear una Rule
 type RuleStatus struct {
-	Subservice string `json:"subservice,omitempty"`
-	Service    string `json:"service,omitempty"`
-	ID         string `json:"_id,omitempty"`
+	Subservice string `json:"subservice,omitempty,omitzero"`
+	Service    string `json:"service,omitempty,omitzero"`
+	ID         string `json:"_id,omitempty,omitzero"`
 }
 
 type Project struct {
 	IsDomain    bool            `json:"is_domain"`
-	Description string          `json:"description,omitempty"`
-	Tags        json.RawMessage `json:"tags,omitempty"`
-	Options     json.RawMessage `json:"options,omitempty"`
+	Description string          `json:"description,omitempty,omitzero"`
+	Tags        json.RawMessage `json:"tags,omitempty,omitzero"`
+	Options     json.RawMessage `json:"options,omitempty,omitzero"`
 	Enabled     bool            `json:"enabled"`
 	Name        string          `json:"name"`
-	ParentId    string          `json:"parent_id,omitempty"`
-	DomainId    string          `json:"domain_id,omitempty"`
+	ParentId    string          `json:"parent_id,omitempty,omitzero"`
+	DomainId    string          `json:"domain_id,omitempty,omitzero"`
 	ProjectStatus
 }
 
 type ProjectStatus struct {
-	Links  json.RawMessage `json:"links,omitempty"`
-	ID     string          `json:"id,omitempty"`
-	Parent string          `json:"parent,omitempty"`
-	Domain string          `json:"domain,omitempty"`
+	Links  json.RawMessage `json:"links,omitempty,omitzero"`
+	ID     string          `json:"id,omitempty,omitzero"`
+	Parent string          `json:"parent,omitempty,omitzero"`
+	Domain string          `json:"domain,omitempty,omitzero"`
 }
 
 type Domain struct {
-	Description string `json:"description,omitempty"`
+	Description string `json:"description,omitempty,omitzero"`
 	Enabled     bool   `json:"enabled"`
 	Name        string `json:"name"`
 	DomainStatus
 }
 
 type DomainStatus struct {
-	Links json.RawMessage `json:"links,omitempty"`
+	Links json.RawMessage `json:"links,omitempty,omitzero"`
 	ID    string          `json:"id"`
 }
 
 type User struct {
 	Name        string                     `json:"name"`
-	Description string                     `json:"description,omitempty"`
+	Description string                     `json:"description,omitempty,omitzero"`
 	Enabled     bool                       `json:"enabled"`
-	Email       string                     `json:"email,omitempty"`
-	Options     map[string]json.RawMessage `json:"options,omitempty"`
+	Email       string                     `json:"email,omitempty,omitzero"`
+	Options     map[string]json.RawMessage `json:"options,omitempty,omitzero"`
 	DomainID    string                     `json:"domain_id"`
 	UserStatus
 }
 
 type UserStatus struct {
-	Links   json.RawMessage `json:"links,omitempty"`
-	ID      string          `json:"id,omitempty"`
-	Domain  string          `json:"domain,omitempty"`
-	Expires json.RawMessage `json:"password_expires_at,omitempty"`
+	Links   json.RawMessage `json:"links,omitempty,omitzero"`
+	ID      string          `json:"id,omitempty,omitzero"`
+	Domain  string          `json:"domain,omitempty,omitzero"`
+	Expires json.RawMessage `json:"password_expires_at,omitempty,omitzero"`
 }
 
 type Group struct {
 	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Description string `json:"description,omitempty,omitzero"`
 	DomainID    string `json:"domain_id"`
 	GroupStatus
 }
 
 type GroupStatus struct {
-	Links     json.RawMessage `json:"links,omitempty"`
-	ID        string          `json:"id,omitempty"`
-	Domain    string          `json:"domain,omitempty"`
-	Users     []string        `json:"users,omitempty"`
-	UserNames []string        `json:"userNames,omitempty"`
+	Links     json.RawMessage `json:"links,omitempty,omitzero"`
+	ID        string          `json:"id,omitempty,omitzero"`
+	Domain    string          `json:"domain,omitempty,omitzero"`
+	Users     []string        `json:"users,omitempty,omitzero"`
+	UserNames []string        `json:"userNames,omitempty,omitzero"`
 }
 
 type Role struct {
-	Description string          `json:"description,omitempty"`
+	Description string          `json:"description,omitempty,omitzero"`
 	Name        string          `json:"name"`
 	DomainID    string          `json:"domain_id"`
-	Options     json.RawMessage `json:"options,omitempty"`
+	Options     json.RawMessage `json:"options,omitempty,omitzero"`
 	RoleStatus
 }
 
 type RoleStatus struct {
-	Links  json.RawMessage `json:"links,omitempty"`
+	Links  json.RawMessage `json:"links,omitempty,omitzero"`
 	ID     string          `json:"id"`
 	Domain string          `json:"domain"`
 }
 
 type RoleAssignment struct {
-	Scope json.RawMessage `json:"scope,omitempty"`
-	Role  AssignmentID    `json:"role,omitempty"`
-	User  AssignmentID    `json:"user,omitempty"`
-	Group AssignmentID    `json:"group,omitempty"`
+	Scope json.RawMessage `json:"scope,omitempty,omitzero"`
+	Role  AssignmentID    `json:"role,omitempty,omitzero"`
+	User  AssignmentID    `json:"user,omitempty,omitzero"`
+	Group AssignmentID    `json:"group,omitempty,omitzero"`
 	RoleAssignmentStatus
 }
 
 type RoleAssignmentStatus struct {
-	Links     json.RawMessage `json:"links,omitempty"`
+	Links     json.RawMessage `json:"links,omitempty,omitzero"`
 	Inherited string          `json:"inherited"`
-	ProjectID string          `json:"project_id,omitempty"`
-	DomainID  string          `json:"domain_id,omitempty"`
-	ScopeName string          `json:"scope_name,omitempty"`
+	ProjectID string          `json:"project_id,omitempty,omitzero"`
+	DomainID  string          `json:"domain_id,omitempty,omitzero"`
+	ScopeName string          `json:"scope_name,omitempty,omitzero"`
 }
 
 func (r *RoleAssignment) ParseScope() error {
@@ -672,29 +682,29 @@ func (r *RoleAssignment) ParseScope() error {
 }
 
 type AssignmentID struct {
-	ID      string          `json:"id,omitempty"`
-	Name    string          `json:"name,omitempty"`
-	Domain  json.RawMessage `json:"domain,omitempty"`
-	Project json.RawMessage `json:"project,omitempty"`
+	ID      string          `json:"id,omitempty,omitzero"`
+	Name    string          `json:"name,omitempty,omitzero"`
+	Domain  json.RawMessage `json:"domain,omitempty,omitzero"`
+	Project json.RawMessage `json:"project,omitempty,omitzero"`
 }
 
 type DeploymentManifest struct {
-	Sources map[string]ManifestSource `json:"sources,omitempty"`
+	Sources map[string]ManifestSource `json:"sources,omitempty,omitzero"`
 }
 
-func (d DeploymentManifest) IsEmpty() bool {
+func (d DeploymentManifest) IsZero() bool {
 	return len(d.Sources) <= 0
 }
 
 type PanelManifest struct {
-	Sources map[string]ManifestSource `json:"sources,omitempty"`
+	Sources map[string]ManifestSource `json:"sources,omitempty,omitzero"`
 }
 
-func (p PanelManifest) IsEmpty() bool {
+func (p PanelManifest) IsZero() bool {
 	return len(p.Sources) <= 0
 }
 
 type ManifestSource struct {
-	Path  string   `json:"path,omitempty"`
-	Files []string `json:"files,omitempty"`
+	Path  string   `json:"path,omitempty,omitzero"`
+	Files []string `json:"files,omitempty,omitzero"`
 }

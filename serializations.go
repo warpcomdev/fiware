@@ -35,17 +35,17 @@ func (x Manifest) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	if !x.Environment.IsEmpty() {
+	if !x.Environment.IsZero() {
 		s.BeginBlock("environment")
 		x.Environment.Serialize(s)
 		s.EndBlock()
 	}
-	if !x.Deployment.IsEmpty() {
+	if !x.Deployment.IsZero() {
 		s.BeginBlock("deployment")
 		x.Deployment.Serialize(s)
 		s.EndBlock()
 	}
-	if !x.ManifestPanels.IsEmpty() {
+	if !x.ManifestPanels.IsZero() {
 		s.BeginBlock("panels")
 		x.ManifestPanels.Serialize(s)
 		s.EndBlock()
@@ -398,31 +398,31 @@ func (x Notification) Serialize(s serialize.Serializer) {
 	if x.AttrsFormat != "" {
 		s.KeyString("attrsFormat", string(x.AttrsFormat))
 	}
-	if !x.HTTP.IsEmpty() {
+	if !x.HTTP.IsZero() {
 		s.BeginBlock("http")
 		x.HTTP.Serialize(s)
 		s.EndBlock()
 	}
-	if !x.HTTPCustom.IsEmpty() {
+	if !x.HTTPCustom.IsZero() {
 		s.BeginBlock("httpCustom")
 		x.HTTPCustom.Serialize(s)
 		s.EndBlock()
 	}
-	if !x.MQTT.IsEmpty() {
+	if !x.MQTT.IsZero() {
 		s.BeginBlock("mqtt")
 		x.MQTT.Serialize(s)
 		s.EndBlock()
 	}
-	if !x.MQTTCustom.IsEmpty() {
+	if !x.MQTTCustom.IsZero() {
 		s.BeginBlock("mqttCustom")
 		x.MQTTCustom.Serialize(s)
 		s.EndBlock()
 	}
-	if !x.OnlyChangedAttrs.IsEmpty() {
-		x.OnlyChangedAttrs.SerializeHook("onlyChangedAttrs", s)
+	if x.OnlyChangedAttrs != nil {
+		s.KeyBool("onlyChangedAttrs", *x.OnlyChangedAttrs)
 	}
-	if !x.Covered.IsEmpty() {
-		x.Covered.SerializeHook("covered", s)
+	if x.Covered != nil {
+		s.KeyBool("covered", *x.Covered)
 	}
 	x.NotificationStatus.Serialize(s)
 }
@@ -577,7 +577,7 @@ func (x SubjectCondition) Serialize(s serialize.Serializer) {
 		s.String(y, false)
 	}
 	s.EndList()
-	if !x.Expression.IsEmpty() {
+	if !x.Expression.IsZero() {
 		s.BeginBlock("expression")
 		x.Expression.Serialize(s)
 		s.EndBlock()
@@ -589,8 +589,8 @@ func (x SubjectCondition) Serialize(s serialize.Serializer) {
 		}
 		s.EndList()
 	}
-	if !x.NotifyOnMetadataChange.IsEmpty() {
-		x.NotifyOnMetadataChange.SerializeHook("notifyOnMetadataChange", s)
+	if x.NotifyOnMetadataChange != nil {
+		s.KeyBool("notifyOnMetadataChange", *x.NotifyOnMetadataChange)
 	}
 }
 
@@ -745,8 +745,8 @@ func (x UrboPanel) Serialize(s serialize.Serializer) {
 	if x.WidgetCount != 0 {
 		s.KeyInt("widgetCount", x.WidgetCount)
 	}
-	if !x.IsShadow.IsEmpty() {
-		x.IsShadow.SerializeHook("isShadow", s)
+	if x.IsShadow != nil {
+		s.KeyBool("isShadow", *x.IsShadow)
 	}
 	if x.Section != "" {
 		s.KeyString("section", string(x.Section))
@@ -771,8 +771,8 @@ func (x Service) Serialize(s serialize.Serializer) {
 	if x.Transport != "" {
 		s.KeyString("transport", string(x.Transport))
 	}
-	if !x.Timestamp.IsEmpty() {
-		x.Timestamp.SerializeHook("timestamp", s)
+	if x.Timestamp != nil {
+		s.KeyBool("timestamp", *x.Timestamp)
 	}
 	if len(x.ExplicitAttrs) > 0 {
 		s.KeyRaw("explicitAttrs", x.ExplicitAttrs, false)
@@ -851,8 +851,8 @@ func (x DeviceAttribute) Serialize(s serialize.Serializer) {
 	if x.Expression != "" {
 		s.KeyString("expression", string(x.Expression))
 	}
-	if !x.SkipValue.IsEmpty() {
-		x.SkipValue.SerializeHook("skipValue", s)
+	if x.SkipValue != nil {
+		s.KeyBool("skipValue", *x.SkipValue)
 	}
 	if x.EntityName != "" {
 		s.KeyString("entity_name", string(x.EntityName))
@@ -925,12 +925,12 @@ func (x Device) Serialize(s serialize.Serializer) {
 		s.KeyString("entity_name", string(x.EntityName))
 	}
 	s.KeyString("entity_type", string(x.EntityType))
-	if !x.Polling.IsEmpty() {
-		x.Polling.SerializeHook("polling", s)
+	if x.Polling != nil {
+		s.KeyBool("polling", *x.Polling)
 	}
 	s.KeyString("transport", string(x.Transport))
-	if !x.Timestamp.IsEmpty() {
-		x.Timestamp.SerializeHook("timestamp", s)
+	if x.Timestamp != nil {
+		s.KeyBool("timestamp", *x.Timestamp)
 	}
 	if x.Endpoint != "" {
 		s.KeyString("endpoint", string(x.Endpoint))

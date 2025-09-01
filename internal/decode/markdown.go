@@ -301,10 +301,10 @@ func Markdown(filename string) ([]fiware.EntityType, []fiware.Entity) {
 					MetaDatas: make(map[string]json.RawMessage),
 				}
 				for _, attr := range model.Attrs {
-					if attr.Value != nil && len(attr.Value) > 0 {
+					if len(attr.Value) > 0 {
 						entity.Attrs[attr.Name] = attr.Value
 					}
-					if attr.Metadatas != nil && len(attr.Metadatas) > 0 {
+					if len(attr.Metadatas) > 0 {
 						entity.MetaDatas[attr.Name] = attr.Metadatas
 					}
 				}
