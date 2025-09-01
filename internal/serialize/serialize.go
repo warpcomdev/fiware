@@ -35,6 +35,6 @@ func Keys[V any](m map[string]V) []string {
 
 // Sorted sorts a string slice
 func Sorted(keys []string) []string {
-	sort.Sort(sort.StringSlice(keys))
+	sort.Strings(keys)
 	return keys
 }
