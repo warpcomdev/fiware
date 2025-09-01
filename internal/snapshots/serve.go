@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/warpcomdev/fiware/internal/config"
-	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
+	"github.com/warpcomdev/fiware/keystone"
 	"github.com/warpcomdev/fiware/models"
 )
 

@@ -11,11 +11,11 @@ import (
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/importer"
-	"github.com/warpcomdev/fiware/internal/iotam"
-	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
+	"github.com/warpcomdev/fiware/iotam"
+	"github.com/warpcomdev/fiware/keystone"
 	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/orion"
 )
 
 var canDelete []string = []string{

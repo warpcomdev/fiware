@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/keystone"
 	"github.com/warpcomdev/fiware/models"
 )
 

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/warpcomdev/fiware/internal/config"
-	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/keystone"
 )
 
 func Serve(client keystone.HTTPClient, store *config.Store) http.Handler {

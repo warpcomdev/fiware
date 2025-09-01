@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"cuelang.org/go/pkg/encoding/json"
-	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/keystone"
 )
 
 type loggingClient struct {

@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/warpcomdev/fiware/internal/config"
-	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
 	"github.com/warpcomdev/fiware/models"
 	"golang.org/x/term"

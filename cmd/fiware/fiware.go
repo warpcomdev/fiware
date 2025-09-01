@@ -16,8 +16,8 @@ import (
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
-	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/template"
+	"github.com/warpcomdev/fiware/keystone"
 )
 
 // Autocompleter builds an autocomplete function for projects and (optionally) subservices
