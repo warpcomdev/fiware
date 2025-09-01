@@ -75,14 +75,6 @@ func SummaryOf[V any](items map[string]V, summary func(k string, v V) string) []
 	return values
 }
 
-func ValuesOf[V any](items map[string]V) []V {
-	values := make([]V, 0, len(items))
-	for _, item := range items {
-		values = append(values, item)
-	}
-	return values
-}
-
 func (m *Manifest) ClearStatus() {
 	for k, v := range m.Subscriptions {
 		v.SubscriptionStatus = SubscriptionStatus{}

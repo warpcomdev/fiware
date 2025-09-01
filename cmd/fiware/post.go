@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -187,7 +189,7 @@ func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http
 	for k, v := range vertical.Environment.NotificationEndpoints {
 		ep[k] = v
 	}
-	subs := models.ValuesOf(vertical.Subscriptions)
+	subs := slices.Collect(maps.Values(vertical.Subscriptions))
 	return api.PostSuscriptions(client, header, subs, ep, useDescription)
 }
 
@@ -204,7 +206,7 @@ func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header
 			return k
 		},
 	)
-	return api.PostRules(client, header, models.ValuesOf(vertical.Rules))
+	return api.PostRules(client, header, slices.Collect(maps.Values(vertical.Rules)))
 }
 
 func postUsers(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {

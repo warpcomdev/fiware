@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -138,7 +140,7 @@ func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header ht
 				return v.Description
 			})
 	}
-	return api.DeleteSuscriptions(client, header, models.ValuesOf(vertical.Subscriptions), useDescription)
+	return api.DeleteSuscriptions(client, header, slices.Collect(maps.Values(vertical.Subscriptions)), useDescription)
 }
 
 func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
@@ -154,7 +156,7 @@ func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Head
 			return k
 		},
 	)
-	return api.DeleteRules(client, header, models.ValuesOf(vertical.Rules))
+	return api.DeleteRules(client, header, slices.Collect(maps.Values(vertical.Rules)))
 }
 
 func knownEntities(vertical models.Manifest) []models.Entity {

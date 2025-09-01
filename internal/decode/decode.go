@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/warpcomdev/fiware/internal/serialize"
 	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 //go:embed vertical.cue

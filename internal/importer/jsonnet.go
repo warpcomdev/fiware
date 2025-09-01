@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/go-jsonnet"
-	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 // loadJsonnet reads a Jsonnet file with the provided params as std.extVars

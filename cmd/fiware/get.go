@@ -14,9 +14,9 @@ import (
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
-	"github.com/warpcomdev/fiware/internal/serialize"
 	"github.com/warpcomdev/fiware/internal/urbo"
 	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 var canGet []string = []string{

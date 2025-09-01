@@ -12,10 +12,10 @@ import (
 
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/serialize"
 	"github.com/warpcomdev/fiware/internal/snapshots"
 	"github.com/warpcomdev/fiware/internal/urbo"
 	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 type verticalDownloader struct {

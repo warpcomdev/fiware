@@ -8,7 +8,7 @@ import (
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
-	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 // loadCue reads a Cue file with the provided params as arguments
