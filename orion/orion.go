@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/warpcomdev/fiware"
-	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
 )
 
 // Orion manages connection to the Context Broker
@@ -49,12 +49,12 @@ func simplifyEndpoint(ep string) string {
 }
 
 // Subscriptions reads the list of suscriptions from the Context Broker
-func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, notifEndpoints map[string]string) ([]fiware.Subscription, error) {
+func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, notifEndpoints map[string]string) ([]models.Subscription, error) {
 	path, err := o.URL.Parse("v2/subscriptions")
 	if err != nil {
 		return nil, err
 	}
-	pages := keystone.NewPaginator(make([]fiware.Subscription, 0, 50))
+	pages := keystone.NewPaginator(make([]models.Subscription, 0, 50))
 	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields, 0); err != nil {
 		return nil, err
 	}
@@ -77,18 +77,18 @@ func (o *Orion) Subscriptions(client keystone.HTTPClient, headers http.Header, n
 		}
 	}
 	for idx, sub := range pages.Slice {
-		simplify(sub.Notification.HTTP.IsEmpty(), &sub.Notification.HTTP.URL)
-		simplify(sub.Notification.HTTPCustom.IsEmpty(), &sub.Notification.HTTPCustom.URL)
-		simplify(sub.Notification.MQTT.IsEmpty(), &sub.Notification.MQTT.URL)
-		simplify(sub.Notification.MQTTCustom.IsEmpty(), &sub.Notification.MQTTCustom.URL)
+		simplify(sub.Notification.HTTP.IsZero(), &sub.Notification.HTTP.URL)
+		simplify(sub.Notification.HTTPCustom.IsZero(), &sub.Notification.HTTPCustom.URL)
+		simplify(sub.Notification.MQTT.IsZero(), &sub.Notification.MQTT.URL)
+		simplify(sub.Notification.MQTTCustom.IsZero(), &sub.Notification.MQTTCustom.URL)
 		pages.Slice[idx] = sub
 	}
 	return pages.Slice, nil
 }
 
 // Turns a list of subscriptions into a map indexed by description
-func SubsMap(subs []fiware.Subscription) map[string]fiware.Subscription {
-	result := make(map[string]fiware.Subscription)
+func SubsMap(subs []models.Subscription) map[string]models.Subscription {
+	result := make(map[string]models.Subscription)
 	for _, sub := range subs {
 		description := sub.Description
 		if description == "" {
@@ -109,12 +109,12 @@ func SubsMap(subs []fiware.Subscription) map[string]fiware.Subscription {
 }
 
 // Suscriptions reads the list of suscriptions from the Context Broker
-func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) ([]fiware.Registration, error) {
+func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) ([]models.Registration, error) {
 	path, err := o.URL.Parse("v2/registrations")
 	if err != nil {
 		return nil, err
 	}
-	pages := keystone.NewPaginator(make([]fiware.Registration, 0, 50))
+	pages := keystone.NewPaginator(make([]models.Registration, 0, 50))
 	if err := keystone.GetPaginatedJSON(client, headers, path, pages, o.AllowUnknownFields, 0); err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (o *Orion) Registrations(client keystone.HTTPClient, headers http.Header) (
 }
 
 // PostSuscriptions posts a list of suscriptions to orion
-func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Subscription, ep map[string]string, useDescription bool) error {
+func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header, subs []models.Subscription, ep map[string]string, useDescription bool) error {
 	var errList []error
 	if useDescription {
 		epCopy := make(map[string]string, len(ep))
@@ -153,8 +153,8 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 		}
 	}
 	for _, sub := range subs {
-		sub.SubscriptionStatus = fiware.SubscriptionStatus{}
-		sub.Notification.NotificationStatus = fiware.NotificationStatus{}
+		sub.SubscriptionStatus = models.SubscriptionStatus{}
+		sub.Notification.NotificationStatus = models.NotificationStatus{}
 		path, err := o.URL.Parse("v2/subscriptions")
 		if err != nil {
 			return err
@@ -175,7 +175,7 @@ func (o *Orion) PostSuscriptions(client keystone.HTTPClient, headers http.Header
 }
 
 // DeleteSuscriptions deletes a list of suscriptions from Orion
-func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []fiware.Subscription, useDescription bool) error {
+func (o *Orion) DeleteSuscriptions(client keystone.HTTPClient, headers http.Header, subs []models.Subscription, useDescription bool) error {
 	var errList []error
 	byDescription := make(map[string]struct{})
 	for _, sub := range subs {
@@ -268,10 +268,10 @@ type EntityAttr struct {
 }
 
 // Merge fiware EntityType with Entity to build full Entity
-func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
-	typeMap := make(map[string](map[string]fiware.Attribute), len(types))
+func Merge(types []models.EntityType, values []models.Entity) []Entity {
+	typeMap := make(map[string](map[string]models.Attribute), len(types))
 	for _, t := range types {
-		ta := make(map[string]fiware.Attribute)
+		ta := make(map[string]models.Attribute)
 		for _, a := range t.Attrs {
 			ta[a.Name] = a
 		}
@@ -307,10 +307,10 @@ func Merge(types []fiware.EntityType, values []fiware.Entity) []Entity {
 	return result
 }
 
-// Split a merged Entity into fiware.entityType and fiware.Entity
-func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
-	types := make(map[string]fiware.EntityType)
-	values := make([]fiware.Entity, 0, len(entities))
+// Split a merged Entity into models.entityType and models.Entity
+func Split(entities []Entity) ([]models.EntityType, []models.Entity) {
+	types := make(map[string]models.EntityType)
+	values := make([]models.Entity, 0, len(entities))
 	for _, current := range entities {
 		currID := current.ID()
 		currType := current.Type()
@@ -318,14 +318,14 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 		// Add a type (if not seen already)
 		newType, ok := types[currType]
 		if !ok {
-			newType = fiware.EntityType{
+			newType = models.EntityType{
 				ID:    currID,
 				Type:  currType,
-				Attrs: make([]fiware.Attribute, 0, len(currAttrs)),
+				Attrs: make([]models.Attribute, 0, len(currAttrs)),
 			}
 		}
 		// Add an entity
-		newEntity := fiware.Entity{
+		newEntity := models.Entity{
 			ID:        currID,
 			Type:      currType,
 			Attrs:     make(map[string]json.RawMessage),
@@ -353,7 +353,7 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 				}
 			}
 			if !found {
-				newType.Attrs = append(newType.Attrs, fiware.Attribute{
+				newType.Attrs = append(newType.Attrs, models.Attribute{
 					Name:      attr,
 					Type:      val.Type,
 					Value:     val.Value,
@@ -372,7 +372,7 @@ func Split(entities []Entity) ([]fiware.EntityType, []fiware.Entity) {
 		types[currType] = newType
 		values = append(values, newEntity)
 	}
-	typesSlice := make([]fiware.EntityType, 0, len(types))
+	typesSlice := make([]models.EntityType, 0, len(types))
 	for _, t := range types {
 		typesSlice = append(typesSlice, t)
 	}
@@ -394,7 +394,7 @@ func (p *entityPaginator) Append(raw json.RawMessage) error {
 }
 
 // Entities reads the list of entities from the Context Broker
-func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string, simpleQuery string, maximum int) ([]fiware.EntityType, []fiware.Entity, error) {
+func (o *Orion) Entities(client keystone.HTTPClient, headers http.Header, idPattern string, entityType string, simpleQuery string, maximum int) ([]models.EntityType, []models.Entity, error) {
 	path, err := o.URL.Parse("v2/entities")
 	if err != nil {
 		return nil, nil, err
@@ -460,7 +460,7 @@ func (o *Orion) UpdateEntities(client keystone.HTTPClient, headers http.Header, 
 }
 
 // DeleteEntities deletes a list of entities from Orion
-func (o *Orion) DeleteEntities(client keystone.HTTPClient, headers http.Header, ents []fiware.Entity, batchSize int) error {
+func (o *Orion) DeleteEntities(client keystone.HTTPClient, headers http.Header, ents []models.Entity, batchSize int) error {
 	type deleteEntity struct {
 		ID   string `json:"id"`
 		Type string `json:"type"`

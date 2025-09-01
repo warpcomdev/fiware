@@ -9,14 +9,14 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
-	"github.com/warpcomdev/fiware/internal/iotam"
-	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
-	"github.com/warpcomdev/fiware/internal/serialize"
 	"github.com/warpcomdev/fiware/internal/urbo"
+	"github.com/warpcomdev/fiware/iotam"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/orion"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 var canGet []string = []string{
@@ -125,9 +125,9 @@ func getResource(c *cli.Context, store *config.Store) error {
 	}
 	defer outfile.Close()
 
-	vertical := &fiware.Manifest{
+	vertical := &models.Manifest{
 		Subservice: selected.Subservice,
-		Environment: fiware.Environment{
+		Environment: models.Environment{
 			NotificationEndpoints: config.FromConfig(selected).NotificationEndpoints,
 		},
 	}
@@ -319,7 +319,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 	return output.Encode(outfile, vertical, selected.Params)
 }
 
-func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
+func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *models.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
@@ -332,20 +332,20 @@ func getDevices(ctx config.Config, c keystone.HTTPClient, header http.Header, ve
 	return nil
 }
 
-func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
+func getServices(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *models.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
-	groups, err := api.Services(c, header)
+	groups, err := api.DeviceGroups(c, header)
 	if err != nil {
 		return err
 	}
-	vertical.Services = groups
+	vertical.DeviceGroups = groups
 	return nil
 }
 
-func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
+func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *models.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -361,7 +361,7 @@ func getSuscriptions(ctx config.Config, c keystone.HTTPClient, header http.Heade
 	return nil
 }
 
-func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
+func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *models.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -374,7 +374,7 @@ func getRegistrations(ctx config.Config, c keystone.HTTPClient, header http.Head
 	return nil
 }
 
-func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType, simpleQuery string, maximum int, vertical *fiware.Manifest) error {
+func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, filterId, filterType, simpleQuery string, maximum int, vertical *models.Manifest) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -388,7 +388,7 @@ func getEntities(ctx config.Config, c keystone.HTTPClient, header http.Header, f
 	return nil
 }
 
-func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *fiware.Manifest) error {
+func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vertical *models.Manifest) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
@@ -397,7 +397,7 @@ func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vert
 	if err != nil {
 		return err
 	}
-	namedRules := make(map[string]fiware.Rule, len(rules))
+	namedRules := make(map[string]models.Rule, len(rules))
 	for _, rule := range rules {
 		namedRules[rule.Name] = rule
 	}
@@ -405,7 +405,7 @@ func getRules(ctx config.Config, c keystone.HTTPClient, header http.Header, vert
 	return nil
 }
 
-func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
 	projects, err := k.Projects(c, header)
 	if err != nil {
 		return err
@@ -414,7 +414,7 @@ func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone,
 	return nil
 }
 
-func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
 	users, err := k.Users(c, header)
 	if err != nil {
 		return err
@@ -423,7 +423,7 @@ func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, he
 	return nil
 }
 
-func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
 	groups, err := k.Groups(c, header)
 	if err != nil {
 		return err
@@ -432,7 +432,7 @@ func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, h
 	return nil
 }
 
-func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
 	roles, err := k.Roles(c, header)
 	if err != nil {
 		return err
@@ -441,7 +441,7 @@ func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, he
 	return nil
 }
 
-func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, uids []string, skipErrors bool, vertical *fiware.Manifest) error {
+func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, uids []string, skipErrors bool, vertical *models.Manifest) error {
 	assignments, err := k.UserRoles(c, header, uids, skipErrors)
 	if err != nil {
 		return err
@@ -450,7 +450,7 @@ func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone
 	return nil
 }
 
-func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, gids []string, skipErrors bool, vertical *fiware.Manifest) error {
+func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, gids []string, skipErrors bool, vertical *models.Manifest) error {
 	assignments, err := k.GroupRoles(c, header, gids, skipErrors)
 	if err != nil {
 		return err
@@ -459,7 +459,7 @@ func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keyston
 	return nil
 }
 
-func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
 	var err error
 	vertical.Projects, err = k.Projects(c, header)
 	if err != nil {
@@ -480,7 +480,7 @@ func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, 
 	return nil
 }
 
-func getDomains(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *fiware.Manifest) error {
+func getDomains(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
 	domains, err := k.Domains(c, header, false)
 	if err != nil {
 		return err
@@ -489,7 +489,7 @@ func getDomains(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, 
 	return nil
 }
 
-func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Manifest) error {
+func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *models.Manifest) error {
 	panels, err := u.Panels(c, header)
 	if err != nil {
 		return err
@@ -498,7 +498,7 @@ func getPanels(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header ht
 	return nil
 }
 
-func getVerticals(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *fiware.Manifest) error {
+func getVerticals(ctx config.Config, c keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical *models.Manifest) error {
 	verticals, err := u.GetVerticals(c, header)
 	if err != nil {
 		return err

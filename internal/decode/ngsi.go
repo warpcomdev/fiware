@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type ngsiEntity map[string]json.RawMessage
@@ -21,7 +21,7 @@ func getString(entity ngsiEntity, field string) string {
 	return s
 }
 
-func getAttribute(entity ngsiEntity, field string) fiware.Attribute {
+func getAttribute(entity ngsiEntity, field string) models.Attribute {
 	var ta typedAttribute
 	if err := json.Unmarshal(entity[field], &ta); err != nil {
 		log.Fatalf("Failed to decode %s: %v", field, err)
@@ -29,7 +29,7 @@ func getAttribute(entity ngsiEntity, field string) fiware.Attribute {
 	if ta.Type == "" {
 		log.Fatalf("Failed to decode attribute '%s': missing type", field)
 	}
-	return fiware.Attribute{
+	return models.Attribute{
 		Name:  field,
 		Type:  ta.Type,
 		Value: ta.Value,
@@ -37,7 +37,7 @@ func getAttribute(entity ngsiEntity, field string) fiware.Attribute {
 }
 
 // Get a list of models from NGSIv2 formatted file
-func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
+func NGSI(filename string) ([]models.EntityType, []models.Entity) {
 	infile, err := SkipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
@@ -50,7 +50,7 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	}
 	entityid := getString(model, "id")
 	entitytype := getString(model, "type")
-	attrs := make([]fiware.Attribute, 0, len(model))
+	attrs := make([]models.Attribute, 0, len(model))
 	attrValues := make(map[string]json.RawMessage)
 	for key := range model {
 		if key == "id" || key == "type" {
@@ -60,15 +60,15 @@ func NGSI(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		attrs = append(attrs, current)
 		attrValues[current.Name] = current.Value
 	}
-	models := []fiware.EntityType{{
+	modelList := []models.EntityType{{
 		ID:    entityid,
 		Type:  entitytype,
 		Attrs: attrs,
 	}}
-	entities := []fiware.Entity{{
+	entities := []models.Entity{{
 		ID:    entityid,
 		Type:  entitytype,
 		Attrs: attrValues,
 	}}
-	return models, entities
+	return modelList, entities
 }

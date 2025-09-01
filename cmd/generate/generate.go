@@ -12,16 +12,11 @@ import (
 	"strings"
 
 	cueformat "cuelang.org/go/cue/format"
-	"github.com/warpcomdev/fiware"
-	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/models"
 )
 
-type isEmpty interface {
-	IsEmpty() bool
-}
-
-type isHook interface {
-	SerializeHook(string, serialize.Serializer)
+type IsZero interface {
+	IsZero() bool
 }
 
 type generator struct {
@@ -53,7 +48,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 		}
 		jsonName := jsonTags[0]
 		omitempty := false
-		if len(jsonTags) > 1 && jsonTags[1] == "omitempty" {
+		if len(jsonTags) > 1 && (jsonTags[1] == "omitempty" || jsonTags[1] == "omitzero") {
 			omitempty = true
 		}
 		compact := tags.Get("compact")
@@ -97,6 +92,14 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			if omitempty {
 				w.WriteString("}\n")
 			}
+		case _typ.Kind() == reflect.Pointer && _typ.Elem().Kind() == reflect.Bool:
+			w.WriteString("if x." + name + " != nil {\n")
+			w.WriteString("s.KeyBool(\"" + jsonName + "\", *x." + name + ")\n")
+			if omitempty {
+				w.WriteString("}\n")
+			} else {
+				w.WriteString("} else {\ns.KeyBool(\"" + jsonName + "\", false)\n")
+			}
 		case _typ.Kind() == reflect.Slice && _typ.Elem().Kind() == reflect.Uint8: // json.RawMessage
 			if omitempty {
 				w.WriteString("if len(x." + name + ") > 0 {\n")
@@ -113,7 +116,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			innerKind := _typ.Elem().Kind()
 			if innerKind == reflect.String && sort == "true" {
 				// If the slice is of string, sort first
-				w.WriteString("for _, y := range serialize.Sorted(x." + name + ") {\n")
+				w.WriteString("sort.Strings(x." + name + ")\nfor _, y := range x." + name + " {\n")
 			} else {
 				w.WriteString("for _, y := range x." + name + " {\n")
 			}
@@ -122,7 +125,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 				w.WriteString(fmt.Sprintf("s.String(y, %s)\n", compact))
 			case innerKind == reflect.Struct:
 				pending = append(pending, pendingData{Name: _typ.Elem().Name(), Type: _typ.Elem()})
-				w.WriteString("s.BeginBlock(\"\"); s.Serialize(y); s.EndBlock();\n")
+				w.WriteString("s.BeginBlock(\"\"); y.Serialize(s); s.EndBlock();\n")
 			case innerKind == reflect.Slice && _typ.Elem().Elem().Kind() == reflect.Uint8: // json.RawMessage
 				w.WriteString("s.String(string(y), false)\n")
 			default:
@@ -138,7 +141,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 				w.WriteString("if len(x." + name + ") > 0 {\n")
 			}
 			w.WriteString("s.BeginBlock(\"" + jsonName + "\")\n")
-			w.WriteString("for _, k := range serialize.Keys(x." + name + ") {\n")
+			w.WriteString("for _, k := range slices.Sorted(maps.Keys(x." + name + ")) {\n")
 			w.WriteString("v := x." + name + "[k]\n")
 			innerKind := _typ.Elem().Kind()
 			switch {
@@ -148,7 +151,7 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 				w.WriteString("s.KeyRaw(k, v, " + compact + ")\n")
 			case innerKind == reflect.Struct:
 				pending = append(pending, pendingData{Name: _typ.Elem().Name(), Type: _typ.Elem()})
-				w.WriteString("s.BeginBlock(k); s.Serialize(v); s.EndBlock();\n")
+				w.WriteString("s.BeginBlock(k); v.Serialize(s); s.EndBlock();\n")
 			default:
 				log.Fatalf("unknown map type: %s", innerKind)
 			}
@@ -159,22 +162,17 @@ func (g *generator) serialize(t reflect.Type, w io.StringWriter) {
 			}
 		case _typ.Kind() == reflect.Struct:
 			conditional := false
-			if _typ.Implements(reflect.TypeOf((*isEmpty)(nil)).Elem()) {
-				w.WriteString("if !x." + name + ".IsEmpty() {\n")
+			if _typ.Implements(reflect.TypeOf((*IsZero)(nil)).Elem()) {
+				w.WriteString("if !x." + name + ".IsZero() {\n")
 				conditional = true
 			}
-			if _typ.Implements(reflect.TypeOf((*isHook)(nil)).Elem()) {
-				// Hooked types know how to serialize themselves
-				w.WriteString("x." + name + ".SerializeHook(\"" + jsonName + "\", s)\n")
-			} else {
-				pending = append(pending, pendingData{Name: _typ.Name(), Type: _typ})
-				if !f.Anonymous {
-					w.WriteString("s.BeginBlock(\"" + jsonName + "\")\n")
-				}
-				w.WriteString("x." + name + ".Serialize(s)\n")
-				if !f.Anonymous {
-					w.WriteString("s.EndBlock()\n")
-				}
+			pending = append(pending, pendingData{Name: _typ.Name(), Type: _typ})
+			if !f.Anonymous {
+				w.WriteString("s.BeginBlock(\"" + jsonName + "\")\n")
+			}
+			w.WriteString("x." + name + ".Serialize(s)\n")
+			if !f.Anonymous {
+				w.WriteString("s.EndBlock()\n")
 			}
 			if conditional {
 				w.WriteString("}\n")
@@ -198,10 +196,10 @@ func generateGo() {
 	g := &generator{
 		visited: make(map[string]struct{}),
 	}
-	w.WriteString("package fiware\n\n")
-	w.WriteString("import (\n\"github.com/warpcomdev/fiware/internal/serialize\"\n)\n\n")
+	w.WriteString("package models\n\n")
+	w.WriteString("import (\n\"sort\"\n\"maps\"\n\"slices\"\n\n\"github.com/warpcomdev/fiware/serialize\"\n)\n\n")
 	w.WriteString("// Autogenerated file - DO NOT EDIT\n\n")
-	g.serialize(reflect.TypeOf(fiware.Manifest{}), w)
+	g.serialize(reflect.TypeOf(models.Manifest{}), w)
 	w.Flush()
 
 	rawCode, filename, result := buffer.Bytes(), "serializations.go", 0
@@ -253,7 +251,7 @@ func (g *generator) serializeCue(t reflect.Type, w io.StringWriter, anonymous, t
 			continue
 		}
 		omitempty := ""
-		if len(jsonTags) > 1 && jsonTags[1] == "omitempty" {
+		if len(jsonTags) > 1 && (jsonTags[1] == "omitempty" || jsonTags[1] == "omitzero") {
 			omitempty = "?"
 		}
 		switch {
@@ -265,6 +263,8 @@ func (g *generator) serializeCue(t reflect.Type, w io.StringWriter, anonymous, t
 			w.WriteString(jsonName + omitempty + ": float" + textTag)
 		case _typ.Kind() == reflect.Bool:
 			w.WriteString(jsonName + omitempty + ": bool" + textTag)
+		case _typ.Kind() == reflect.Pointer && _typ.Elem().Kind() == reflect.Bool:
+			w.WriteString(jsonName + "?: bool" + textTag)
 		case _typ.Kind() == reflect.Slice && _typ.Elem().Kind() == reflect.Uint8: // json.RawMessage
 			w.WriteString(jsonName + omitempty + ": #Json" + textTag)
 		case _typ.Kind() == reflect.Slice: // other slices
@@ -300,13 +300,8 @@ func (g *generator) serializeCue(t reflect.Type, w io.StringWriter, anonymous, t
 			if f.Anonymous {
 				g.serializeCue(_typ, w, true, true)
 			} else {
-				switch innerName {
-				case "OptionalBool":
-					w.WriteString(jsonName + "?: bool\n")
-				default:
-					w.WriteString(jsonName + omitempty + ": #" + innerName + "\n")
-					pending = append(pending, pendingData{Name: innerName, Type: _typ})
-				}
+				w.WriteString(jsonName + omitempty + ": #" + innerName + "\n")
+				pending = append(pending, pendingData{Name: innerName, Type: _typ})
 			}
 		}
 	}
@@ -329,7 +324,7 @@ func generateCue() {
 		visited: make(map[string]struct{}),
 	}
 	w.WriteString("// Autogenerated file - DO NOT EDIT\n\n")
-	g.serializeCue(reflect.TypeOf(fiware.Manifest{}), w, true, false)
+	g.serializeCue(reflect.TypeOf(models.Manifest{}), w, true, false)
 	w.WriteString("\n#Json: _ // cuaquier cosa...\n")
 	w.Flush()
 

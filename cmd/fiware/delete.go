@@ -2,18 +2,20 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/importer"
-	"github.com/warpcomdev/fiware/internal/iotam"
-	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
+	"github.com/warpcomdev/fiware/iotam"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/orion"
 )
 
 var canDelete []string = []string{
@@ -98,71 +100,71 @@ func deleteResource(c *cli.Context, store *config.Store) error {
 	return nil
 }
 
-func deleteDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func deleteDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
 	listMessage("DELETing devices with IDs", vertical.Devices,
-		func(g fiware.Device) string { return g.DeviceId },
+		func(g models.Device) string { return g.DeviceId },
 	)
 	return api.DeleteDevices(client, header, vertical.Devices)
 }
 
-func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func deleteServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
-	listMessage("DELETing groups with API Keys", vertical.Services,
-		func(g fiware.Service) string { return g.APIKey },
+	listMessage("DELETing device groups with API Keys", vertical.DeviceGroups,
+		func(g models.DeviceGroup) string { return g.APIKey },
 	)
-	return api.DeleteServices(client, header, vertical.Services)
+	return api.DeleteServices(client, header, vertical.DeviceGroups)
 }
 
-func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, useDescription bool) error {
+func deleteSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest, useDescription bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
 	if !useDescription {
 		dictMessage("DELETing suscriptions with IDs", vertical.Subscriptions,
-			func(k string, v fiware.Subscription) string { return v.ID },
+			func(k string, v models.Subscription) string { return v.ID },
 		)
 	} else {
 		dictMessage("DELETing suscriptions with ids (or descriptions)", vertical.Subscriptions,
-			func(k string, v fiware.Subscription) string {
+			func(k string, v models.Subscription) string {
 				if v.ID != "" {
 					return fmt.Sprintf("%s (%s)", v.ID, v.Description)
 				}
 				return v.Description
 			})
 	}
-	return api.DeleteSuscriptions(client, header, fiware.ValuesOf(vertical.Subscriptions), useDescription)
+	return api.DeleteSuscriptions(client, header, slices.Collect(maps.Values(vertical.Subscriptions)), useDescription)
 }
 
-func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func deleteRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
 	}
 	dictMessage("DELETing rules with names", vertical.Rules,
-		func(k string, v fiware.Rule) string {
+		func(k string, v models.Rule) string {
 			if v.Name != "" {
 				return v.Name
 			}
 			return k
 		},
 	)
-	return api.DeleteRules(client, header, fiware.ValuesOf(vertical.Rules))
+	return api.DeleteRules(client, header, slices.Collect(maps.Values(vertical.Rules)))
 }
 
-func knownEntities(vertical fiware.Manifest) []fiware.Entity {
+func knownEntities(vertical models.Manifest) []models.Entity {
 	knownTypes := make(map[string]struct{})
 	for _, entType := range vertical.EntityTypes {
 		knownTypes[entType.Type] = struct{}{}
 	}
-	knownEntities := make([]fiware.Entity, 0, len(vertical.Entities))
+	knownEntities := make([]models.Entity, 0, len(vertical.Entities))
 	for _, current := range vertical.Entities {
 		if _, match := knownTypes[current.Type]; match {
 			knownEntities = append(knownEntities, current)
@@ -171,14 +173,14 @@ func knownEntities(vertical fiware.Manifest) []fiware.Entity {
 	return knownEntities
 }
 
-func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, batchSize int) error {
+func deleteEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest, batchSize int) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
 	toDelete := knownEntities(vertical)
 	listMessage("DELETing entities ", toDelete,
-		func(g fiware.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
+		func(g models.Entity) string { return strings.Join([]string{g.Type, g.ID}, "/") },
 	)
 	return api.DeleteEntities(client, header, toDelete, batchSize)
 }

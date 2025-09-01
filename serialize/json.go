@@ -187,11 +187,6 @@ func (j *JsonSerializer) KeyRaw(k string, v json.RawMessage, compact bool) {
 	j.sep = ",\n"
 }
 
-// Serialize recursos into a Serializable object
-func (j *JsonSerializer) Serialize(s Serializable) {
-	s.Serialize(j)
-}
-
 // BeginBlock opens a block with an optional key
 func (j *JsonSerializer) BeginBlock(optionalTitle string) {
 	if j.Err != nil {

@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
-	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type listFunc func(keystone.HTTPClient, config.Config) (interface{}, error)
@@ -103,7 +103,7 @@ func projectDownloader(client keystone.HTTPClient, w http.ResponseWriter, r *htt
 	if a, ok := r.URL.Query()["assets"]; ok {
 		assets = a
 	}
-	manifest, err := Project(client, api, selected, headers, fiware.Project{Name: id}, assets, 10000)
+	manifest, err := Project(client, api, selected, headers, models.Project{Name: id}, assets, 10000)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -122,9 +122,9 @@ func projectDownloader(client keystone.HTTPClient, w http.ResponseWriter, r *htt
 		log.Print(err.Error())
 		return
 	}
-	deployment := fiware.Manifest{
-		Deployment: fiware.DeploymentManifest{
-			Sources: map[string]fiware.ManifestSource{
+	deployment := models.Manifest{
+		Deployment: models.DeploymentManifest{
+			Sources: map[string]models.ManifestSource{
 				attachName: source,
 			},
 		},
@@ -142,7 +142,7 @@ func urboDownloader(client keystone.HTTPClient, w http.ResponseWriter, r *http.R
 	}
 	id = strings.TrimPrefix(id, "/")
 	headers := api.Headers(selected.UrboToken)
-	manifest, panels, err := Urbo(client, api, selected, headers, fiware.Vertical{Slug: id})
+	manifest, panels, err := Urbo(client, api, selected, headers, models.Vertical{Slug: id})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -7,7 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/serialize"
 	"go.starlark.net/starlark"
 )
 

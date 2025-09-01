@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/warpcomdev/fiware/internal/importer"
-	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 type outputFile string

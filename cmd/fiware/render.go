@@ -5,9 +5,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/importer"
 	"github.com/warpcomdev/fiware/internal/template"
+	"github.com/warpcomdev/fiware/models"
 )
 
 func render(c *cli.Context, params map[string]string) error {
@@ -28,7 +28,7 @@ func renderTemplate(datapath, libpath, outPath, perEntity string, templates []st
 	}
 
 	// Runs is a map from outputfile to manifest
-	runs := make(map[string]fiware.Manifest)
+	runs := make(map[string]models.Manifest)
 	if perEntity == "" {
 		// If only running once, add single entry to map.
 		runs[outPath] = manifest
@@ -38,7 +38,7 @@ func renderTemplate(datapath, libpath, outPath, perEntity string, templates []st
 		for _, et := range manifest.EntityTypes {
 			fullOutPath := filepath.Join(outPath, et.Type+"."+perEntity)
 			etManifest := manifest
-			etManifest.EntityTypes = []fiware.EntityType{et}
+			etManifest.EntityTypes = []models.EntityType{et}
 			runs[fullOutPath] = etManifest
 		}
 	}

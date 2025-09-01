@@ -40,7 +40,7 @@ func MarshalJSON(s Serializable) ([]byte, error) {
 	b.Depth = -1
 	b.Setup(nil, nil)
 	b.Begin()
-	b.Serialize(s)
+	s.Serialize(&b)
 	b.End()
 	return b.Buffer.Bytes(), b.Err
 }

@@ -9,18 +9,18 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/importer"
-	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
 )
 
 // RoleMap contains the information needed to make a migration
 type RoleMap struct {
-	Projects []fiware.Project
-	Roles    []fiware.Role
-	Users    []fiware.User
-	Groups   []fiware.Group
+	Projects []models.Project
+	Roles    []models.Role
+	Users    []models.User
+	Groups   []models.Group
 	// Populated ID maps
 	ProjectToID map[string]string
 	RoleToID    map[string]string
@@ -28,7 +28,7 @@ type RoleMap struct {
 	GroupToID   map[string]string
 }
 
-func newRoleMap(v fiware.Manifest) (RoleMap, error) {
+func newRoleMap(v models.Manifest) (RoleMap, error) {
 	m := RoleMap{
 		Projects:    v.Projects,
 		Roles:       v.Roles,
@@ -117,12 +117,12 @@ func migrateResource(c *cli.Context, config *config.Store) error {
 	return nil
 }
 
-func migrateUserRoles(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical, srcmap, dstmap fiware.Manifest) error {
+func migrateUserRoles(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical, srcmap, dstmap models.Manifest) error {
 	dstRoleMap, err := newRoleMap(dstmap)
 	if err != nil {
 		return err
 	}
-	userAssignments := make([]fiware.RoleAssignment, 0, len(vertical.Assignments))
+	userAssignments := make([]models.RoleAssignment, 0, len(vertical.Assignments))
 	for _, assign := range vertical.Assignments {
 		if assign.User.ID != "" {
 			dstId, ok := dstRoleMap.UserToID[assign.User.Name]
@@ -150,7 +150,7 @@ func migrateUserRoles(k *keystone.Keystone, client keystone.HTTPClient, header h
 		}
 	}
 	listMessage("Migrating roles ", userAssignments,
-		func(a fiware.RoleAssignment) string {
+		func(a models.RoleAssignment) string {
 			if a.Inherited != "" {
 				return fmt.Sprintf("%s [%s: %s] OS-INHERIT: %s", a.User.Name, a.ScopeName, a.Role.Name, a.Inherited)
 			} else {

@@ -6,15 +6,15 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type deployerAsset map[string]map[string]json.RawMessage
 
 var is_text = regexp.MustCompile(`^[a-zA-Z0-9 _\-.:]+$`)
 
-func assetToAttrib(asset map[string]json.RawMessage) []fiware.Attribute {
-	attrs := make([]fiware.Attribute, 0, len(asset))
+func assetToAttrib(asset map[string]json.RawMessage) []models.Attribute {
+	attrs := make([]models.Attribute, 0, len(asset))
 	for name, value := range asset {
 		// "TextUnrestricted" for anything that is not regular text or boolean
 		attrType := "TextUnrestricted"
@@ -29,7 +29,7 @@ func assetToAttrib(asset map[string]json.RawMessage) []fiware.Attribute {
 				}
 			}
 		}
-		attrs = append(attrs, fiware.Attribute{
+		attrs = append(attrs, models.Attribute{
 			Name:  name,
 			Type:  attrType,
 			Value: value,
@@ -39,7 +39,7 @@ func assetToAttrib(asset map[string]json.RawMessage) []fiware.Attribute {
 }
 
 // Get a list of models from NGSIv2 formatted file
-func Asset(filename string) ([]fiware.EntityType, []fiware.Entity) {
+func Asset(filename string) ([]models.EntityType, []models.Entity) {
 	infile, err := SkipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
@@ -50,7 +50,7 @@ func Asset(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	if err := dec.Decode(&model); err != nil {
 		log.Fatalf("Failed to decode asset %s: %v", filename, err)
 	}
-	entityTypes := make([]fiware.EntityType, 0, len(model))
+	entityTypes := make([]models.EntityType, 0, len(model))
 	for key, asset := range model {
 		var (
 			entityID   string
@@ -69,19 +69,19 @@ func Asset(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		default:
 			log.Fatalf("Failed to decode asset %s: unrecognized section %s", filename, key)
 		}
-		entityTypes = append(entityTypes, fiware.EntityType{
+		entityTypes = append(entityTypes, models.EntityType{
 			ID:    entityID,
 			Type:  entityType,
 			Attrs: assetToAttrib(asset),
 		})
 	}
-	entities := make([]fiware.Entity, 0, len(entityTypes))
+	entities := make([]models.Entity, 0, len(entityTypes))
 	for _, et := range entityTypes {
 		attrMap := make(map[string]json.RawMessage)
 		for _, attr := range et.Attrs {
 			attrMap[attr.Name] = attr.Value
 		}
-		entities = append(entities, fiware.Entity{
+		entities = append(entities, models.Entity{
 			ID:    et.ID,
 			Type:  et.Type,
 			Attrs: attrMap,

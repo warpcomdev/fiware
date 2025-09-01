@@ -1,25 +1,25 @@
 package importer
 
 import (
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type deployerConfig struct {
-	Environment    fiware.Environment                        `json:"environment"`
-	Deployment     fiware.DeploymentManifest                 `json:"deployment"`
-	Subscriptions  map[string]map[string]fiware.Subscription `json:"subscriptions"`
-	Rules          map[string]map[string]fiware.Rule         `json:"rules"`
-	ManifestPanels map[string]fiware.PanelManifest           `json:"panels,omitempty"`
-	Verticals      map[string]map[string]fiware.Vertical     `json:"verticals,omitempty"`
+	Environment    models.Environment                        `json:"environment"`
+	Deployment     models.DeploymentManifest                 `json:"deployment"`
+	Subscriptions  map[string]map[string]models.Subscription `json:"subscriptions"`
+	Rules          map[string]map[string]models.Rule         `json:"rules"`
+	ManifestPanels map[string]models.PanelManifest           `json:"panels,omitempty"`
+	Verticals      map[string]map[string]models.Vertical     `json:"verticals,omitempty"`
 }
 
 // Read a deployer config file
-func (rawConfig deployerConfig) ToManifest() fiware.Manifest {
-	manifest := fiware.Manifest{
-		Subscriptions:  make(map[string]fiware.Subscription),
-		Rules:          make(map[string]fiware.Rule),
-		Verticals:      make(map[string]fiware.Vertical),
-		ManifestPanels: fiware.PanelManifest{Sources: make(map[string]fiware.ManifestSource)},
+func (rawConfig deployerConfig) ToManifest() models.Manifest {
+	manifest := models.Manifest{
+		Subscriptions:  make(map[string]models.Subscription),
+		Rules:          make(map[string]models.Rule),
+		Verticals:      make(map[string]models.Vertical),
+		ManifestPanels: models.PanelManifest{Sources: make(map[string]models.ManifestSource)},
 	}
 	manifest.Environment = rawConfig.Environment
 	manifest.Deployment = rawConfig.Deployment

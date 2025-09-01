@@ -2,19 +2,21 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/importer"
-	"github.com/warpcomdev/fiware/internal/iotam"
-	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
 	"github.com/warpcomdev/fiware/internal/urbo"
+	"github.com/warpcomdev/fiware/iotam"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/orion"
 )
 
 var canPost []string = []string{
@@ -29,16 +31,16 @@ var canPost []string = []string{
 	"projects",
 }
 
-func filterEntities(c *cli.Context, manifest fiware.Manifest) (fiware.Manifest, error) {
+func filterEntities(c *cli.Context, manifest models.Manifest) (models.Manifest, error) {
 	filterType := c.String(filterTypeFlag.Name)
-	postedEntities := make([]fiware.Entity, 0, len(manifest.Entities))
+	postedEntities := make([]models.Entity, 0, len(manifest.Entities))
 	for _, entity := range manifest.Entities {
 		if filterType == "" || filterType == entity.Type {
 			postedEntities = append(postedEntities, entity)
 		}
 	}
 	if len(postedEntities) <= 0 {
-		return fiware.Manifest{}, fmt.Errorf("no entities of type %s found", filterType)
+		return models.Manifest{}, fmt.Errorf("no entities of type %s found", filterType)
 	}
 	postedManifest := manifest
 	postedManifest.Entities = postedEntities
@@ -152,80 +154,80 @@ func postResource(c *cli.Context, config *config.Store) error {
 	return nil
 }
 
-func postDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postDevices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
 	listMessage("POSTing devices with IDs", vertical.Devices,
-		func(g fiware.Device) string { return g.DeviceId },
+		func(g models.Device) string { return g.DeviceId },
 	)
 	return api.PostDevices(client, header, vertical.Devices)
 }
 
-func postServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postServices(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	api, err := iotam.New(ctx.IotamURL)
 	if err != nil {
 		return err
 	}
-	listMessage("POSTing groups with API Keys", vertical.Services,
-		func(g fiware.Service) string { return g.APIKey },
+	listMessage("POSTing device groups with API Keys", vertical.DeviceGroups,
+		func(g models.DeviceGroup) string { return g.APIKey },
 	)
-	return api.PostServices(client, header, vertical.Services)
+	return api.PostServices(client, header, vertical.DeviceGroups)
 }
 
-func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, useDescription bool) error {
+func postSuscriptions(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest, useDescription bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
 	}
 	dictMessage("POSTing suscriptions with descriptions", vertical.Subscriptions,
-		func(k string, v fiware.Subscription) string { return v.Description },
+		func(k string, v models.Subscription) string { return v.Description },
 	)
 	// Mewrge configuration notificationEndpoints with vertical ones
 	ep := config.FromConfig(ctx).NotificationEndpoints
 	for k, v := range vertical.Environment.NotificationEndpoints {
 		ep[k] = v
 	}
-	subs := fiware.ValuesOf(vertical.Subscriptions)
+	subs := slices.Collect(maps.Values(vertical.Subscriptions))
 	return api.PostSuscriptions(client, header, subs, ep, useDescription)
 }
 
-func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postRules(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	api, err := perseo.New(ctx.PerseoURL)
 	if err != nil {
 		return err
 	}
 	dictMessage("POSTing rules with names", vertical.Rules,
-		func(k string, v fiware.Rule) string {
+		func(k string, v models.Rule) string {
 			if v.Name != "" {
 				return v.Name
 			}
 			return k
 		},
 	)
-	return api.PostRules(client, header, fiware.ValuesOf(vertical.Rules))
+	return api.PostRules(client, header, slices.Collect(maps.Values(vertical.Rules)))
 }
 
-func postUsers(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postUsers(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	listMessage("POSTing users with names ", vertical.Users,
-		func(u fiware.User) string { return u.Name })
+		func(u models.User) string { return u.Name })
 	return k.PostUsers(client, header, vertical.Users)
 }
 
-func postGroups(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postGroups(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	listMessage("POSTing groups with names ", vertical.Groups,
-		func(g fiware.Group) string { return g.Name })
+		func(g models.Group) string { return g.Name })
 	return k.PostGroups(client, header, vertical.Groups)
 }
 
-func postProjects(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest) error {
+func postProjects(k *keystone.Keystone, client keystone.HTTPClient, header http.Header, vertical models.Manifest) error {
 	listMessage("POSTing projects with names ", vertical.Projects,
-		func(p fiware.Project) string { return p.Name })
+		func(p models.Project) string { return p.Name })
 	return k.PostProjects(client, header, vertical.Projects)
 }
 
-func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical fiware.Manifest, batchSize int, overrideMetadata bool) error {
+func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Header, vertical models.Manifest, batchSize int, overrideMetadata bool) error {
 	api, err := orion.New(ctx.OrionURL)
 	if err != nil {
 		return err
@@ -237,15 +239,15 @@ func postEntities(ctx config.Config, client keystone.HTTPClient, header http.Hea
 	return api.UpdateEntities(client, header, merged, batchSize, overrideMetadata)
 }
 
-func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical fiware.Manifest) error {
+func postVerticals(ctx config.Config, client keystone.HTTPClient, u *urbo.Urbo, header http.Header, vertical models.Manifest) error {
 	dictMessage("POSTing verticals with slugs", vertical.Verticals,
-		func(k string, v fiware.Vertical) string { return v.Slug },
+		func(k string, v models.Vertical) string { return v.Slug },
 	)
 	return u.PostVerticals(client, header, vertical.Verticals)
 }
 
 func dictMessage[T any](msg string, items map[string]T, summary func(string, T) string) {
-	labels := fiware.SummaryOf(items, summary)
+	labels := models.SummaryOf(items, summary)
 	fmt.Printf("%s '%s'\n", msg, strings.Join(labels, "','"))
 }
 

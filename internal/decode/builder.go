@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type builderModel map[string]struct {
@@ -23,7 +23,7 @@ type builderModel map[string]struct {
 }
 
 // Get a list of models from Builder file.
-func Builder(filename string) ([]fiware.EntityType, []fiware.Entity) {
+func Builder(filename string) ([]models.EntityType, []models.Entity) {
 	infile, err := SkipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
@@ -34,11 +34,11 @@ func Builder(filename string) ([]fiware.EntityType, []fiware.Entity) {
 	if err := dec.Decode(&model); err != nil {
 		log.Fatalf("Failed to decode model %s: %v", filename, err)
 	}
-	models := make([]fiware.EntityType, 0, len(model))
+	modelList := make([]models.EntityType, 0, len(model))
 	for modelType, modelData := range model {
-		attrs := make([]fiware.Attribute, 0, len(modelData.Model))
+		attrs := make([]models.Attribute, 0, len(modelData.Model))
 		for label, attrData := range modelData.Model {
-			attr := fiware.Attribute{
+			attr := models.Attribute{
 				Name: label,
 				Type: attrData.NGSIType,
 				Description: []string{
@@ -51,12 +51,12 @@ func Builder(filename string) ([]fiware.EntityType, []fiware.Entity) {
 			}
 			attrs = append(attrs, attr)
 		}
-		et := fiware.EntityType{
+		et := models.EntityType{
 			ID:    modelData.ExampleId,
 			Type:  modelType,
 			Attrs: attrs,
 		}
-		models = append(models, et)
+		modelList = append(modelList, et)
 	}
-	return models, nil
+	return modelList, nil
 }

@@ -10,12 +10,12 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
-	"github.com/warpcomdev/fiware/internal/keystone"
-	"github.com/warpcomdev/fiware/internal/serialize"
 	"github.com/warpcomdev/fiware/internal/snapshots"
 	"github.com/warpcomdev/fiware/internal/urbo"
+	"github.com/warpcomdev/fiware/keystone"
+	"github.com/warpcomdev/fiware/models"
+	"github.com/warpcomdev/fiware/serialize"
 )
 
 type verticalDownloader struct {
@@ -23,7 +23,7 @@ type verticalDownloader struct {
 	Api       *urbo.Urbo
 	Headers   http.Header
 	Client    keystone.HTTPClient
-	Verticals map[string]fiware.Vertical
+	Verticals map[string]models.Vertical
 }
 
 func newVerticalDownloader(c *cli.Context, store *config.Store) (*verticalDownloader, error) {
@@ -95,9 +95,9 @@ func (dld *verticalDownloader) Download(c *cli.Context, store *config.Store) err
 		}
 	}
 
-	manifest := fiware.Manifest{
-		Deployment: fiware.DeploymentManifest{
-			Sources: make(map[string]fiware.ManifestSource),
+	manifest := models.Manifest{
+		Deployment: models.DeploymentManifest{
+			Sources: make(map[string]models.ManifestSource),
 		},
 	}
 
@@ -140,7 +140,7 @@ type projectDownloader struct {
 	Api      *keystone.Keystone
 	Headers  http.Header
 	Client   keystone.HTTPClient
-	Projects []fiware.Project
+	Projects []models.Project
 }
 
 func newProjectDownloader(c *cli.Context, store *config.Store) (*projectDownloader, error) {
@@ -184,9 +184,9 @@ func (dld *projectDownloader) Download(c *cli.Context, store *config.Store) erro
 		targetNames[target] = false
 	}
 
-	manifest := fiware.Manifest{
-		Deployment: fiware.DeploymentManifest{
-			Sources: make(map[string]fiware.ManifestSource),
+	manifest := models.Manifest{
+		Deployment: models.DeploymentManifest{
+			Sources: make(map[string]models.ManifestSource),
 		},
 	}
 
