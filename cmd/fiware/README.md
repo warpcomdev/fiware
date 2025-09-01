@@ -37,7 +37,7 @@ COMMANDS:
      template        template for vertical data
 
 GLOBAL OPTIONS:
-   --context value, -c value  Path to the context configuration file (default: ${XDG_CONFIG_DIR}/fiware.json) [$FIWARE_CONTEXT]
+   --context value, -c value  Path to the context configuration file (default: ${XDG_CONFIG_DIR}/models.json) [$FIWARE_CONTEXT]
    --help, -h                 show help (default: false)
 ```
 

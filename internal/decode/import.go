@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 // encodes a expected map[string]interface{} to JSON
@@ -20,41 +20,41 @@ func mustEncode(v interface{}) json.RawMessage {
 // o un objeto con valor y metadatas.
 // A veces, si el csv ha sido exportado de orion, se cuela
 // algun registro en formato ngsiv2, con metadatas.
-func importJson(v string) fiware.Attribute {
+func importJson(v string) models.Attribute {
 	var structured interface{}
 	if !strings.HasPrefix(v, "{") && !strings.HasPrefix(v, "[") {
 		// Try to detect the common error of using "location": ... as example
 		if !strings.HasPrefix(v, "\"location\"") {
 			log.Printf("supposed json type %s does not start with '{' or '[', decoding as string", v)
-			return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
+			return models.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 		}
 		v = "{" + v + "}"
 	}
 	if err := json.Unmarshal([]byte(v), &structured); err != nil {
 		log.Printf("failed to decode %s because of %v, assuming it's a text placeholder", v, err)
-		return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
+		return models.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 	}
 	// Check if the attribute is actually a value and metadata pair from orion dump
 	if d, ok := structured.(map[string]interface{}); ok {
 		if v, ok := d["value"]; ok {
 			if m, ok := d["metadatas"]; ok {
-				return fiware.Attribute{Value: mustEncode(v), Metadatas: mustEncode(m)}
+				return models.Attribute{Value: mustEncode(v), Metadatas: mustEncode(m)}
 			}
-			return fiware.Attribute{Value: mustEncode(v)}
+			return models.Attribute{Value: mustEncode(v)}
 		}
 		// Try to detect the common error of using "location": ... as example
 		if v, ok := d["location"]; ok {
 			if l, ok := v.(map[string]interface{}); ok {
 				if v2, ok := l["value"]; ok {
-					return fiware.Attribute{Value: mustEncode(v2)}
+					return models.Attribute{Value: mustEncode(v2)}
 				}
 			}
 		}
 	}
-	return fiware.Attribute{Value: mustEncode(structured)}
+	return models.Attribute{Value: mustEncode(structured)}
 }
 
-func importNumber(v string) fiware.Attribute {
+func importNumber(v string) models.Attribute {
 	// A veces, si el csv ha sido exportado de orion, se cuela
 	// algun registro en formato ngsiv2, con metadata
 	if strings.HasPrefix(v, "{") {
@@ -63,19 +63,19 @@ func importNumber(v string) fiware.Attribute {
 	f, err := strconv.ParseFloat(v, 64)
 	if err != nil {
 		log.Printf("supposed float type %s cannot be parsed, decoding as string", v)
-		return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
+		return models.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 	}
-	return fiware.Attribute{Value: []byte(strconv.FormatFloat(f, 'f', 2, 64))}
+	return models.Attribute{Value: []byte(strconv.FormatFloat(f, 'f', 2, 64))}
 }
 
-func importOther(v string) fiware.Attribute {
+func importOther(v string) models.Attribute {
 	if strings.HasPrefix(v, "{") { // Por si viene con metadata
 		return importJson(v)
 	}
 	if strings.HasPrefix(v, "\"") && strings.HasSuffix(v, "\"") && !strings.HasPrefix(v, "\"\"") {
 		if strings.Contains(v, "\\") {
 			// Si ya nos han dado la cadena escapada
-			return fiware.Attribute{Value: []byte(v)}
+			return models.Attribute{Value: []byte(v)}
 		}
 		if len(v) <= 2 {
 			v = ""
@@ -90,5 +90,5 @@ func importOther(v string) fiware.Attribute {
 			v = strings.TrimSpace(v[1 : len(v)-1])
 		}
 	}
-	return fiware.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
+	return models.Attribute{Value: []byte(fmt.Sprintf("%q", v))}
 }

@@ -2,7 +2,6 @@ package serialize
 
 import (
 	"encoding/json"
-	"sort"
 )
 
 type Serializable interface {
@@ -22,19 +21,4 @@ type Serializer interface {
 	BeginList(string)  // [ + omit first ","
 	EndList()          // ]
 	Error() error      // If it failed at any step
-}
-
-// Keys returns the sorted list of keys in a map
-func Keys[V any](m map[string]V) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return Sorted(keys)
-}
-
-// Sorted sorts a string slice
-func Sorted(keys []string) []string {
-	sort.Strings(keys)
-	return keys
 }

@@ -97,5 +97,4 @@ func servePanels(client keystone.HTTPClient, store *config.Store, w http.Respons
 		return
 	}
 	http.Error(w, "invalid method", http.StatusMethodNotAllowed)
-	return
 }

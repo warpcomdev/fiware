@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 // Tries to guess the separator used in a string
@@ -31,7 +31,7 @@ func findsep(multistr string) string {
 var wifi_repeats = regexp.MustCompile(`^(?P<pre>[^{]+){(?P<mid>[^}]+)}(?P<post>.*)$`)
 
 // Generate attribute from README line
-func from_line(longtermIndex int, line string) []fiware.Attribute {
+func from_line(longtermIndex int, line string) []models.Attribute {
 	// log.Printf("Parsing line %s", line)
 	// Warning: WiFi vertical uses field names like
 	// dlBandwidth{User\|Device} to summarize two lines in one
@@ -75,25 +75,25 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 	singletonKey, simulated := false, false
 	var text []string
 	// Check if we have a longterm column
-	longterm := fiware.LongtermNone
+	longterm := models.LongtermNone
 	var longtermOptions []string
 	if longtermIndex >= 2 {
 		after := strings.TrimSpace(fields[longtermIndex])
 		afterLower := strings.ToLower(after)
 		if strings.HasPrefix(afterLower, "modal") {
-			longterm = fiware.LongtermModal
+			longterm = models.LongtermModal
 		}
 		if strings.HasPrefix(afterLower, "gauge") {
-			longterm = fiware.LongtermGauge
+			longterm = models.LongtermGauge
 		}
 		if strings.HasPrefix(afterLower, "counter") {
-			longterm = fiware.LongtermCounter
+			longterm = models.LongtermCounter
 		}
 		if strings.HasPrefix(afterLower, "dimension") {
-			longterm = fiware.LongtermDimension
+			longterm = models.LongtermDimension
 		}
 		if strings.HasPrefix(afterLower, "enum") {
-			longterm = fiware.LongtermEnum
+			longterm = models.LongtermEnum
 			options := strings.Split(strings.TrimSpace(strings.SplitN(after, " ", 2)[1]), ",")
 			longtermOptions = make([]string, 0, len(options))
 			for _, option := range options {
@@ -151,14 +151,14 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 		//    break
 	}
 	// Turn value into the proper type
-	value := make([]fiware.Attribute, 0, len(text))
+	value := make([]models.Attribute, 0, len(text))
 	lower := strings.ToLower(_typ)
 	for _, v := range text {
 		v = strings.TrimSpace(v)
 		switch {
 		case lower == "number":
 			if v == "" {
-				value = append(value, fiware.Attribute{Value: []byte("null")})
+				value = append(value, models.Attribute{Value: []byte("null")})
 			} else {
 				value = append(value, importNumber(v))
 			}
@@ -166,7 +166,7 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 			fallthrough
 		case strings.Contains(lower, "json"):
 			if v == "" {
-				value = append(value, fiware.Attribute{Value: []byte("null")})
+				value = append(value, models.Attribute{Value: []byte("null")})
 			} else {
 				value = append(value, importJson(v))
 			}
@@ -177,7 +177,7 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 	// Finally, check for wifi-style repeats
 	matches := wifi_repeats.FindStringSubmatch(name)
 	if len(matches) <= 0 {
-		attrib := fiware.Attribute{
+		attrib := models.Attribute{
 			Name:            name,
 			Type:            _typ,
 			Description:     desc,
@@ -190,7 +190,7 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 			attrib.Value = value[0].Value
 			attrib.Metadatas = value[0].Metadatas
 		}
-		return []fiware.Attribute{attrib}
+		return []models.Attribute{attrib}
 	}
 	log.Printf("Found infixed attribute %s", name)
 	prefix := strings.TrimSpace(matches[1])
@@ -200,9 +200,9 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 		infixes = append(infixes, strings.TrimSpace(part))
 	}
 	vals := len(value)
-	result := make([]fiware.Attribute, 0, len(infixes))
+	result := make([]models.Attribute, 0, len(infixes))
 	for index, infix := range infixes {
-		attrib := fiware.Attribute{
+		attrib := models.Attribute{
 			Name:            fmt.Sprintf("%s%s%s", prefix, infix, suffix),
 			Type:            _typ,
 			Description:     desc,
@@ -221,8 +221,8 @@ func from_line(longtermIndex int, line string) []fiware.Attribute {
 }
 
 // Builds model from list of lines
-func from_lines(longtermIndex int, lines []string) fiware.EntityType {
-	model := fiware.EntityType{ID: "", Type: "", Attrs: make([]fiware.Attribute, 0, 16)}
+func from_lines(longtermIndex int, lines []string) models.EntityType {
+	model := models.EntityType{ID: "", Type: "", Attrs: make([]models.Attribute, 0, 16)}
 	visited := make(map[string]struct{})
 	for _, line := range lines {
 		for _, attrib := range from_line(longtermIndex, line) {
@@ -259,9 +259,9 @@ func from_lines(longtermIndex int, lines []string) fiware.EntityType {
 // - atributo = tipo|type: entity type
 // - tipo: Text, TextUnrestricted, Number, Reference, geo:json, geox:json ...
 // - Any other column: "Ejemplo:", "Ejemplo=", "Valor:", "Valor=",...
-func Markdown(filename string) ([]fiware.EntityType, []fiware.Entity) {
-	models := make([]fiware.EntityType, 0, 16)
-	entities := make([]fiware.Entity, 0, 16)
+func Markdown(filename string) ([]models.EntityType, []models.Entity) {
+	modelList := make([]models.EntityType, 0, 16)
+	entities := make([]models.Entity, 0, 16)
 	latest := make([]string, 0, 256)
 	inside := false
 	infile, err := SkipBOM(filename)
@@ -289,12 +289,12 @@ func Markdown(filename string) ([]fiware.EntityType, []fiware.Entity) {
 			if line == "" {
 				model := from_lines(longtermIndex, latest)
 				log.Printf("Finished processing model %s", model.Type)
-				models = append(models, model)
+				modelList = append(modelList, model)
 				inside = false
 				longtermIndex = -1
 				latest = latest[:0]
 				// Create entity too, to be able to populate CSV from NGSI
-				entity := fiware.Entity{
+				entity := models.Entity{
 					ID:        model.ID,
 					Type:      model.Type,
 					Attrs:     make(map[string]json.RawMessage),
@@ -357,5 +357,5 @@ func Markdown(filename string) ([]fiware.EntityType, []fiware.Entity) {
 			}
 		}
 	}
-	return models, entities
+	return modelList, entities
 }

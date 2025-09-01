@@ -14,10 +14,10 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/urbo"
+	"github.com/warpcomdev/fiware/models"
 	"golang.org/x/term"
 )
 
@@ -111,7 +111,7 @@ func getAndCacheProjects(client keystone.HTTPClient, api *keystone.Keystone, sel
 	return cacheProjects(selected, projects)
 }
 
-func cacheProjects(selected *config.Config, projects []fiware.Project) error {
+func cacheProjects(selected *config.Config, projects []models.Project) error {
 	projectNames := make([]string, 0, len(projects))
 	for _, project := range projects {
 		if strings.HasPrefix(project.Name, "/") {

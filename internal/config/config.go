@@ -5,7 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 )
 
 type stringError string
@@ -113,15 +114,6 @@ func (c *Config) pairs() map[string]*string {
 	return p
 }
 
-func SortedKeys[T any](m map[string]T) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Sort(sort.StringSlice(keys))
-	return keys
-}
-
 // Pairs return all context parameters as a map of strings
 func (c *Config) Pairs() map[string]string {
 	result := make(map[string]string)
@@ -145,7 +137,7 @@ func (c *Config) String() string {
 	pairs := c.Pairs()
 	w.WriteString("{")
 	sep := "\n  \""
-	sortedPairs := SortedKeys(pairs)
+	sortedPairs := slices.Sorted(maps.Keys(pairs))
 	for _, label := range sortedPairs {
 		value := pairs[label]
 		writePair(w, sep, label, "\": ", value)
@@ -167,8 +159,7 @@ func (c *Config) String() string {
 	}
 	if len(c.Params) > 0 {
 		w.WriteString("\n> fiware context params")
-		sortedParams := SortedKeys(c.Params)
-		for _, k := range sortedParams {
+		for _, k := range slices.Sorted(maps.Keys(c.Params)) {
 			v := c.Params[k]
 			writePair(w, " ", k, " ", v)
 		}

@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type header struct {
@@ -83,11 +83,11 @@ type setKey struct {
 }
 
 type entityWithSet struct {
-	fiware.EntityType
+	models.EntityType
 	set map[setKey]struct{}
 }
 
-func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
+func CSV(filename string) ([]models.EntityType, []models.Entity) {
 	infile, err := SkipBOM(filename)
 	if err != nil {
 		log.Fatalf("Failed to open file %s: %v", filename, err)
@@ -104,7 +104,7 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		log.Fatalf("Headers must begin with entityID, entityType, not '%s', '%s'", headers[0].Name, headers[1].Name)
 	}
 	headers = headers[2:]
-	mixedEntities := make([]fiware.EntityType, 0, 64)
+	mixedEntities := make([]models.EntityType, 0, 64)
 	for {
 		next, err := reader.Read()
 		row += 1
@@ -117,10 +117,10 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		if len(next) < 2 {
 			continue
 		}
-		current := fiware.EntityType{
+		current := models.EntityType{
 			ID:    next[0],
 			Type:  next[1],
-			Attrs: make([]fiware.Attribute, len(headers)),
+			Attrs: make([]models.Attribute, len(headers)),
 		}
 		for index, col := range next[2:] {
 			if index > len(headers) {
@@ -136,7 +136,7 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 			}
 			switch {
 			case col == "null" || col == "\"null\"":
-				current.Attrs[index] = fiware.Attribute{Value: []byte("null")}
+				current.Attrs[index] = models.Attribute{Value: []byte("null")}
 			case h.IsNumber:
 				current.Attrs[index] = importNumber(col)
 			case h.IsJson:
@@ -155,7 +155,7 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		if ref.Type == "" {
 			ref.ID = entity.ID
 			ref.Type = entity.Type
-			ref.Attrs = make([]fiware.Attribute, 0, len(headers))
+			ref.Attrs = make([]models.Attribute, 0, len(headers))
 			ref.set = make(map[setKey]struct{})
 			changed = true
 		}
@@ -179,7 +179,7 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		}
 	}
 	// Turn the entity map into a list, sorted by natity type
-	entityTypes := make([]fiware.EntityType, 0, len(bytype))
+	entityTypes := make([]models.EntityType, 0, len(bytype))
 	for _, e := range bytype {
 		entityTypes = append(entityTypes, e.EntityType)
 	}
@@ -187,7 +187,7 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 		return strings.Compare(entityTypes[i].Type, entityTypes[j].Type) < 0
 	})
 	// Extract the streamlined entities from the mix
-	entities := make([]fiware.Entity, 0, len(mixedEntities))
+	entities := make([]models.Entity, 0, len(mixedEntities))
 	for _, entity := range mixedEntities {
 		values := make(map[string]json.RawMessage)
 		metadatas := make(map[string]json.RawMessage)
@@ -200,7 +200,7 @@ func CSV(filename string) ([]fiware.EntityType, []fiware.Entity) {
 				}
 			}
 		}
-		curr := fiware.Entity{
+		curr := models.Entity{
 			ID:   entity.ID,
 			Type: entity.Type,
 		}

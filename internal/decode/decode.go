@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/serialize"
+	"github.com/warpcomdev/fiware/models"
 )
 
 //go:embed vertical.cue
@@ -42,8 +42,8 @@ func Decode(outfile, verticalName, subserviceName string, paths []string, format
 	}
 
 	var (
-		models    []fiware.EntityType
-		instances []fiware.Entity
+		modelList []models.EntityType
+		instances []models.Entity
 	)
 	// Allow reading both a NGSI and a CSV file. If both specified,
 	// entity types are read from NGSI file, but entity values are
@@ -54,19 +54,19 @@ func Decode(outfile, verticalName, subserviceName string, paths []string, format
 		case strings.HasSuffix(pathLower, ".csv"):
 			localModels, localInstances := CSV(path)
 			instances = localInstances
-			if models == nil {
-				models = localModels
+			if modelList == nil {
+				modelList = localModels
 			}
 		case strings.HasSuffix(pathLower, ".md"):
 			localModels, localInstances := Markdown(path)
-			models = localModels
+			modelList = localModels
 			if instances == nil {
 				instances = localInstances
 			}
 		case strings.HasSuffix(pathLower, ".json"):
 			var (
-				localModels    []fiware.EntityType
-				localInstances []fiware.Entity
+				localModels    []models.EntityType
+				localInstances []models.Entity
 			)
 			switch format {
 			case FORMAT_NGSI:
@@ -76,13 +76,13 @@ func Decode(outfile, verticalName, subserviceName string, paths []string, format
 			default:
 				localModels, localInstances = Builder(path)
 			}
-			models = localModels
+			modelList = localModels
 			if instances == nil {
 				instances = localInstances
 			}
 		case strings.HasSuffix(pathLower, ".ngsi"):
 			localModels, localInstances := NGSI(path)
-			models = localModels
+			modelList = localModels
 			if instances == nil {
 				instances = localInstances
 			}
@@ -91,10 +91,10 @@ func Decode(outfile, verticalName, subserviceName string, paths []string, format
 		}
 	}
 	indent := "    "
-	modelText, err := json.MarshalIndent(models, indent, indent)
+	modelText, err := json.MarshalIndent(modelList, indent, indent)
 	if err != nil {
-		text_models := make([]string, 0, len(models))
-		for _, model := range models {
+		text_models := make([]string, 0, len(modelList))
+		for _, model := range modelList {
 			rawData, err := serialize.MarshalJSON(model)
 			if err != nil {
 				return fmt.Errorf("failed to marshal offending model '%s': %w", string(rawData), err)

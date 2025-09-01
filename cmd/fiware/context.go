@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 
 	"github.com/urfave/cli/v2"
@@ -186,8 +188,7 @@ func setParamsContext(s *config.Store, c *cli.Context, contextName string, pairs
 	}
 	fmt.Printf("using context %s\nupdated params: {\n", s.Current.Name)
 	finalPairs := s.Current.Params
-	keys := config.SortedKeys(finalPairs)
-	for _, k := range keys {
+	for _, k := range slices.Sorted(maps.Keys(finalPairs)) {
 		if _, found := pairMap[k]; found {
 			fmt.Printf("    %s: %s\n", k, finalPairs[k])
 		}

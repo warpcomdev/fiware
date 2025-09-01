@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/models"
 )
 
 // Perseo manages connections to Perseo API
@@ -34,14 +34,14 @@ func New(perseoURL string) (*Perseo, error) {
 var rulenameRegexp *regexp.Regexp = regexp.MustCompile(`(?i)select\s+[^\s]+\s+as ruleName,\s*`)
 
 // Rules reads the list of rules from Perseo
-func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiware.Rule, error) {
+func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]models.Rule, error) {
 	path, err := o.URL.Parse("rules")
 	if err != nil {
 		return nil, err
 	}
 	var response struct {
 		Count int             `json:"count"`
-		Data  []fiware.Rule   `json:"data"`
+		Data  []models.Rule   `json:"data"`
 		Error json.RawMessage `json:"error"`
 	}
 	if err := keystone.GetJSON(client, headers, path, &response, o.AllowUnknownFields); err != nil {
@@ -60,13 +60,13 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 	// FIN DE HACK
 	// HACK: Omito la NoSignal si es igual a la cadena vacía
 	for index, rule := range response.Data {
-		if rule.NoSignal != nil && len(rule.NoSignal) > 0 && bytes.Equal(rule.NoSignal, []byte("\"\"")) {
+		if len(rule.NoSignal) > 0 && bytes.Equal(rule.NoSignal, []byte("\"\"")) {
 			response.Data[index].NoSignal = nil
 		}
 	}
 	// HACK: Me aseguro de que todas las acciones son listas
 	for index, rule := range response.Data {
-		if rule.Action != nil && len(rule.Action) > 0 {
+		if len(rule.Action) > 0 {
 			reader := bytes.NewReader(rule.Action)
 			if rune, size, err := reader.ReadRune(); err == nil && size > 0 && rune != '[' {
 				var newAction bytes.Buffer
@@ -82,7 +82,7 @@ func (o *Perseo) Rules(client keystone.HTTPClient, headers http.Header) ([]fiwar
 }
 
 // PostRules posts a list of rules to Perseo
-func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rules []fiware.Rule) error {
+func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rules []models.Rule) error {
 	var errList []error
 	for _, rule := range rules {
 		// HACK: No quiero que se añada a las acciones el servicio y el subservicio,
@@ -91,7 +91,7 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 		// "service" y "subservice", y de ser así los omito.
 		actionList := rule.ActionList()
 		replaced := false // indica si hemos reemplazado alguna accion
-		if actionList != nil && len(actionList) > 0 {
+		if len(actionList) > 0 {
 			// Para prever el caso en que descargamos reglas de
 			// un servicio, y queremos aplicarlas a otro.
 			keys := map[string]string{
@@ -131,7 +131,7 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 			}
 		}
 		// FIN DE HACK
-		rule.RuleStatus = fiware.RuleStatus{}
+		rule.RuleStatus = models.RuleStatus{}
 		if rule.Name == "" {
 			return errors.New("All rules must have name")
 		}
@@ -139,7 +139,7 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 			// HACK 2: no voy a subir el ruleName, voy a dejar que lo ponga perseo
 			rule.Text = rulenameRegexp.ReplaceAllLiteralString(rule.Text, "select ")
 			// FIN DE HACK 2
-			if rule.NoSignal != nil && len(rule.NoSignal) > 0 && !bytes.Equal(rule.NoSignal, []byte("\"\"")) {
+			if len(rule.NoSignal) > 0 && !bytes.Equal(rule.NoSignal, []byte("\"\"")) {
 				return fmt.Errorf("both rule.Text and rule.NoSignal defined for rule %s", rule.Name)
 			}
 			rule.NoSignal = nil // those two are mutually exclusive
@@ -156,10 +156,9 @@ func (o *Perseo) PostRules(client keystone.HTTPClient, headers http.Header, rule
 }
 
 // DeleteRules deletes a list of rules from Perseo
-func (o *Perseo) DeleteRules(client keystone.HTTPClient, headers http.Header, rules []fiware.Rule) error {
+func (o *Perseo) DeleteRules(client keystone.HTTPClient, headers http.Header, rules []models.Rule) error {
 	var errList []error
 	for _, rule := range rules {
-		rule.RuleStatus = fiware.RuleStatus{}
 		if rule.Name == "" {
 			return errors.New("All rules must have name")
 		}

@@ -4,26 +4,26 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/iotam"
 	"github.com/warpcomdev/fiware/internal/keystone"
 	"github.com/warpcomdev/fiware/internal/orion"
 	"github.com/warpcomdev/fiware/internal/perseo"
+	"github.com/warpcomdev/fiware/models"
 )
 
-func ProjectList(projects []fiware.Project) []string {
+func ProjectList(projects []models.Project) []string {
 	names := make([]string, 0, len(projects))
 	for _, project := range projects {
 		names = append(names, project.Name)
 	}
-	sort.Sort(sort.StringSlice(names))
+	sort.Strings(names)
 	return names
 }
 
 // Snap takes an snapshot of all assets in project
-func Project(client keystone.HTTPClient, api *keystone.Keystone, selected config.Config, headers http.Header, project fiware.Project, assets []string, maximum int) (fiware.Manifest, error) {
-	var result fiware.Manifest
+func Project(client keystone.HTTPClient, api *keystone.Keystone, selected config.Config, headers http.Header, project models.Project, assets []string, maximum int) (models.Manifest, error) {
+	var result models.Manifest
 	assetMap := map[string]bool{
 		"entities":      true,
 		"subscriptions": true,
@@ -40,7 +40,7 @@ func Project(client keystone.HTTPClient, api *keystone.Keystone, selected config
 
 	// If some assets selected, build assetMap
 	if assets != nil {
-		for k, _ := range assetMap {
+		for k := range assetMap {
 			assetMap[k] = false
 		}
 		for _, asset := range assets {
@@ -101,7 +101,7 @@ func Project(client keystone.HTTPClient, api *keystone.Keystone, selected config
 		if err != nil {
 			return result, err
 		}
-		namedRules := make(map[string]fiware.Rule, len(rules))
+		namedRules := make(map[string]models.Rule, len(rules))
 		for _, rule := range rules {
 			namedRules[rule.Name] = rule
 		}

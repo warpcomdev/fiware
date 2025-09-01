@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/decode"
+	"github.com/warpcomdev/fiware/models"
 )
 
-func Load(datafile string, params map[string]string, libPath string) (fiware.Manifest, error) {
+func Load(datafile string, params map[string]string, libPath string) (models.Manifest, error) {
 	var (
 		jsonStr  string
 		err      error
-		manifest fiware.Manifest
+		manifest models.Manifest
 	)
 	if datafile != "" {
 		// Use starlark for .star or .py files
@@ -26,7 +26,7 @@ func Load(datafile string, params map[string]string, libPath string) (fiware.Man
 			jsonStr, err = loadStarlark(datafile, params, libPath)
 		case strings.HasSuffix(lowerName, ".csv"): // support for loading a CSV. Only makes sense to delete entities.
 			types, entities := decode.CSV(datafile)
-			return fiware.Manifest{EntityTypes: types, Entities: entities}, nil
+			return models.Manifest{EntityTypes: types, Entities: entities}, nil
 		default:
 			jsonStr, err = loadCue(datafile, params, libPath)
 		}

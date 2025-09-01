@@ -10,19 +10,19 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/warpcomdev/fiware"
+	"github.com/warpcomdev/fiware/models"
 )
 
 //go:embed builtin/*.tmpl
 var builtin embed.FS
 
 type verticalWithParams struct {
-	fiware.Manifest
+	models.Manifest
 	Params map[string]string `json:"params,omitempty"`
 }
 
 // Turn a manifest into a json dict to use in a template
-func ManifestForTemplate(manifest fiware.Manifest, params map[string]string) (interface{}, error) {
+func ManifestForTemplate(manifest models.Manifest, params map[string]string) (interface{}, error) {
 	var (
 		data       interface{}
 		strictData verticalWithParams

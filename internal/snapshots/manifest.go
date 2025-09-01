@@ -5,21 +5,21 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/config"
 	"github.com/warpcomdev/fiware/internal/template"
+	"github.com/warpcomdev/fiware/models"
 )
 
 // Write all assets in manifest using deployer format.
 // panels might containe payload for any panel in manifest.Verticals.
 // panels outside manifest.Verticals are not stored.
-func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, writer config.Writer) (fiware.ManifestSource, error) {
-	result := fiware.ManifestSource{
+func WriteManifest(manifest models.Manifest, panels map[string]json.RawMessage, writer config.Writer) (models.ManifestSource, error) {
+	result := models.ManifestSource{
 		Files: make([]string, 0, 8),
 	}
 
 	// dump assets
-	conditionalSave := func(asset string, when bool, manifest fiware.Manifest) error {
+	conditionalSave := func(asset string, when bool, manifest models.Manifest) error {
 		if when {
 			filename := asset + ".json"
 			if err := config.AtomicSave(writer, filename, asset, manifest); err != nil {
@@ -30,47 +30,47 @@ func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, 
 		return nil
 	}
 
-	if err := conditionalSave("rules", len(manifest.Rules) > 0, fiware.Manifest{
+	if err := conditionalSave("rules", len(manifest.Rules) > 0, models.Manifest{
 		Rules: manifest.Rules,
 	}); err != nil {
 		return result, err
 	}
 
-	if err := conditionalSave("subs", len(manifest.Subscriptions) > 0, fiware.Manifest{
+	if err := conditionalSave("subs", len(manifest.Subscriptions) > 0, models.Manifest{
 		Subscriptions: manifest.Subscriptions,
 		Environment:   manifest.Environment,
 	}); err != nil {
 		return result, err
 	}
 
-	if err := conditionalSave("registrations", len(manifest.Registrations) > 0, fiware.Manifest{
+	if err := conditionalSave("registrations", len(manifest.Registrations) > 0, models.Manifest{
 		Registrations: manifest.Registrations,
 	}); err != nil {
 		return result, err
 	}
 
-	if err := conditionalSave("groups", len(manifest.Services) > 0, fiware.Manifest{
+	if err := conditionalSave("groups", len(manifest.Services) > 0, models.Manifest{
 		Services: manifest.Services,
 	}); err != nil {
 		return result, err
 	}
 
-	if err := conditionalSave("devices", len(manifest.Devices) > 0, fiware.Manifest{
+	if err := conditionalSave("devices", len(manifest.Devices) > 0, models.Manifest{
 		Devices: manifest.Devices,
 	}); err != nil {
 		return result, err
 	}
 
 	if len(panels) > 0 {
-		manifest := fiware.Manifest{
+		manifest := models.Manifest{
 			Verticals: manifest.Verticals,
-			ManifestPanels: fiware.PanelManifest{
-				Sources: make(map[string]fiware.ManifestSource),
+			ManifestPanels: models.PanelManifest{
+				Sources: make(map[string]models.ManifestSource),
 			},
 		}
 		// Only dump panels in verticals
 		for verticalSlug, vertical := range manifest.Verticals {
-			panelSource := fiware.ManifestSource{
+			panelSource := models.ManifestSource{
 				Path:  "./panels",
 				Files: make([]string, 0, len(panels)),
 			}
@@ -92,7 +92,7 @@ func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, 
 			return result, err
 		}
 	} else {
-		if err := conditionalSave("verticals", len(manifest.Verticals) > 0, fiware.Manifest{
+		if err := conditionalSave("verticals", len(manifest.Verticals) > 0, models.Manifest{
 			Verticals: manifest.Verticals,
 		}); err != nil {
 			return result, err
@@ -101,7 +101,7 @@ func WriteManifest(manifest fiware.Manifest, panels map[string]json.RawMessage, 
 
 	// dump entities as CSV
 	if len(manifest.EntityTypes) > 0 {
-		entityManifest := fiware.Manifest{
+		entityManifest := models.Manifest{
 			EntityTypes: manifest.EntityTypes,
 			Entities:    manifest.Entities,
 		}

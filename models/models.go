@@ -2,7 +2,7 @@
 // El principal modelo es el de Vertical, que es el punto de entrada a
 // partir del cual se accede al conjunto de datos de la vertical. El resto
 // de tipos corresponden a sub-atributos dentro de la vertical.
-package fiware
+package models
 
 // Some bools in the IoTA APIs have different behaviour if they are
 // undefined versus false. For instance, "timestamp === false" might
@@ -28,7 +28,7 @@ import (
 // para poder ser exportados a diferentes formatos (json, jsonnet,
 // starlark, etc).
 // La interfaz se implementa automáticamente con el siguiente generador:
-//go:generate go run cmd/generate/generate.go
+//go:generate go run ../cmd/generate/generate.go
 
 // Manifest representa un manifiesto de vertical
 type Manifest struct {

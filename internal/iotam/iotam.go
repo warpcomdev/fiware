@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/warpcomdev/fiware"
 	"github.com/warpcomdev/fiware/internal/keystone"
+	"github.com/warpcomdev/fiware/models"
 )
 
 type Iotam struct {
@@ -27,14 +27,14 @@ func New(iotaURL string) (*Iotam, error) {
 }
 
 // Services reads the list of groups from the IoTA Manager
-func (i *Iotam) Services(client keystone.HTTPClient, headers http.Header) ([]fiware.Service, error) {
+func (i *Iotam) Services(client keystone.HTTPClient, headers http.Header) ([]models.Service, error) {
 	path, err := i.URL.Parse("iot/services")
 	if err != nil {
 		return nil, err
 	}
 	var response struct {
 		Count    int              `json:"count"`
-		Services []fiware.Service `json:"services"`
+		Services []models.Service `json:"services"`
 	}
 	if err := keystone.GetJSON(client, headers, path, &response, i.AllowUnknownFields); err != nil {
 		return nil, err
@@ -43,14 +43,14 @@ func (i *Iotam) Services(client keystone.HTTPClient, headers http.Header) ([]fiw
 }
 
 // Devices reads the list of devices from the IoTA Manager
-func (i *Iotam) Devices(client keystone.HTTPClient, headers http.Header) ([]fiware.Device, error) {
+func (i *Iotam) Devices(client keystone.HTTPClient, headers http.Header) ([]models.Device, error) {
 	path, err := i.URL.Parse("iot/devices")
 	if err != nil {
 		return nil, err
 	}
 	var response struct {
 		Count   int             `json:"count"`
-		Devices []fiware.Device `json:"devices"`
+		Devices []models.Device `json:"devices"`
 	}
 	if err := keystone.GetJSON(client, headers, path, &response, i.AllowUnknownFields); err != nil {
 		return nil, err
@@ -59,14 +59,14 @@ func (i *Iotam) Devices(client keystone.HTTPClient, headers http.Header) ([]fiwa
 }
 
 // PostServices sends a POST request for a set of Services
-func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, services []fiware.Service) error {
-	clean := make([]fiware.Service, 0, len(services))
+func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, services []models.Service) error {
+	clean := make([]models.Service, 0, len(services))
 	for _, service := range services {
-		service.ServiceStatus = fiware.ServiceStatus{}
+		service.ServiceStatus = models.ServiceStatus{}
 		clean = append(clean, service)
 	}
 	// Aggregate Devices by protocol
-	resourceMap, err := groupResources(services, func(g fiware.Service) string { return g.Protocol })
+	resourceMap, err := groupResources(services, func(g models.Service) string { return g.Protocol })
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, se
 			return err
 		}
 		request := struct {
-			Services []fiware.Service `json:"services"`
+			Services []models.Service `json:"services"`
 		}{Services: services}
 		if _, _, err := keystone.PostJSON(client, headers, path, request); err != nil {
 			return err
@@ -86,7 +86,7 @@ func (i *Iotam) PostServices(client keystone.HTTPClient, headers http.Header, se
 }
 
 // DeleteServices sends a DELETE request for a set of Services
-func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, services []fiware.Service) error {
+func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, services []models.Service) error {
 	var errList []error
 	for _, service := range services {
 		if service.Resource == "" || service.APIKey == "" || service.Protocol == "" {
@@ -109,13 +109,13 @@ func (i *Iotam) DeleteServices(client keystone.HTTPClient, headers http.Header, 
 }
 
 // PostDevices sends a POST request for a set of Devices
-func (i *Iotam) PostDevices(client keystone.HTTPClient, headers http.Header, devices []fiware.Device) error {
-	clean := make([]fiware.Device, 0, len(devices))
+func (i *Iotam) PostDevices(client keystone.HTTPClient, headers http.Header, devices []models.Device) error {
+	clean := make([]models.Device, 0, len(devices))
 	for _, service := range devices {
-		service.DeviceStatus = fiware.DeviceStatus{}
+		service.DeviceStatus = models.DeviceStatus{}
 		clean = append(clean, service)
 	}
-	resourceMap, err := groupResources(clean, func(g fiware.Device) string { return g.Protocol })
+	resourceMap, err := groupResources(clean, func(g models.Device) string { return g.Protocol })
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (i *Iotam) PostDevices(client keystone.HTTPClient, headers http.Header, dev
 			return err
 		}
 		request := struct {
-			Devices []fiware.Device `json:"devices"`
+			Devices []models.Device `json:"devices"`
 		}{Devices: devices}
 		if _, _, err := keystone.PostJSON(client, headers, path, request); err != nil {
 			return err
@@ -135,7 +135,7 @@ func (i *Iotam) PostDevices(client keystone.HTTPClient, headers http.Header, dev
 }
 
 // DeleteDevices sends a DELETE request for a set of Devices
-func (i *Iotam) DeleteDevices(client keystone.HTTPClient, headers http.Header, devices []fiware.Device) error {
+func (i *Iotam) DeleteDevices(client keystone.HTTPClient, headers http.Header, devices []models.Device) error {
 	var errList []error
 	for _, device := range devices {
 		if device.DeviceId == "" {
