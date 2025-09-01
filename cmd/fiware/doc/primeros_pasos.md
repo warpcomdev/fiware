@@ -16,7 +16,7 @@ Para poder empezar a utilizar la aplicación, lo primero es definir un **context
 - El servicio y subservicio que gestiona dicho contexto
 - Variables y parámetros adicionales útiles para la operación, como las URLs de cygnus.
 
-Los contextos se almacenan en el directorio `~/.config/models.d` del usuario. Inicialmente, la lista de contextos estará vacía:
+Los contextos se almacenan en el directorio `~/.config/fiware.d` del usuario. Inicialmente, la lista de contextos estará vacía:
 
 ```
 $ fiware context list

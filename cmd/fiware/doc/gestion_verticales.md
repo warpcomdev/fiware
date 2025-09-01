@@ -168,6 +168,6 @@ Tanto los ficheros de datos como las plantillas pueden acceder a los párametros
 
 Así, para compartir con el template un atributo como por ejemplo la URL del servidor cygnus, se puede añadir al contexto con el comando:
 
-```fiware context params cygnus_url http://cygnus.models.com:8080```
+```fiware context params cygnus_url http://cygnus.fiware.com:8080```
 
 Y ese valor será accesible desde *jsonnet*, *starlark* y las plantillas.
