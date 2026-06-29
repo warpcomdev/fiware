@@ -206,6 +206,12 @@ var (
 		Usage:   "Group ID",
 	}
 
+	domainFlag = &cli.StringFlag{
+		Name:    "domain",
+		Aliases: []string{"D"},
+		Usage:   "Query Keystone users/groups/roles in a separate domain",
+	}
+
 	srcMapFlag = &cli.StringFlag{
 		Name:     "srcmap",
 		Aliases:  []string{"src"},

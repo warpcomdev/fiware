@@ -133,6 +133,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 	}
 	maximum := c.Int(maxFlag.Name)
 	skipErrors := c.Bool(continueFlag.Name)
+	domain := c.String(domainFlag.Name)
 	client := httpClient(verbosity(c), configuredTimeout(c))
 	for _, arg := range c.Args().Slice() {
 		var k *keystone.Keystone
@@ -234,7 +235,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getUsers(selected, client, k, header, vertical); err != nil {
+			if err := getUsers(selected, client, k, header, domain, vertical); err != nil {
 				return err
 			}
 		case "ug":
@@ -245,14 +246,14 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getGroups(selected, client, k, header, vertical); err != nil {
+			if err := getGroups(selected, client, k, header, domain, vertical); err != nil {
 				return err
 			}
 		case "roles":
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getRoles(selected, client, k, header, vertical); err != nil {
+			if err := getRoles(selected, client, k, header, domain, vertical); err != nil {
 				return err
 			}
 		case "ur":
@@ -267,7 +268,7 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getUserRoles(selected, client, k, header, userIds, skipErrors, vertical); err != nil {
+			if err := getUserRoles(selected, client, k, header, domain, userIds, skipErrors, vertical); err != nil {
 				return err
 			}
 		case "gr":
@@ -282,14 +283,14 @@ func getResource(c *cli.Context, store *config.Store) error {
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getGroupRoles(selected, client, k, header, groupIds, skipErrors, vertical); err != nil {
+			if err := getGroupRoles(selected, client, k, header, domain, groupIds, skipErrors, vertical); err != nil {
 				return err
 			}
 		case "rolemap":
 			if k, header, err = getKeystoneHeaders(c, &selected); err != nil {
 				return err
 			}
-			if err := getRolemap(selected, client, k, header, vertical); err != nil {
+			if err := getRolemap(selected, client, k, header, domain, vertical); err != nil {
 				return err
 			}
 		case "panels":
@@ -414,8 +415,8 @@ func getProjects(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone,
 	return nil
 }
 
-func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
-	users, err := k.Users(c, header)
+func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, domain string, vertical *models.Manifest) error {
+	users, err := k.Users(c, header, domain)
 	if err != nil {
 		return err
 	}
@@ -423,8 +424,8 @@ func getUsers(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, he
 	return nil
 }
 
-func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
-	groups, err := k.Groups(c, header)
+func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, domain string, vertical *models.Manifest) error {
+	groups, err := k.Groups(c, header, domain)
 	if err != nil {
 		return err
 	}
@@ -432,8 +433,8 @@ func getGroups(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, h
 	return nil
 }
 
-func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
-	roles, err := k.Roles(c, header)
+func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, domain string, vertical *models.Manifest) error {
+	roles, err := k.Roles(c, header, domain)
 	if err != nil {
 		return err
 	}
@@ -441,8 +442,8 @@ func getRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, he
 	return nil
 }
 
-func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, uids []string, skipErrors bool, vertical *models.Manifest) error {
-	assignments, err := k.UserRoles(c, header, uids, skipErrors)
+func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, domain string, uids []string, skipErrors bool, vertical *models.Manifest) error {
+	assignments, err := k.UserRoles(c, header, domain, uids, skipErrors)
 	if err != nil {
 		return err
 	}
@@ -450,8 +451,8 @@ func getUserRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone
 	return nil
 }
 
-func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, gids []string, skipErrors bool, vertical *models.Manifest) error {
-	assignments, err := k.GroupRoles(c, header, gids, skipErrors)
+func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, domain string, gids []string, skipErrors bool, vertical *models.Manifest) error {
+	assignments, err := k.GroupRoles(c, header, domain, gids, skipErrors)
 	if err != nil {
 		return err
 	}
@@ -459,21 +460,21 @@ func getGroupRoles(ctx config.Config, c keystone.HTTPClient, k *keystone.Keyston
 	return nil
 }
 
-func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
+func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, domain string, vertical *models.Manifest) error {
 	var err error
 	vertical.Projects, err = k.Projects(c, header)
 	if err != nil {
 		return err
 	}
-	vertical.Roles, err = k.Roles(c, header)
+	vertical.Roles, err = k.Roles(c, header, domain)
 	if err != nil {
 		return err
 	}
-	vertical.Users, err = k.Users(c, header)
+	vertical.Users, err = k.Users(c, header, domain)
 	if err != nil {
 		return err
 	}
-	vertical.Groups, err = k.Groups(c, header)
+	vertical.Groups, err = k.Groups(c, header, domain)
 	if err != nil {
 		return err
 	}
@@ -481,7 +482,7 @@ func getRolemap(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, 
 }
 
 func getDomains(ctx config.Config, c keystone.HTTPClient, k *keystone.Keystone, header http.Header, vertical *models.Manifest) error {
-	domains, err := k.Domains(c, header, false)
+	domains, err := k.Domains(c, header, true)
 	if err != nil {
 		return err
 	}

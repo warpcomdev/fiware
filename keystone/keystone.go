@@ -515,17 +515,118 @@ func (k *Keystone) MyDomain(client HTTPClient, headers http.Header) (string, str
 	return domName, domID, nil
 }
 
+func (k *Keystone) Domain(client HTTPClient, headers http.Header, name string) (string, string, error) {
+	if name == "" {
+		return k.MyDomain(client, headers)
+	}
+	urlDomain, err := k.URL.Parse("/v3/domains")
+	if err != nil {
+		return "", "", err
+	}
+	var domains domainList
+	if err := GetJSON(client, headers, urlDomain, &domains, true); err != nil {
+		return "", "", err
+	}
+	for _, domain := range domains.Domains {
+		if domain.Name == name {
+			return domain.Name, domain.ID, nil
+		}
+	}
+	return "", "", fmt.Errorf("domain %q not found", name)
+}
+
 type keystoneUsers struct {
 	Links json.RawMessage `json:"links,omitempty"`
 	Users []models.User   `json:"users"`
 }
 
-func (k *Keystone) Users(client HTTPClient, headers http.Header) ([]models.User, error) {
-	// Get the domain id for the service
-	domName, domID, err := k.MyDomain(client, headers)
-	if err != nil {
-		return nil, err
+type scimResourceExtension struct {
+	DomainID string `json:"domain_id"`
+}
+
+type scimUser struct {
+	ID          string                `json:"id"`
+	UserName    string                `json:"userName"`
+	DisplayName string                `json:"displayName,omitempty"`
+	Active      bool                  `json:"active"`
+	Emails      []map[string]string   `json:"emails,omitempty"`
+	Extension   scimResourceExtension `json:"urn:scim:schemas:extension:keystone:1.0"`
+}
+
+type scimUsers struct {
+	Resources []scimUser `json:"Resources"`
+}
+
+type scimGroup struct {
+	ID          string                `json:"id"`
+	DisplayName string                `json:"displayName"`
+	Extension   scimResourceExtension `json:"urn:scim:schemas:extension:keystone:1.0"`
+}
+
+type scimGroups struct {
+	Resources []scimGroup `json:"Resources"`
+}
+
+type scimRole struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type scimRoles struct {
+	Resources []scimRole `json:"Resources"`
+}
+
+func (k *Keystone) scimURL(path string) (*url.URL, error) {
+	return k.URL.Parse(path)
+}
+
+// resolveSCIMPath discovers which SCIM base path is available in Keystone.
+func (k *Keystone) resolveSCIMPath(client HTTPClient, headers http.Header, suffix string) (*url.URL, error) {
+	candidates := []string{
+		"/v3/OS-SCIM/v1" + suffix,
+		"/v3/OS-SCIM" + suffix,
 	}
+	var lastErr error
+	for _, candidate := range candidates {
+		u, err := k.scimURL(candidate)
+		if err != nil {
+			return nil, err
+		}
+		req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header = headers.Clone()
+		resp, err := client.Do(req)
+		if err == nil && resp != nil && resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			Exhaust(resp)
+			return u, nil
+		}
+		lastErr = newNetError(req, resp, err)
+		var netErr NetError
+		if errors.As(lastErr, &netErr) && (netErr.StatusCode == http.StatusNotFound || netErr.StatusCode == http.StatusMethodNotAllowed) {
+			continue
+		}
+		return nil, lastErr
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("SCIM path not found for suffix %s", suffix)
+	}
+	return nil, lastErr
+}
+
+// firstSCIMEmail extracts the first email value from a SCIM email list.
+func firstSCIMEmail(emails []map[string]string) string {
+	for _, item := range emails {
+		if value := item["value"]; value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+// nativeUsers queries the legacy Keystone users endpoint and normalizes domain metadata.
+func (k *Keystone) nativeUsers(client HTTPClient, headers http.Header, domName, domID string) ([]models.User, error) {
 	urlProjects, err := k.URL.Parse(fmt.Sprintf("/v3/users?domain_id=%s", domID))
 	if err != nil {
 		return nil, err
@@ -539,6 +640,35 @@ func (k *Keystone) Users(client HTTPClient, headers http.Header) ([]models.User,
 		users.Users[idx] = user
 	}
 	return users.Users, nil
+}
+
+func (k *Keystone) Users(client HTTPClient, headers http.Header, domain string) ([]models.User, error) {
+	domName, domID, err := k.Domain(client, headers, domain)
+	if err != nil {
+		return nil, err
+	}
+	urlUsers, err := k.resolveSCIMPath(client, headers, fmt.Sprintf("/Users?domain_id=%s", domID))
+	if err == nil {
+		var users scimUsers
+		if _, err := Query(client, http.MethodGet, headers, urlUsers, &users, true); err == nil {
+			result := make([]models.User, 0, len(users.Resources))
+			for _, user := range users.Resources {
+				result = append(result, models.User{
+					Name:        user.UserName,
+					Description: user.DisplayName,
+					Enabled:     user.Active,
+					Email:       firstSCIMEmail(user.Emails),
+					DomainID:    user.Extension.DomainID,
+					UserStatus: models.UserStatus{
+						ID:     user.ID,
+						Domain: domName,
+					},
+				})
+			}
+			return result, nil
+		}
+	}
+	return k.nativeUsers(client, headers, domName, domID)
 }
 
 type userWithPassword struct {
@@ -589,21 +719,9 @@ type keystoneGroups struct {
 	Groups []models.Group  `json:"groups"`
 }
 
-func (k *Keystone) Groups(client HTTPClient, headers http.Header) ([]models.Group, error) {
-	// Get the domain id for the service
-	domName, domID, err := k.MyDomain(client, headers)
-	if err != nil {
-		return nil, err
-	}
-	urlGroups, err := k.URL.Parse(fmt.Sprintf("/v3/groups?domain_id=%s", domID))
-	if err != nil {
-		return nil, err
-	}
-	var groups keystoneGroups
-	if _, err := Query(client, http.MethodGet, headers, urlGroups, &groups, false); err != nil {
-		return nil, err
-	}
-	for idx, grp := range groups.Groups {
+// populateGroupUsers resolves the user IDs and names for each group.
+func (k *Keystone) populateGroupUsers(client HTTPClient, headers http.Header, groups []models.Group) ([]models.Group, error) {
+	for idx, grp := range groups {
 		urlUsers, err := k.URL.Parse(fmt.Sprintf("/v3/groups/%s/users", grp.ID))
 		if err != nil {
 			return nil, err
@@ -619,12 +737,55 @@ func (k *Keystone) Groups(client HTTPClient, headers http.Header) ([]models.Grou
 			usrList = append(usrList, user.ID)
 			userNameList = append(userNameList, user.Name)
 		}
-		grp.Domain = domName
 		grp.Users = usrList
 		grp.UserNames = userNameList
+		groups[idx] = grp
+	}
+	return groups, nil
+}
+
+// nativeGroups queries the legacy Keystone groups endpoint and enriches group membership.
+func (k *Keystone) nativeGroups(client HTTPClient, headers http.Header, domName, domID string) ([]models.Group, error) {
+	urlGroups, err := k.URL.Parse(fmt.Sprintf("/v3/groups?domain_id=%s", domID))
+	if err != nil {
+		return nil, err
+	}
+	var groups keystoneGroups
+	if _, err := Query(client, http.MethodGet, headers, urlGroups, &groups, false); err != nil {
+		return nil, err
+	}
+	for idx, grp := range groups.Groups {
+		grp.Domain = domName
 		groups.Groups[idx] = grp
 	}
-	return groups.Groups, nil
+	return k.populateGroupUsers(client, headers, groups.Groups)
+}
+
+func (k *Keystone) Groups(client HTTPClient, headers http.Header, domain string) ([]models.Group, error) {
+	domName, domID, err := k.Domain(client, headers, domain)
+	if err != nil {
+		return nil, err
+	}
+	urlGroups, err := k.resolveSCIMPath(client, headers, fmt.Sprintf("/Groups?domain_id=%s", domID))
+	if err == nil {
+		var groups scimGroups
+		if _, err := Query(client, http.MethodGet, headers, urlGroups, &groups, true); err == nil {
+			result := make([]models.Group, 0, len(groups.Resources))
+			for _, grp := range groups.Resources {
+				result = append(result, models.Group{
+					Name:        grp.DisplayName,
+					Description: grp.DisplayName,
+					DomainID:    grp.Extension.DomainID,
+					GroupStatus: models.GroupStatus{
+						ID:     grp.ID,
+						Domain: domName,
+					},
+				})
+			}
+			return k.populateGroupUsers(client, headers, result)
+		}
+	}
+	return k.nativeGroups(client, headers, domName, domID)
 }
 
 type postUserGroup struct {
@@ -662,12 +823,8 @@ type keystoneRoles struct {
 	Roles []models.Role   `json:"roles"`
 }
 
-func (k *Keystone) Roles(client HTTPClient, headers http.Header) ([]models.Role, error) {
-	// Get the domain id for the service
-	domName, domID, err := k.MyDomain(client, headers)
-	if err != nil {
-		return nil, err
-	}
+// nativeRoles queries the legacy Keystone roles endpoint and filters domain-scoped roles.
+func (k *Keystone) nativeRoles(client HTTPClient, headers http.Header, domName, domID string) ([]models.Role, error) {
 	urlRoles, err := k.URL.Parse("/v3/roles")
 	if err != nil {
 		return nil, err
@@ -676,8 +833,6 @@ func (k *Keystone) Roles(client HTTPClient, headers http.Header) ([]models.Role,
 	if _, err := Query(client, http.MethodGet, headers, urlRoles, &roles, false); err != nil {
 		return nil, err
 	}
-	// Filter only roles from this service. Role names currently
-	// are returned as "projectid#role_name"
 	filtered := make([]models.Role, 0, len(roles.Roles))
 	for _, role := range roles.Roles {
 		parts := strings.Split(role.Name, "#")
@@ -699,20 +854,50 @@ func (k *Keystone) Roles(client HTTPClient, headers http.Header) ([]models.Role,
 	return filtered, nil
 }
 
+func (k *Keystone) Roles(client HTTPClient, headers http.Header, domain string) ([]models.Role, error) {
+	domName, domID, err := k.Domain(client, headers, domain)
+	if err != nil {
+		return nil, err
+	}
+	urlRoles, err := k.resolveSCIMPath(client, headers, fmt.Sprintf("/Roles?domain_id=%s", domID))
+	if err == nil {
+		var roles scimRoles
+		if _, err := Query(client, http.MethodGet, headers, urlRoles, &roles, true); err == nil {
+			result := make([]models.Role, 0, len(roles.Resources))
+			for _, role := range roles.Resources {
+				result = append(result, models.Role{
+					Name:     role.Name,
+					DomainID: domID,
+					RoleStatus: models.RoleStatus{
+						ID:     role.ID,
+						Domain: domName,
+					},
+				})
+			}
+			return result, nil
+		}
+	}
+	return k.nativeRoles(client, headers, domName, domID)
+}
+
 type keystoneRoleAssignments struct {
 	Links       json.RawMessage         `json:"links,omitempty"`
 	Assignments []models.RoleAssignment `json:"role_assignments"`
 }
 
-func (k *Keystone) UserRoles(client HTTPClient, headers http.Header, uids []string, skipErrors bool) ([]models.RoleAssignment, error) {
-	return k.assignments(client, headers, "user.id", uids, skipErrors)
+func (k *Keystone) UserRoles(client HTTPClient, headers http.Header, domain string, uids []string, skipErrors bool) ([]models.RoleAssignment, error) {
+	return k.assignments(client, headers, domain, "user.id", uids, skipErrors)
 }
 
-func (k *Keystone) GroupRoles(client HTTPClient, headers http.Header, gids []string, skipErrors bool) ([]models.RoleAssignment, error) {
-	return k.assignments(client, headers, "group.id", gids, skipErrors)
+func (k *Keystone) GroupRoles(client HTTPClient, headers http.Header, domain string, gids []string, skipErrors bool) ([]models.RoleAssignment, error) {
+	return k.assignments(client, headers, domain, "group.id", gids, skipErrors)
 }
 
-func (k *Keystone) assignments(client HTTPClient, headers http.Header, param string, vals []string, skipErrors bool) ([]models.RoleAssignment, error) {
+func (k *Keystone) assignments(client HTTPClient, headers http.Header, domain, param string, vals []string, skipErrors bool) ([]models.RoleAssignment, error) {
+	_, domID, err := k.Domain(client, headers, domain)
+	if err != nil {
+		return nil, err
+	}
 	allAssignments := make([]models.RoleAssignment, 0, 32)
 	inherit := make(map[string]string)
 	for _, val := range vals {
@@ -759,6 +944,9 @@ func (k *Keystone) assignments(client HTTPClient, headers http.Header, param str
 				if len(parts) == 2 {
 					assign.Role.Name = parts[1]
 				}
+			}
+			if assign.DomainID == "" {
+				assign.DomainID = domID
 			}
 			result = append(result, assign)
 		}

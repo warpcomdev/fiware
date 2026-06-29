@@ -254,6 +254,7 @@ func main() {
 					tokenFlag,
 					urboTokenFlag,
 					subServiceFlag,
+					domainFlag,
 					outputFlag,
 					filterIdFlag,
 					filterTypeFlag,
