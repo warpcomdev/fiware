@@ -10,7 +10,7 @@ from typing import Any, TypedDict
 
 DOMAINS_DIR = Path(__file__).parent / "domains"
 DEFAULT_KEYSTONE_URL = os.environ.get(
-    "KEYSTONE_URL", "https://auth.iotplatform.telefonica.com:15001"
+    "KEYSTONE_URL", "https://auth.keystone.com"
 )
 
 ADMIN_SPECIFIC = {"ServiceAdmin" + s for s in ("IOTAGENT", "ORION", "PERSEO", "STH")}

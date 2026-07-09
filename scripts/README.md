@@ -94,10 +94,10 @@ After the summary, the script also prints remediation commands in this form:
 
 ```bash
 curl -X PUT -H "X-Auth-Token: $TOKEN" \
-  "https://auth.iotplatform.telefonica.com:15001/v3/projects/<project_id>/users/<user_id>/roles/<role_id>"
+  "https://auth.keystone.com/v3/projects/<project_id>/users/<user_id>/roles/<role_id>"
 ```
 
-Use `--keystone-url` to override the Keystone base URL. If omitted, the script uses `KEYSTONE_URL` from the environment when present, otherwise `https://auth.iotplatform.telefonica.com:15001`.
+Use `--keystone-url` to override the Keystone base URL. If omitted, the script uses `KEYSTONE_URL` from the environment when present, otherwise `https://auth.keystone.com`.
 
 Example:
 
